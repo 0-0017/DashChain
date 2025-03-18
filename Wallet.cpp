@@ -241,7 +241,7 @@ bool Wallet::ecDoVerify(EVP_PKEY* pkey, const std::vector<uint8_t>& mesdgst, std
 
     /* Finalize the digest verify operation and get the verification result */
     int ret = EVP_DigestVerifyFinal(ctx, sig, siglen);
-    std::cout << "Verified: " << ret << std::endl;                                                                          //
+    std::cout << "Verified: " << ret << std::endl;
 
     /* Clean up memory */
     EVP_MD_CTX_free(ctx);
@@ -251,63 +251,26 @@ bool Wallet::ecDoVerify(EVP_PKEY* pkey, const std::vector<uint8_t>& mesdgst, std
 }
 
 void Wallet::extract_public_key() {
-    EVP_PKEY* pubkey = NULL;
-    EVP_PKEY_CTX* ctx = NULL;
-    OSSL_PARAM_BLD* param_bld = NULL;
-    OSSL_PARAM* params = NULL;
-    int result = 0;
+    EVP_PKEY* pubKey = NULL;
+    BIO* bio = BIO_new(BIO_s_mem());
 
-    // Build parameters
-    param_bld = OSSL_PARAM_BLD_new();
-    if (!param_bld) {
-        std::cerr << "Failed to create OSSL_PARAM_BLD\n";
-        goto cleanup;
+    if (!bio) {
+        fprintf(stderr, "Error creating BIO\n");
     }
 
-    if (!OSSL_PARAM_BLD_push_utf8_string(param_bld, OSSL_PKEY_PARAM_GROUP_NAME, "prime256v1", 0)) {
-        std::cerr << "Failed to set group name\n";
-        goto cleanup;
+    // Write the public key to the BIO
+    if (PEM_write_bio_PUBKEY(bio, keyPair) != 1) {
+        fprintf(stderr, "Error writing public key to BIO\n");
+        BIO_free(bio);
     }
 
-    params = OSSL_PARAM_BLD_to_param(param_bld);
-    if (!params) {
-        std::cerr << "Failed to convert OSSL_PARAM_BLD to OSSL_PARAM\n";
-        goto cleanup;
+    // Read the public key from the BIO
+    pubKeyP = PEM_read_bio_PUBKEY(bio, NULL, NULL, NULL);
+    if (!pubKeyP) {
+        fprintf(stderr, "Error reading public key from BIO\n");
     }
 
-    // Create a context for the key generation
-    ctx = EVP_PKEY_CTX_new_from_pkey(NULL, keyPair, NULL);
-    if (!ctx) {
-        std::cerr << "Failed to create EVP_PKEY_CTX\n";
-        goto cleanup;
-    }
-
-    // Initialize the context for key generation
-    if (EVP_PKEY_fromdata_init(ctx) <= 0) {
-        std::cerr << "Failed to initialize EVP_PKEY from data\n";
-        goto cleanup;
-    }
-
-    // Generate the public key
-    if (EVP_PKEY_fromdata(ctx, &pubkey, EVP_PKEY_PUBLIC_KEY, params) <= 0) {
-        std::cerr << "Failed to create EVP_PKEY from data\n";
-        goto cleanup;
-    }
-
-
-    pubKeyP = pubkey;
-    result = 1;
-
-cleanup:
-    // Free resources
-    if (pubkey) EVP_PKEY_free(pubkey);
-    if (ctx) EVP_PKEY_CTX_free(ctx);
-    if (params) OSSL_PARAM_free(params);
-    if (param_bld) OSSL_PARAM_BLD_free(param_bld);
-
-    if (!result) {
-        std::cerr << "Failed to extract public key." << std::endl;
-    }
+    BIO_free(bio);
 }
 
 std::string Wallet::genAddress(const unsigned char* pubKey) {
@@ -480,7 +443,9 @@ std::string Wallet::getWalletAddr() {
 }
 
 EVP_PKEY* Wallet::getPubKey() {
-    extract_public_key();
+    if (pubKeyP == nullptr) {
+        extract_public_key();
+    }
     return pubKeyP;
 }
 

@@ -25,6 +25,7 @@
 #include <openssl/pem.h>
 #include <openssl/rand.h>
 #include <openssl/ripemd.h>
+#include <openssl/provider.h>
 #include <openssl/param_build.h>
 #include <openssl/core_names.h>
 #include <string>

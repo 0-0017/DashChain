@@ -23,7 +23,7 @@ public:
 	~BlockChain();
 
 	/* Creates a Block into the chain*/
-	void GenerateBlock(std::vector<transactions> d, Block* b = nullptr);
+	void GenerateBlock(const std::vector<transactions>& d, Block* b = nullptr);
 
 	/* Checks to see if Blockchain is Empty */
 	bool empty();

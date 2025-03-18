@@ -47,7 +47,7 @@ private:
 
 public:
 	/* Constuctor Ran on Block Creation */
-	Block(std::vector<transactions> d, Block* n = NULL); //*
+	Block(const std::vector<transactions>& d, Block* n = NULL); //*
 
 	/* Getter for timestamp */
 	unsigned long long getTimestamp();

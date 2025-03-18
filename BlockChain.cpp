@@ -43,7 +43,7 @@ BlockChain::~BlockChain() {
 }
 
 
-void BlockChain::GenerateBlock(std::vector<transactions> d, Block* b) {
+void BlockChain::GenerateBlock(const std::vector<transactions>& d, Block* b) {
 	if (b == nullptr) {
 		/* Creates Block And Adds Genesis Block */
 		Block* newBlk = new Block(d);
@@ -51,7 +51,7 @@ void BlockChain::GenerateBlock(std::vector<transactions> d, Block* b) {
 
 		/* set Block Info */
 		newBlk->setPrevHash(preBlk->getCurrHash());
-		newBlk->blockHeight = height++;
+		newBlk->blockHeight = height + 1;
 		newBlk->setMerkleRoot(d);
 		newBlk->setCurrHash();
 

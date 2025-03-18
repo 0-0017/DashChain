@@ -7,7 +7,7 @@
 using namespace std;
 
 
-Block::Block(std::vector<transactions> d, Block* n)
+Block::Block(const std::vector<transactions>& d, Block* n)
 {
     data = d;
     next = n;

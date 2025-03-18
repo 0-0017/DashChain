@@ -44,7 +44,7 @@ private:
 	EVP_PKEY* keyPair;
 	std::vector<transactions> UTXO;
 	const char* curvename = "P-256";
-	EVP_PKEY* pubKeyP;
+	EVP_PKEY* pubKeyP = nullptr;
 	unsigned char* pubKey = nullptr;
 	unsigned char* privKey = nullptr;
 	unsigned short txCount;

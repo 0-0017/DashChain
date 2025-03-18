@@ -311,8 +311,8 @@ void Server::serverOnStart(Server& server) {
             std::cout << "Chain Created!\n";
 
             /* Update Loop */
-            uploop = std::thread(&Server::upLoop, this, std::ref(server));
-            uploop.detach();
+            //uploop = std::thread(&Server::upLoop, this, std::ref(server));
+            //uploop.detach();
         }
         else
         {
@@ -413,7 +413,7 @@ void Server::clientUpLoop() {
 void Server::updateSlot() {
     unsigned long long timeNow = u.TimeStamp();
 
-    if ((timeNow - chain->getTimestamp()) % sPeriod) {
+    if ((timeNow - chain->getTimestamp()) >= 0) { //if ((timeNow - chain->getTimestamp()) % sPeriod)
         chain->updateChnSlot();
         /* Create a random number generator */
         if (serverID.host == nodeID[0].host && serverID.portNum == nodeID[0].portNum) {

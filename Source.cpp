@@ -15,8 +15,12 @@ int main() {
 	std::cout << "Connecting Client...\n";
 	Network n;
 	n.Connect("127.0.0.1", 50507);
-	n.maintainance();
+	//n.maintainance();
 	n.connectWallet();
+
+	while (1) {
+		server.upLoop(server);
+	}
 
 	return 0;
 }
