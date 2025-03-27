@@ -35,10 +35,12 @@ To compile and run Project DASH:
    git clone https://github.com/0-0017/DashChain
    cd DashChain
 
-2. Compile the program using a C++ compiler			:
+2. Compile the program using a C++ compiler:
+	```sh
 	g++ -o DashChain source.cpp -lssl -lcrypto
 
 3. Run The Program
+	```sh
 	./DashChain
 
 
