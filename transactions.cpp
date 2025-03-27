@@ -12,15 +12,18 @@ transactions::transactions() {
 }
 
 transactions::~transactions() {
-    /* Free EVP_PKEY pointers */
+    /* Free EVP_PKEY pointers 
     if (sendPkey != nullptr) {
         EVP_PKEY_free(sendPkey);
+        sendPkey = nullptr;
     }
     for (auto& pkey : recievePkeys) {
         if (pkey != nullptr) {
             EVP_PKEY_free(pkey);
+            pkey = nullptr;
         }
     }
+    */
 }
 
 unsigned long long transactions::getTimeStamp() const {

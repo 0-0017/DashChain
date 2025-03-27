@@ -488,9 +488,9 @@ void Server::updateWallets() {
     }
 
     tx = chain->checkWallets(w1.getWalletAddr());
-    for (int i = 0; i < tx.size(); i++) {
-        if (!tx[i].getRecieveAddr().empty()) {
-            w1.inUTXO(tx[i]);
+    for (int k = 0; k < tx.size(); k++) {
+        if (!tx[k].getRecieveAddr().empty()) {
+            w1.inUTXO(tx[k]);
         }
     }
     std::cout << "Wallets Updated\n";

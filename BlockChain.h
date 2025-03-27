@@ -11,7 +11,7 @@
 	 display:  Output the list
 
 Note:
-  AI Will be a central part in this class like all other classes
+  AI Will be a Major Future Focus in this class like all other classes
 -------------------------------------------------------------------------*/
 class BlockChain
 {

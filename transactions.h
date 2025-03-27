@@ -26,23 +26,23 @@ Version
 	 display:  Output the list
 
 Note:
-  AI Will be a central part in this class like all other classes
+  AI Will be a Major Future Focus in this class like all other classes
 -------------------------------------------------------------------------*/
 
 class transactions
 {
 private:
 	/* Variables */
-	unsigned long long timestamp;
+	unsigned long long timestamp = 0;
 	unsigned char* txid;
 	std::string sendAddr;
 	std::vector<std::string> recieveAddr;
-	EVP_PKEY* sendPkey;
+	EVP_PKEY* sendPkey = nullptr;
 	std::vector<EVP_PKEY*> recievePkeys;
 	std::vector<double> ammount;
-	double fee;
-	unsigned short locktime;
-	float version;
+	double fee = 0;
+	unsigned short locktime = 0;
+	float version = 0;
 
 public:
 	/* Transaction data Getters and Setters */

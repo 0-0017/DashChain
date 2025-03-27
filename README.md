@@ -1,19 +1,46 @@
 # Project DASH
 
-Project DASH merges the realms of cryptocurrency and artificial intelligence to pioneer innovative investment solutions. This blockchain implementation offers a secure and efficient framework for managing digital transactions while integrating AI for enhanced decision-making capabilities.
+Project DASH merges the realms of cryptocurrency and blockchain technology to pioneer innovative investment solutions. This blockchain implementation offers a secure and efficient framework for managing digital transactions, with future plans to integrate AI for enhanced decision-making capabilities.
 
 ## Table of Contents
 
 - [Overview](#overview)
 - [License](#license)
-- [Contributing](#contributing)
 - [Installation](#installation)
+- [Build Instructions](#build-instructions)
 - [Key Components](#key-components)
 - [Usage](#usage)
+- [What's Next](#whats-next)
 
 ## Overview
 
-Project DASH utilizes a robust blockchain architecture that emphasizes security, efficiency, and scalability. The project features a comprehensive transaction management system, verification protocols for blocks and transactions, and a unique consensus mechanism using Delegated Proof of Stake (DPoS) for governance. The integration of AI algorithms assists in analyzing market trends and improving investment strategies, making it a cutting-edge solution in the crypto space.
+Project DASH utilizes a robust blockchain architecture that emphasizes security, efficiency, and scalability. The project features a comprehensive transaction management system, verification protocols for blocks and transactions, and an intended Delegated Proof of Stake (DPoS) consensus mechanism for governance. Future updates will also include AI-driven analytics to assist in market trend analysis and investment strategy improvements.
+
+**Note:** Currently, this program has only been tested on **Windows systems**. Compatibility with other operating systems has not yet been confirmed.
+
+## Installation
+
+Ensure you have the necessary dependencies installed before proceeding:
+
+- **OpenSSL** – Required for cryptographic functions.
+- **C++ Compiler** – Ensure you have a compiler that supports C++17 or later.
+- **CMake (Optional)** – Useful for managing builds across different environments.
+
+## Build Instructions
+
+To compile and run Project DASH:
+
+1. Clone the repository:
+   ```sh
+   git clone https://github.com/0-0017/DashChain
+   cd DashChain
+
+2. Compile the program using a C++ compiler			:
+	g++ -o DashChain source.cpp -lssl -lcrypto
+
+3. Run The Program
+	./DashChain
+
 
 ## Key Components
 
@@ -149,10 +176,11 @@ To utilize Project DASH, follow these key steps:
 9. **Display Blockchain:**
    - Use the `display` function to visualize the current state of the blockchain.
 
-## Contributing
+## What's Next
+Project DASH is still in development. While currently functional, it has known memory leaks that need to be addressed. Once these are resolved, future improvements will focus on:
 
-Contributions to Project DASH are welcome! Feel free to contribute by following our [contribution guidelines](CONTRIBUTING.md).
+	- Expanding the Coin class to track more than just circulation.
 
-## License
+	- Implementing Delegated Proof of Stake (DPoS).
 
-Project DASH is licensed under the [MIT License](LICENSE).
+	- Enhancing network functionality for better peer-to-peer interaction.

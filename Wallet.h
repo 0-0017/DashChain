@@ -41,16 +41,16 @@ private:
 	/* Private Wallet Variables */
 	std::string address;
 	util utility;
-	EVP_PKEY* keyPair;
+	EVP_PKEY* keyPair = nullptr;
 	std::vector<transactions> UTXO;
 	const char* curvename = "P-256";
 	EVP_PKEY* pubKeyP = nullptr;
 	unsigned char* pubKey = nullptr;
 	unsigned char* privKey = nullptr;
-	unsigned short txCount;
-	double balance;
-	unsigned short locktimeUTXO;
-	float versionUTXO;
+	unsigned short txCount = 0;
+	double balance = 0;
+	unsigned short locktimeUTXO = 0;
+	float versionUTXO = 0;
 
 	/* UTXO Implementation */
 

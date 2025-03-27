@@ -101,9 +101,9 @@ protected:
 	servID serverID;
 	util u; // Utility Class
 	unsigned short sPeriod = 15;
-	BlockChain* chain;
+	BlockChain* chain = nullptr;
 	std::thread uploop;  // manage server update loop
-	unsigned long long created; // Time Server Was Created
+	unsigned long long created = 0; // Time Server Was Created
 	std::vector<servID> nodeID; // List of Servers Structs
 	std::vector<walletInfo> wallets;
 	std::vector<transactions> mempool;

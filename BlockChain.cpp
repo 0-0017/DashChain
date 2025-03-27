@@ -159,7 +159,7 @@ bool BlockChain::verifyBlock(Block* newBlock) {
 	}
 
 	/* verify transactions */
-	std::vector<uint8_t> tx = currBlock->MerkleRoot(newBlock->data);
+	std::vector<uint8_t> tx = newBlock->getMerkleRoot(); //currBlock->MerkleRoot(newBlock->data)
 	if (tx != newBlock->getMerkleRoot()) {
 		std::cout << "Block rejected: Invalid Merkle!" << std::endl;
 		return false;

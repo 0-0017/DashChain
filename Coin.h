@@ -42,7 +42,7 @@
 
   Note:
   USD in CircSupply = 7,594,103,000,000 (Quadrillion)
-  AI Will be a central part in this class like all other classes
+  AI Will be a Major Future Focus in this class like all other classes
 -------------------------------------------------------------------------*/
 
 class Coin
