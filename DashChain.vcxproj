@@ -107,14 +107,15 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;CURL_STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\Craig\Desktop\LIBS\C++\OpenSSL-Win64\include;C:\Users\Craig\Desktop\LIBS\C++\Net_Common;C:\Users\Craig\Desktop\LIBS\C++\json-develop\include;C:\Users\Craig\Desktop\LIBS\C++\asio-1.30.2\asio-1.30.2\include;C:\Users\Craig\Desktop\LIBS\C++\curl-8.11.1\curl-8.11.1\include;C:\Users\Craig\Desktop\LIBS\C++\curl-8.11.1\curl-8.11.1;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Craig\Desktop\LIBS\C++\vcpkg\packages\openssl_x64-windows\include;C:\Users\Craig\source\repos\DashChain\OLC_NET;C:\Users\Craig\Desktop\LIBS\C++\vcpkg\packages\nlohmann-json_x64-windows\include;C:\Users\Craig\Desktop\LIBS\C++\vcpkg\packages\curl_x64-windows\include;C:\Users\Craig\Desktop\LIBS\C++\vcpkg\packages\asio_x64-windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Users\Craig\Desktop\LIBS\C++\OpenSSL-Win64\lib\VC\x64\MDd</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libcrypto.lib;libssl.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
