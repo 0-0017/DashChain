@@ -14,7 +14,7 @@ Wallet::Wallet() {
     test = utility.shaHash((unsigned char*)"Hello!");
     ecDoSign(keyPair, test);
     //address
-    genAddress(pubKey);
+    address = genAddress(pubKey);
 }
 
 EVP_PKEY* Wallet::generateECDSAKeyPair() {
