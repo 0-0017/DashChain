@@ -31,45 +31,39 @@ Note:
 
 class transactions
 {
-private:
-	/* Variables */
-	unsigned long long timestamp = 0;
-	unsigned char* txid;
-	std::string sendAddr;
-	std::vector<std::string> recieveAddr;
-	EVP_PKEY* sendPkey = nullptr;
-	std::vector<EVP_PKEY*> recievePkeys;
-	std::vector<double> ammount;
-	double fee = 0;
-	unsigned short locktime = 0;
-	float version = 0;
-
 public:
+	/* using for custom EVP Shared Pointers */
+	using EVP_PKEY_ptr = std::shared_ptr<EVP_PKEY>;
+
+	EVP_PKEY_ptr createEVP_PKEY() {
+		EVP_PKEY* pkey = EVP_PKEY_new();
+		if (!pkey) {
+			throw std::runtime_error("Failed to create EVP_PKEY");
+		}
+		return EVP_PKEY_ptr(pkey, EVP_PKEY_Deleter());
+	}
+
 	/* Transaction data Getters and Setters */
-	transactions();
+	transactions(std::string sa, std::vector<std::string> ra, EVP_PKEY_ptr spk, std::vector<EVP_PKEY_ptr> rpk, std::vector<double> amm,
+		double fe, unsigned short lk, float v, unsigned long long timestamp = setTimeStamp(), unsigned char* txid = setTxid());
+
+	/* Copy Constructor */
+	transactions(const transactions& copy);
+
 	/* Destructor to free EVP_PKEY pointers */
 	~transactions();
 	unsigned long long getTimeStamp() const;
-	unsigned char* getTxid() const;
+	const unsigned char* getTxid() const;
 	std::string getSendAddr() const;
 	std::vector<std::string> getRecieveAddr() const;
 	std::vector<double> getAmmount() const;
-	EVP_PKEY* getSendPkey() const;
-	std::vector<EVP_PKEY*> getRecievePkeys() const;
+	EVP_PKEY_ptr getSendPkey() const;
+	std::vector<EVP_PKEY_ptr> getRecievePkeys() const;
 	double getFee() const;
 	unsigned short getLockTime() const;
 	float getVersion() const;
-
-	void setTimeStamp(unsigned long long ts);
-	void setTxid(unsigned char* tx);
-	void setSendAddr(std::string sa);
-	void setRecieveAddr(std::vector<std::string> addy);
-	void setAmmount(std::vector<double> amm);
-	void setSendPkey(EVP_PKEY* sk);
-	void setRecievePkeys(std::vector<EVP_PKEY*> rpk);
-	void setFee(double fe);
-	void setLockTime(unsigned short lt);
-	void setVersion(float v);
+	static unsigned long long setTimeStamp();
+	static unsigned char* setTxid();
 
 	/* verification */
 	bool inputsValid() const;
@@ -113,7 +107,7 @@ public:
 		ammSize = ammount.size() * sizeof(double); // Calculate size of ammount vector
 
 		/* Calculate sendPkey Size */
-		int len = i2d_PUBKEY(sendPkey, nullptr);
+		int len = i2d_PUBKEY(sendPkey.get(), nullptr);
 		spkSize = len;
 
 		/* Calculate recieveAddr Size */
@@ -124,7 +118,7 @@ public:
 
 		/* Calculate recievePkeys size */
 		for (const auto& pkey : recievePkeys) {
-			int lenn = i2d_PUBKEY(pkey, nullptr);
+			int lenn = i2d_PUBKEY(pkey.get(), nullptr);
 			recAddSize += lenn;
 		}
 
@@ -136,4 +130,25 @@ public:
 		return tSize;
 	}
 
+private:
+	/* Custom EVP Shared Pointer Deleter */
+	struct EVP_PKEY_Deleter {
+		void operator()(EVP_PKEY* pkey) const {
+			EVP_PKEY_free(pkey);
+		}
+	};
+
+	/* Variables */
+	static util ut;
+	EVP_PKEY_ptr pubKey;
+	const unsigned long long timestamp;
+	const unsigned char* txid;
+	const std::string sendAddr;
+	const std::vector<std::string> recieveAddr;
+	const EVP_PKEY_ptr sendPkey;
+	const std::vector<EVP_PKEY_ptr> recievePkeys;
+	const std::vector<double> ammount;
+	const double fee;
+	const unsigned short locktime;
+	const float version;
 };

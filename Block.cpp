@@ -7,20 +7,25 @@
 using namespace std;
 
 
-Block::Block(const std::vector<transactions>& d, Block* n)
+Block::Block(const std::vector<transactions>& d, std::vector<uint8_t> prevHash, float versionNum, unsigned int blockHeight, unsigned long long ts, Block* n)
+    : data(d),
+    head(ts, std::move(prevHash), versionNum, std::move(MerkleRoot(data))),
+    blockHeight(blockHeight),
+    blockSize(setSize()),
+    currHash(setCurrHash())
 {
-    data = d;
     next = n;
-    head.timestamp = utility.TimeStamp();
-    head.versionNum = 1;
-    blockHeight = 0;
-    blockSize = 0;
 }
 
-void Block::setVersion(float v) {
-    head.versionNum = v;
+Block::Block(const Block& copy)
+    :data(copy.data),
+    head(copy.head),
+    blockHeight(copy.blockHeight),
+    currHash(copy.currHash),
+    blockSize(copy.blockSize),
+    next(copy.next)
+{
 }
-
 
 float Block::getVersion() {
     return head.versionNum;
@@ -62,22 +67,16 @@ std::vector<uint8_t> Block::MerkleRoot(const std::vector<transactions>& tx) {
     return txHash.front();
 }
 
-/* Adjust the function to accept an instance of Utility */
-void Block::setMerkleRoot(const std::vector<transactions>& txs) {
-    head.merkleRoot = MerkleRoot(txs);
-}
-
 std::vector<uint8_t> Block::getMerkleRoot() {
     return head.merkleRoot;
 }
 
-unsigned long long Block::getTimestamp() {
-    return head.timestamp;
+unsigned long long Block::setTimestamp(){
+    return utility.TimeStamp();
 }
 
-/* Sets current block size */
-void Block::setBlockSize(uint32_t blkSize) {
-    blockSize = blkSize;
+unsigned long long Block::getTimestamp() {
+    return head.timestamp;
 }
 
 /* Gets current block size */
@@ -85,20 +84,21 @@ uint32_t Block::getBlockSize() {
     return blockSize;
 }
 
-void Block::setCurrHash() {
+unsigned int Block::getBlockHeight() {
+    return blockHeight;
+}
+
+std::vector<uint8_t> Block::setCurrHash() const{
 
     /* Block data used for current hash */
     unsigned char* data = serialize();
-    currHash = utility.shaHash(data);
+    return utility.shaHash(data);
 }
 
 std::vector<uint8_t> Block::getCurrHash() {
     return currHash;
 }
 
-void Block::setPrevHash(std::vector<uint8_t> ph) {
-    head.prevHash = ph;
-}
 
 std::vector<uint8_t> Block::getPrevHash() {
     return head.prevHash;
@@ -106,6 +106,22 @@ std::vector<uint8_t> Block::getPrevHash() {
 
 std::vector<transactions> Block::getTxs() {
     return data;
+}
+
+std::vector<transactions> Block::getData() {
+    return data;
+}
+
+
+uint32_t Block::setSize() const{
+    uint32_t size = 0;
+    size += data.size() + head.merkleRoot.size() + sizeof(unsigned long long) + head.prevHash.size() + sizeof(float) + sizeof(head);
+    size += sizeof(uint32_t) + sizeof(unsigned int);
+    return size;
+}
+
+uint32_t Block::getSize() {
+    return blockSize;
 }
 
 /* Serialize method */
@@ -254,7 +270,9 @@ unsigned char* Block::serialize() const {
     return buffer;
 }
 
-/* Deserialize method */
+/* Deserialize method 
+* Current Has And Merkle Root Checks for Integrity
+*/
 Block* Block::deserialize(const unsigned char* buffer) {
     size_t offset = 0;
 
@@ -324,21 +342,30 @@ Block* Block::deserialize(const unsigned char* buffer) {
     offset += mrSize;
 
     // Read transactions (data)
-    std::vector<transactions> data(dNum);
+    std::vector<transactions> tempdata;
     for (size_t i = 0; i < dNum; ++i) {
-        data[i] = transactions::deserialize(buffer + offset); // Assuming transactions::deserialize exists
+        transactions t = t.deserialize(buffer + offset);
+        tempdata.push_back(t);
         offset += txSizes[i];
     }
 
     // Create and populate Block
-    Block* block = new Block(data);
-    block->blockHeight = blockHeight;
-    block->head.versionNum = versionNum;
-    block->head.timestamp = timestamp;
-    block->blockSize = blockSize;
-    block->head.prevHash = std::move(prevHash);
-    block->currHash = std::move(currHash);
-    block->head.merkleRoot = std::move(merkleRoot);
+    Block* block = new Block(tempdata, std::move(prevHash), versionNum, blockHeight, timestamp);
 
-    return block;
+    /* Current Hash & Merkle Root Equality Check */
+    uint32_t newBlockSiz = block->getSize();
+    std::vector<uint8_t> newCurrHs = block->getCurrHash();
+    std::vector<uint8_t> newMerk = block->getMerkleRoot();
+
+    if (newMerk == merkleRoot && newCurrHs == currHash) {
+        if (newBlockSiz == blockSize) {
+            return block;
+        }
+        else {
+            std::cout << "Block Size Does Not Match\n";
+        }
+    }
+    else {
+        std::cout << "Block Size Does Not Match\n";
+    }
 }

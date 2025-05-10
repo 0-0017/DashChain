@@ -203,7 +203,7 @@ unsigned char* Network::serializeWalletInfo(const walletInfo& info) {
     // Size of clientID (uint32_t), walladdr length (size_t), walladdr content, and public key length */
     size_t clientSize = sizeof(size_t);
     size_t addrSize = info.walladdr.size() * sizeof(char);
-    size_t pubKeySize = (info.pubKeyy != nullptr) ? i2d_PUBKEY(info.pubKeyy, nullptr) : 0;
+    size_t pubKeySize = (info.pubKeyy != nullptr) ? i2d_PUBKEY(info.pubKeyy.get(), nullptr) : 0;
     tSize += sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + clientSize + addrSize + pubKeySize;
 
     /* Allocate buffer for serialization */
@@ -239,7 +239,7 @@ unsigned char* Network::serializeWalletInfo(const walletInfo& info) {
     /* Serialize pubKeyy (EVP_PKEY*) */
     if (info.pubKeyy != nullptr) {
         unsigned char* tempPtr = buffer + offset;
-        i2d_PUBKEY(info.pubKeyy, &tempPtr);
+        i2d_PUBKEY(info.pubKeyy.get(), &tempPtr);
         offset += pubKeySize;
     }
 
@@ -283,7 +283,9 @@ walletInfo Network::deserializeWalletInfo(const unsigned char* buffer) {
     /* Deserialize pubKeyy (EVP_PKEY*) */
     if (pubKeySize > 0) {
         const unsigned char* tempPtr = buffer + offset;
-        info.pubKeyy = d2i_PUBKEY(nullptr, &tempPtr, pubKeySize);
+        EVP_PKEY* temp = d2i_PUBKEY(nullptr, &tempPtr, pubKeySize);
+        std::shared_ptr<EVP_PKEY> tempevp(temp);
+        info.pubKeyy = tempevp;
         offset += pubKeySize;
     }
     else {
@@ -437,7 +439,7 @@ void Server::verifyMempool() {
                 continue;
             }
             else {
-                mempool[i].setTxid(w1.calcTxid(u.TimeStamp()));
+                mempool[i].setTxid();
             }
         } while (!chain->isNewTxid(mempool[i].getTxid()));
     }
@@ -449,23 +451,15 @@ void Server::blkRqMethod() {
         txs.push_back(mempool[i]);
     }
 
-    transactions reward;
-    reward.setTimeStamp(u.TimeStamp());
-    reward.setTxid(u.toUnsignedChar(u.TimeStamp()));
-    reward.setSendAddr(w1.getWalletAddr());
-    reward.setSendPkey(w1.getPubKey());
     std::vector<std::string> ra;
-    std::vector<EVP_PKEY*> rpk;
+    std::vector<std::shared_ptr<EVP_PKEY>> rpk;
     std::vector<double> amm;
     ra.push_back(w1.getWalletAddr());
     rpk.push_back(w1.getPubKey());
     amm.push_back(X0017.getReward());
-    reward.setRecieveAddr(ra);
-    reward.setRecievePkeys(rpk);
-    reward.setAmmount(amm);
-    reward.setFee(0);
-    txs.push_back(reward);
 
+    transactions reward(w1.getWalletAddr(), ra, w1.getPubKey(), rpk, amm, 0, w1.getLockTime(), w1.getVersion());
+    txs.push_back(reward);
     chain->GenerateBlock(txs);
     updateCoins(reward);
 }
@@ -482,8 +476,8 @@ void Server::updateWallets() {
                 msg << tx[j].serialize();
                 MessageClient(m_deqConnections[wallets[i].clientID], msg);
             }
-            std::vector<std::string> es;
-            tx[j].setRecieveAddr(es);
+            //std::vector<std::string> es;
+            //tx[j].setRecieveAddr(es);
         }
     }
 

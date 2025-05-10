@@ -14,21 +14,20 @@ BlockChain::BlockChain() {
 	//Genesis Block Creation */
 	//Empty Transaction Data
 	std::vector<transactions> txs;
-	transactions tx; //*
-	tx.setTxid(utility.toUnsignedChar(utility.TimeStamp())); //*************** 03/10/25
-	txs.push_back(tx); //*
-	Block* Genesis = new Block(txs);
-	first = Genesis;
-	currBlock = Genesis;
-	Genesis->next = NULL;
+	std::vector<std::string> tra;
+	std::vector<EVP_PKEY_ptr> trpk;
+	std::vector<double> tamm;
+	transactions tx("", tra, nullptr, trpk, tamm, 0.0, 0, 0.0); //*
+	txs.push_back(tx);
 	//Data To be Hashed */
 	std::string dataToHash =
 		"Genesis1:1; Thank you Jesus; Thank You God; A New creation => Your Creation";
 	unsigned char* data = utility.toUnsignedChar(dataToHash);
 	std::vector<uint8_t> GenHash = utility.shaHash(data, true);
-	Genesis->setPrevHash(GenHash);
-	Genesis->setMerkleRoot(txs);
-	Genesis->setCurrHash();
+	Block* Genesis = new Block(txs, GenHash, 1.0, 1, utility.TimeStamp());
+	first = Genesis;
+	currBlock = Genesis;
+	Genesis->next = NULL;
 }
 
 BlockChain::~BlockChain() {
@@ -45,15 +44,9 @@ BlockChain::~BlockChain() {
 
 void BlockChain::GenerateBlock(const std::vector<transactions>& d, Block* b) {
 	if (b == nullptr) {
-		/* Creates Block And Adds Genesis Block */
-		Block* newBlk = new Block(d);
+		/* Creates Block, set Block Info And Adds Genesis Block */
 		Block* preBlk = currBlock;
-
-		/* set Block Info */
-		newBlk->setPrevHash(preBlk->getCurrHash());
-		newBlk->blockHeight = height + 1;
-		newBlk->setMerkleRoot(d);
-		newBlk->setCurrHash();
+		Block* newBlk = new Block(d,preBlk->getCurrHash(), 1.0, height + 1, utility.TimeStamp());
 
 		/* Verify Block & update chain */
 		if (verifyBlock(newBlk)) {
@@ -93,7 +86,7 @@ unsigned long long BlockChain::getTimestamp() {
 }
 
 unsigned int BlockChain::getBlockHeight() {
-	unsigned int bHeight = currBlock->blockHeight;
+	unsigned int bHeight = currBlock->getBlockHeight();
 	return (bHeight + 1);
 }
 
@@ -101,7 +94,7 @@ void BlockChain::setHeight() {
 	height++;
 }
 
-bool BlockChain::isNewTxid(unsigned char* txid) {
+bool BlockChain::isNewTxid(const unsigned char* txid) {
 	Block* ptr = first;
 	std::vector<transactions> pbTxs;
 	while (ptr->next != NULL) {
@@ -153,7 +146,7 @@ bool BlockChain::verifyBlock(Block* newBlock) {
 	}
 
 	/* Verify block height matches the current height + 1 */
-	if (newBlock->blockHeight != currBlock->blockHeight + 1) {
+	if (newBlock->getBlockHeight() != currBlock->getBlockHeight() + 1) {
 		std::cout << "Block rejected: Invalid block height" << std::endl;
 		return false;
 	}
@@ -186,7 +179,7 @@ void BlockChain::updateChnSlot() {
 
 std::vector<transactions> BlockChain::checkWallets(std::string wa) {
 	/* Only Check Current block for transactions */
-	std::vector<transactions> pbTxs = currBlock->data;
+	std::vector<transactions> pbTxs = currBlock->getData();
 	std::vector<transactions> txout;
 	for (int i = 0; i < pbTxs.size(); i++) {
 		std::vector<std::string> ra = pbTxs[i].getRecieveAddr();

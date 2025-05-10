@@ -33,7 +33,7 @@ enum class CustomMsgTypes : uint32_t
 };
 
 struct servID { std::string host;  uint16_t portNum; };
-struct walletInfo { uint32_t clientID; std::string walladdr; EVP_PKEY* pubKeyy; };
+struct walletInfo { uint32_t clientID; std::string walladdr; std::shared_ptr<EVP_PKEY> pubKeyy; };
 
 /* Inherits From Net_Client's Interface */
 class Network : public olc::net::client_interface<CustomMsgTypes> {
@@ -170,11 +170,10 @@ protected:
 		{
 			/* deserialize utxout and verify transaction */
 			utxout uin;
-			transactions tx;
 			unsigned char* body;
 			std::memcpy(&body, msg.body.data(), msg.body.size());
 			uin = w1.deserialize_utxout(body);
-			tx = tx.deserialize(uin.utxo);
+			transactions tx = tx.deserialize(uin.utxo);
 
 
 			/* Verify if the transaction is valid */
@@ -184,26 +183,17 @@ protected:
 					if (w1.verifyTx(uin)) {
 						if (tx.getRecieveAddr().size() == tx.getAmmount().size() && tx.getRecieveAddr().size() == tx.getRecievePkeys().size()) {
 							std::vector<std::string> txra = tx.getRecieveAddr();
-							std::vector<EVP_PKEY*> txrpk = tx.getRecievePkeys();
+							std::vector<std::shared_ptr<EVP_PKEY>> txrpk = tx.getRecievePkeys();
 							std::vector<double> txam = tx.getAmmount();
 							for (int i = 0; i < tx.getRecieveAddr().size(); i++) {
-								transactions confirmed;
 								std::vector<std::string>ra;
-								std::vector<EVP_PKEY*> rpk;
+								std::vector<std::shared_ptr<EVP_PKEY>> rpk;
 								std::vector<double> am;
 								ra.push_back(txra[i]);
 								rpk.push_back(txrpk[i]);
 								am.push_back(txam[i]);
-								confirmed.setTimeStamp(u.TimeStamp());
-								confirmed.setTxid(w1.calcTxid(u.TimeStamp()));
-								confirmed.setSendAddr(w1.getWalletAddr());
-								confirmed.setRecieveAddr(ra);
-								confirmed.setSendPkey(tx.getSendPkey());
-								confirmed.setRecievePkeys(rpk);
-								confirmed.setAmmount(am);
-								confirmed.setFee((tx.getFee() / txra.size()));
-								confirmed.setLockTime(tx.getLockTime());
-								confirmed.setVersion(tx.getVersion());
+								transactions confirmed(w1.getWalletAddr(), ra, tx.getSendPkey(), rpk, am, (tx.getFee() / txra.size()), tx.getLockTime(),
+									tx.getVersion());
 								mempool.push_back(confirmed);
 								verifyMempool();
 							}

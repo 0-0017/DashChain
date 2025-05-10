@@ -3,16 +3,39 @@
 ---------------------------------------------------------------------------*/
 #include "transactions.h"
 
-transactions::transactions() {
-    timestamp = 0;
-    txid = nullptr;
-    sendPkey = nullptr;  // Initialize sendPkey to nullptr
-    locktime = 7;
-    version = 1.0;
+transactions::transactions(std::string sa, std::vector<std::string> ra, EVP_PKEY_ptr spk, std::vector<EVP_PKEY_ptr> rpk, std::vector<double> amm,
+    double fe, unsigned short lk, float v, unsigned long long timestamp, unsigned char* txid)
+    : timestamp(timestamp),
+    txid(txid), 
+    sendAddr(sa),
+    recieveAddr(ra),
+    sendPkey(std::move(spk)),
+    recievePkeys(std::move(rpk)),
+    ammount(amm),
+    fee(fe),
+    locktime(lk),
+    version(v)
+{
 }
 
+/* Copy */
+transactions::transactions(const transactions& copy)
+    :timestamp(copy.timestamp),
+    txid(copy.txid),
+    sendAddr(copy.sendAddr),
+    recieveAddr(copy.recieveAddr),
+    sendPkey(copy.sendPkey),
+    recievePkeys(copy.recievePkeys),
+    ammount(copy.ammount),
+    fee(copy.fee),
+    locktime(copy.locktime),
+    version(copy.version)
+{
+}
+
+
 transactions::~transactions() {
-    /* Free EVP_PKEY pointers 
+    /* Free EVP_PKEY pointers
     if (sendPkey != nullptr) {
         EVP_PKEY_free(sendPkey);
         sendPkey = nullptr;
@@ -24,86 +47,81 @@ transactions::~transactions() {
         }
     }
     */
-}
+};
 
 unsigned long long transactions::getTimeStamp() const {
     return timestamp;
 }
 
-void transactions::setTimeStamp(unsigned long long ts) {
-    timestamp = ts;
+unsigned long long transactions::setTimeStamp(){
+    return ut.TimeStamp();
 }
 
-unsigned char* transactions::getTxid() const {
+const unsigned char* transactions::getTxid() const {
     return txid;
 }
 
-void transactions::setTxid(unsigned char* tx) {
-    txid = tx;
+unsigned char* transactions::setTxid(){
+    /* Create a random number generator */
+    std::random_device rd; // Seed for random number generator
+    std::mt19937 gen(rd()); // Mersenne Twister engine
+    std::uniform_int_distribution<unsigned int> distrib(0, 4294967295); // Define the range
+
+    /* Generate a random number */
+    unsigned int random_number = distrib(gen);
+    std::string randomn;
+
+    /* Achieve Uniformity */
+    if (random_number < 10) {
+        randomn = "000000000" + ut.toString(random_number);
+    }
+    else if (random_number < 100) {
+        randomn = "00000000" + ut.toString(random_number);
+    }
+    else if (random_number < 1000) {
+        randomn = "0000000" + ut.toString(random_number);
+    }
+    else if (random_number < 10000) {
+        randomn = "000000" + ut.toString(random_number);
+    }
+    else if (random_number < 100000) {
+        randomn = "00000" + ut.toString(random_number);
+    }
+
+    std::string txid = ("0X0017" + randomn + ut.toString(ut.TimeStamp()));
+    return ut.toUnsignedChar(txid);
 }
 
 std::string transactions::getSendAddr() const {
     return sendAddr;
 }
 
-void transactions::setSendAddr(std::string sa) {
-    sendAddr = sa;
-}
-
 std::vector<std::string> transactions::getRecieveAddr() const {
     return recieveAddr;
-}
-
-void transactions::setRecieveAddr(std::vector<std::string> addy) {
-    recieveAddr = addy;
 }
 
 std::vector<double> transactions::getAmmount() const {
     return ammount;
 }
 
-void transactions::setAmmount(std::vector<double> amm) {
-    ammount = amm;
-}
-
-EVP_PKEY* transactions::getSendPkey() const {
+transactions::EVP_PKEY_ptr transactions::getSendPkey() const {
     return sendPkey;
 }
 
-void transactions::setSendPkey(EVP_PKEY* sk) {
-    sendPkey = sk;
-}
-
-std::vector<EVP_PKEY*> transactions::getRecievePkeys() const {
+std::vector<transactions::EVP_PKEY_ptr> transactions::getRecievePkeys() const {
     return recievePkeys;
-}
-
-void transactions::setRecievePkeys(std::vector<EVP_PKEY*> rpk) {
-    recievePkeys = rpk;
 }
 
 double transactions::getFee() const {
     return fee;
 }
 
-void transactions::setFee(double fe) {
-    fee = fe;
-}
-
 unsigned short transactions::getLockTime() const {
     return locktime;
 }
 
-void transactions::setLockTime(unsigned short lt) {
-    locktime = lt;
-}
-
 float transactions::getVersion() const {
     return version;
-}
-
-void transactions::setVersion(float v) {
-    version = v;
 }
 
 bool transactions::inputsValid() const {
@@ -197,7 +215,7 @@ unsigned char* transactions::serialize() const {
     ammSize = ammount.size() * sizeof(double); // Calculate size of ammount vector
 
     /* Calculate sendPkey Size */
-    int len = i2d_PUBKEY(sendPkey, nullptr);
+    int len = i2d_PUBKEY(sendPkey.get(), nullptr);
     spkSize = len;
 
     /* Calculate recieveAddr Size */
@@ -208,7 +226,7 @@ unsigned char* transactions::serialize() const {
 
     /* Calculate recievePkeys size */
     for (const auto& pkey : recievePkeys) {
-        int lenn = i2d_PUBKEY(pkey, nullptr);
+        int lenn = i2d_PUBKEY(pkey.get(), nullptr);
         recAddSize += lenn;
     }
 
@@ -290,10 +308,10 @@ unsigned char* transactions::serialize() const {
     offset += txidSize;
 
     /* Serialize sendPkey using OpenSSL */
-    int lennn = i2d_PUBKEY(sendPkey, nullptr);
+    int lennn = i2d_PUBKEY(sendPkey.get(), nullptr);
     std::vector<unsigned char> keyBytes(lennn);
     unsigned char* temp = keyBytes.data();
-    i2d_PUBKEY(sendPkey, &temp);
+    i2d_PUBKEY(sendPkey.get(), &temp);
     std::memcpy(buffer + offset, keyBytes.data(), keyBytes.size());
     offset += keyBytes.size();
 
@@ -309,10 +327,10 @@ unsigned char* transactions::serialize() const {
 
     /* Serialize recievePkeys */
     for (const auto& pkey : recievePkeys) {
-        int llen = i2d_PUBKEY(pkey, nullptr);
+        int llen = i2d_PUBKEY(pkey.get(), nullptr);
         std::vector<unsigned char> pkeyBytes(llen);
         unsigned char* temp = pkeyBytes.data();
-        i2d_PUBKEY(pkey, &temp);
+        i2d_PUBKEY(pkey.get(), &temp);
         std::memcpy(buffer + offset, pkeyBytes.data(), pkeyBytes.size()); // Copy the serialized key
         offset += pkeyBytes.size(); // Move the offset forward
     }
@@ -322,7 +340,6 @@ unsigned char* transactions::serialize() const {
 
 /* Deserialize method */
 transactions transactions::deserialize(const unsigned char* data) {
-    transactions tx;
     size_t offset = 0;
 
     /* Deserialize tSize */
@@ -376,55 +393,72 @@ transactions transactions::deserialize(const unsigned char* data) {
     offset += sizeof(rpkSize);
 
     /* Deserialize locktime */
-    std::memcpy(&tx.locktime, data + offset, sizeof(tx.locktime));
-    offset += sizeof(tx.locktime);
+    unsigned short* lk = 0;
+    size_t lk_size = sizeof(unsigned short);
+    std::memcpy(lk, data + offset, lk_size);
+    offset += lk_size;
 
     /* Deserialize version */
-    std::memcpy(&tx.version, data + offset, sizeof(tx.version));
-    offset += sizeof(tx.version);
+    float* vs = 0;
+    size_t vsSize = sizeof(float);
+    std::memcpy(vs, data + offset, vsSize);
+    offset += vsSize;
 
     /* Deserialize fee */
-    std::memcpy(&tx.fee, data + offset, sizeof(tx.fee));
-    offset += sizeof(tx.fee);
+    double* fe = 0;
+    size_t feSize = sizeof(double);
+    std::memcpy(fe, data + offset, feSize);
+    offset += feSize;
 
     /* Deserialize timestamp */
-    std::memcpy(&tx.timestamp, data + offset, sizeof(tx.timestamp));
-    offset += sizeof(tx.timestamp);
+    unsigned long long* ts = 0;
+    size_t tsSize = sizeof(unsigned long long);
+    std::memcpy(ts, data + offset, tsSize);
+    offset += tsSize;
 
     /* Deserialize sendAddr */
-    tx.sendAddr.resize(sendSize);
-    std::memcpy(tx.sendAddr.data(), data + offset, sendSize);
+    std::string sa;
+    sa.resize(sendSize);
+    std::memcpy(sa.data(), data + offset, sendSize);
     offset += sendSize;
 
     /* Deserialize ammount */
-    tx.ammount.resize(numAmm);
-    std::memcpy(tx.ammount.data(), data + offset, ammSize);
+    std::vector<double> am;
+    am.resize(numAmm);
+    std::memcpy(am.data(), data + offset, ammSize);
     offset += ammSize;
 
     /* Deserialize txid */
-    std::memcpy(tx.txid, data + offset, txidSize);
+    unsigned char* tid = nullptr;
+    std::memcpy(tid, data + offset, txidSize);
     offset += txidSize;
 
     /* Deserialize sendPkey using OpenSSL */
     const unsigned char* temp = data + offset;
-    tx.sendPkey = d2i_PUBKEY(nullptr, &temp, spkSize);
+    EVP_PKEY* tempspk = d2i_PUBKEY(nullptr, &temp, spkSize);
+    EVP_PKEY_ptr spk(tempspk);
     offset += spkSize;
 
     /* Deserialize recieveAddr */
-    tx.recieveAddr.resize(recAddAmm);
-    for (auto& addr : tx.recieveAddr) {
+    std::vector<std::string> tempra;
+    tempra.resize(recAddAmm);
+    for (auto& addr : tempra) {
         size_t len = std::strlen(reinterpret_cast<const char*>(data + offset)) + 1;
         addr.assign(reinterpret_cast<const char*>(data + offset), len - 1);
         offset += len;
     }
 
     /* Deserialize recievePkeys */
-    tx.recievePkeys.resize(prkAmm);
-    for (auto& pkey : tx.recievePkeys) {
+    std::vector<EVP_PKEY*> tempprk;
+    std::vector<EVP_PKEY_ptr> prk;
+    tempprk.resize(prkAmm);
+    for (auto& pkey : tempprk) {
         const unsigned char* temp = data + offset;
         pkey = d2i_PUBKEY(nullptr, &temp, rpkSize);
+        prk.push_back(EVP_PKEY_ptr(pkey));
         offset += rpkSize;
     }
 
+    transactions tx(sa, tempra, spk, prk, am, *fe, *lk, *vs, *ts, tid);
     return tx;
 }

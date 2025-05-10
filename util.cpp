@@ -3,7 +3,7 @@
 -------------------------------------------------------------------------*/
 #include "util.h"
 
-unsigned long long util::TimeStamp() {
+unsigned long long util::TimeStamp(){
     /* Get the current time point */
     auto currentTime = std::chrono::system_clock::now();
 
@@ -16,7 +16,7 @@ unsigned long long util::TimeStamp() {
     return (unsigned long long)secondsSinceEpoch;
 }
 
-std::vector<uint8_t> util::shaHash(const unsigned char* data, bool isString) {
+std::vector<uint8_t> util::shaHash(const unsigned char* data, bool isString){
     const EVP_MD* algorithm = nullptr;
     size_t dSize;
 
@@ -43,10 +43,10 @@ std::vector<uint8_t> util::shaHash(const unsigned char* data, bool isString) {
     return hash_value;
 }
 
-unsigned char* util::ripemd(const unsigned char pubKey[80]) {
+unsigned char* util::ripemd(const unsigned char* pubKey, size_t ucSize){
 
     /* Function Variables */
-    size_t size = sizeof(pubKey);
+    size_t size = ucSize;
     unsigned char* d = new unsigned char[size];
     std::memcpy(d, pubKey, size);
     unsigned int mdSize;
@@ -88,7 +88,7 @@ cleanup:
     return md;
 }
 
-std::string util::genRandNum() {
+std::string util::genRandNum(){
     /* Create a random device and a Mersenne Twister engine */
     std::random_device rd;
     std::mt19937 mt(rd());
@@ -106,7 +106,7 @@ std::string util::genRandNum() {
     return result;
 }
 
-std::string util::getPasswordFromUser() {
+std::string util::getPasswordFromUser(){
     std::string passphrase;
     std::cout << "Enter passphrase for private key encryption: ";
     std::getline(std::cin, passphrase);
@@ -115,6 +115,7 @@ std::string util::getPasswordFromUser() {
 
 
 std::string util::base58_encode(const unsigned char* bytes, size_t size) {
+    const std::string base58_chars = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
     std::string result;
 
     /* Convert big-endian bytes to little-endian */

@@ -26,59 +26,48 @@
 
 
 /* Struct for hashed utxo & signed hash */
-struct utxout { size_t txSize; size_t shSize; unsigned char* utxo; unsigned char* utxoSignedHash; };
+struct utxout { size_t txSize; size_t shSize; unsigned char* utxo; unsigned char* utxoSignedHash;};
 
 class Wallet
 {
-private:
-	/* ECDSA Function, Creates Public and Private Keys for newly created wallets */
-	EVP_PKEY* generateECDSAKeyPair();
-	int get_key_values(EVP_PKEY* pkey);
-
-	/* Wallet address Function, Creates wallet address for newly created wallets */
-	std::string genAddress(const unsigned char pubKey[80]);
-
-	/* Private Wallet Variables */
-	std::string address;
-	util utility;
-	EVP_PKEY* keyPair = nullptr;
-	std::vector<transactions> UTXO;
-	const char* curvename = "P-256";
-	EVP_PKEY* pubKeyP = nullptr;
-	unsigned char* pubKey = nullptr;
-	unsigned char* privKey = nullptr;
-	unsigned short txCount = 0;
-	double balance = 0;
-	unsigned short locktimeUTXO = 0;
-	float versionUTXO = 0;
-
-	/* UTXO Implementation */
-
-
 public:
+	/* using for custom EVP Shared Pointers */
+	using EVP_PKEY_ptr = std::shared_ptr<EVP_PKEY>;
+
+
+	EVP_PKEY_ptr createEVP_PKEY() {
+		EVP_PKEY* pkey = EVP_PKEY_new();
+		if (!pkey) { 
+			throw std::runtime_error("Failed to create EVP_PKEY");
+		}
+		return EVP_PKEY_ptr(pkey, EVP_PKEY_Deleter());
+	}
+
+
 	/* Constructor */
 	Wallet();
 
-	/* Sign & verify functions */
-	unsigned char* ecDoSign(EVP_PKEY* keypair, const std::vector<uint8_t>& mesdgst);
-	bool ecDoVerify(EVP_PKEY* pkey, const std::vector<uint8_t>& mesdgst, std::vector<unsigned char> signature);
-	void extract_public_key();
-	unsigned char* calcTxid(unsigned long long ts);
-	utxout outUTXO(double feee, std::vector<std::string> rwa, std::vector<EVP_PKEY*> rks,
-		std::vector<double>amm);
-	void inUTXO(transactions txin);
+	/* Wallet Methods */
+	unsigned char* ecDoSign(const EVP_PKEY_ptr& keypair, const std::vector<uint8_t>& mesdgst);
+	bool ecDoVerify(const EVP_PKEY_ptr& pkey, const std::vector<uint8_t>& mesdgst, const std::vector<unsigned char>& signature) const ;
+	EVP_PKEY_ptr extract_public_key() const ;
+	utxout outUTXO(double feee, const std::vector<std::string>& rwa, const std::vector<EVP_PKEY_ptr>& rks, const std::vector<double>& amm);
+	void inUTXO(const transactions& txin);
 	bool verifyTx(const utxout& out);
 	void setBalance();
-	double getBalance();
-	std::string getWalletAddr();
-	EVP_PKEY* getPubKey();
+	double getBalance() const;
+	std::string getWalletAddr() const;
+	EVP_PKEY_ptr getPubKey() const;
+	unsigned short getLockTime() const;
+	void setLockTime(unsigned short lk);
+	float getVersion() const;
+	void setVersion(float vs);
 
 	/* De-serialize utxo and its data */
-	unsigned char* serialize_utxout(const utxout& obj);
-	utxout deserialize_utxout(const unsigned char* buffer);
+	unsigned char* serialize_utxout(const utxout& obj) const ;
+	utxout deserialize_utxout(const unsigned char* buffer) const ;
 
-	size_t getSignSize(std::vector<uint8_t> msg) {
-
+	size_t getSignSize(const std::vector<uint8_t>& msg) const {
 		/* Convert the message digest vector to a byte array */
 		const unsigned char* md = msg.data();
 		size_t mdlen = msg.size();
@@ -91,7 +80,7 @@ public:
 		}
 
 		/* Initialize the digest sign operation */
-		if (EVP_DigestSignInit(ctx, nullptr, nullptr, nullptr, keyPair) <= 0) {
+		if (EVP_DigestSignInit(ctx, nullptr, nullptr, nullptr, keyPair.get()) <= 0) {
 			std::cerr << "sign_init Failed For Sign Size\n";
 			EVP_MD_CTX_free(ctx);
 			return 0;
@@ -112,10 +101,39 @@ public:
 			return 0;
 		}
 
-		return siglen;
 		EVP_MD_CTX_free(ctx);
+		return siglen;
 	}
+
+private:
+
+	/* Custom EVP Shared Pointer Deleter */
+	struct EVP_PKEY_Deleter {
+		void operator()(EVP_PKEY* pkey) const {
+			EVP_PKEY_free(pkey);
+		}
+	};
+
+	/* ECDSA Function, Creates Public and Private Keys for newly created wallets */
+	EVP_PKEY_ptr generateECDSAKeyPair();
+
+	/* Wallet address Function, Creates wallet address for newly created wallets */
+	std::string genAddress();
+
+	/* Private Wallet Variables */
+	const std::string address;
+	util utility;
+	const EVP_PKEY_ptr keyPair = createEVP_PKEY();
+	std::vector<transactions> UTXO;
+	const char* curvename = "P-256";
+	const EVP_PKEY_ptr pubKeyP = createEVP_PKEY();
+	unsigned short txCount = 0;
+	double balance = 0;
+	unsigned short locktimeUTXO = 0;
+	float versionUTXO = 0;
+
+
+	/* UTXO Implementation */
 };
 
 #endif
-

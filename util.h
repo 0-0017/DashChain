@@ -24,6 +24,7 @@
 #include <openssl/ec.h>
 #include <openssl/pem.h>
 #include <openssl/rand.h>
+#include <openssl/sha.h>
 #include <openssl/ripemd.h>
 #include <openssl/provider.h>
 #include <openssl/param_build.h>
@@ -36,6 +37,7 @@
 #include <atomic>
 #include <cstdint> 
 #include <fstream>
+#include <memory>
 #include <algorithm> // For std::copy
 #include <cstring> // For std::memcpy
 #include <nlohmann/json.hpp>
@@ -47,14 +49,14 @@ class util
 public:
 
 	/* Time Stamp Function, Sets current timestamp */
-	unsigned long long TimeStamp();
-	std::vector<uint8_t> shaHash(const unsigned char* data, bool isString = false);
-	unsigned char* ripemd(const unsigned char pubKey[80]);
+	static unsigned long long TimeStamp();
+	static std::vector<uint8_t> shaHash(const unsigned char* data, bool isString = false);
+	static unsigned char* ripemd(const unsigned char* pubKey, size_t ucSize);
 
 
 	/* To String Method Using Templates for Generic Typing */
 	template <typename T>
-	std::string toString(const T& value) {
+	static std::string toString(const T& value) {
 		std::stringstream ss;
 
 		/* Check if the input is a vector<uint8_t> */
@@ -77,7 +79,7 @@ public:
 	}
 
 	template <typename T>
-	unsigned char* toUnsignedChar(const T& value) {
+	static unsigned char* toUnsignedChar(const T& value) {
 		unsigned char* result = nullptr;
 
 		/* Case 1: Handle std::string */
@@ -116,7 +118,7 @@ public:
 
 
 	template<typename T>
-	const char* toConstChar(const T& input) {
+	static const char* toConstChar(const T& input) {
 		if constexpr (std::is_same_v<T, std::string>) {
 			return input.c_str();
 		}
@@ -129,14 +131,13 @@ public:
 		}
 	}
 	/* Random Number Generator Function, Generates 17 Digit Random Number */
-	std::string genRandNum();
+	static std::string genRandNum();
 
 	/* Prompt User for password used to create keys */
-	std::string getPasswordFromUser();
+	static std::string getPasswordFromUser();
 
 	/* Base58 Encoding, Commonly used so letters/numbers dont get confused */
-	const std::string base58_chars = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
-	std::string base58_encode(const unsigned char* bytes, size_t size);
+	static std::string base58_encode(const unsigned char* bytes, size_t size);
 
 };
 
