@@ -66,15 +66,15 @@ public:
 	/* Get size for serialization */
 	size_t getSize() const {
 		/*
-		There Will be 6 uint32_t, 3 short & 1 size_t Variables at the start of every Buffer
+		There Will be 6 uint32_t & 4 size_t Variables at the start of every Buffer
 		This Will Account For The Sized Of:
-			uint32_t (In Order)             short (In Order)            size_t (In Order)
-			1. sendAddr                                                    tSize
+			uint32_t (In Order)             size_t (In Order)
+			1. sendAddr                     tSize
 			2. txid
-			3. ammount                      short numAmm;
+			3. ammount                      size_t numAmm;
 			4. sendPkey
-			5. recieveAddr                  short recAddAmm
-			6. recievePkeys                 short prkAmm;
+			5. recieveAddr                  size_t recAddAmm
+			6. recievePkeys                 size_t prkAmm;
 	*/
 
 	/* Variables */
@@ -83,8 +83,8 @@ public:
 		tSize = sizeof(unsigned short) + sizeof(float) + sizeof(double) + sizeof(unsigned long long);
 
 		/* Variable Vars */
-		short numAmm = 0, recAddAmm = 0, prkAmm = 0;
-		uint32_t sendSize = 0, txidSize = 0, ammSize = 0, spkSize = 0, recAddSize = 0, rpkSize = 0;
+		size_t numAmm = 0, recAddAmm = 0, prkAmm = 0;
+		size_t sendSize = 0, txidSize = 0, ammSize = 0, spkSize = 0, recAddSize = 0, rpkSize = 0;
 
 		sendSize = sendAddr.size() * sizeof(char); //Calculate size of sendAddr String
 
@@ -114,8 +114,8 @@ public:
 
 		/* Create Buffer */
 		tSize = tSize + sendSize + txidSize + ammSize + spkSize + recAddSize + rpkSize;
-		tSize = tSize + sizeof(short) + sizeof(short) + sizeof(short) + sizeof(size_t);
-		tSize = tSize +  sizeof(uint32_t) + sizeof(uint32_t) + sizeof(uint32_t) + sizeof(uint32_t) + sizeof(uint32_t) + sizeof(uint32_t);
+		tSize = tSize + sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(size_t);
+		tSize = tSize +  sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(size_t);
 
 		return tSize;
 	}

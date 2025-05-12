@@ -129,7 +129,7 @@ bool transactions::inputsValid() const {
         if (sendPkey != nullptr) {
             if (locktime != NULL) {
                 if (version != NULL) {
-                    int ammSize = ammount.size();
+                    size_t ammSize = ammount.size();
                     for (int i = 0; i < ammSize; i++) {
                         if (ammount[i] == NULL) {
                             return false;
@@ -172,7 +172,7 @@ bool transactions::outputsValid() const {
 
 double transactions::totalAmm() const {
     double amm = 0;
-    short ammsize = ammount.size();
+    size_t ammsize = ammount.size();
 
     for (int i = 0; i < ammsize; i++) {
         amm += ammount[i];
@@ -201,8 +201,8 @@ unsigned char* transactions::serialize() const {
     tSize = sizeof(unsigned short) + sizeof(float) + sizeof(double) + sizeof(unsigned long long);
 
     /* Variable Vars */
-    short numAmm = 0, recAddAmm = 0, prkAmm = 0;
-    uint32_t sendSize = 0, txidSize = 0, ammSize = 0, spkSize = 0, recAddSize = 0, rpkSize = 0;
+    size_t numAmm = 0, recAddAmm = 0, prkAmm = 0;
+    size_t sendSize = 0, txidSize = 0, ammSize = 0, spkSize = 0, recAddSize = 0, rpkSize = 0;
 
     sendSize = sendAddr.size() * sizeof(char); //Calculate size of sendAddr String
 
@@ -232,8 +232,8 @@ unsigned char* transactions::serialize() const {
 
     /* Create Buffer */
     tSize = tSize + sendSize + txidSize + ammSize + spkSize + recAddSize + rpkSize;
-    tSize = tSize + sizeof(short) + sizeof(short) + sizeof(short) + sizeof(size_t);
-    tSize = tSize + sizeof(uint32_t) + sizeof(uint32_t) + sizeof(uint32_t) + sizeof(uint32_t) + sizeof(uint32_t) + sizeof(uint32_t);
+    tSize = tSize + sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(size_t);
+    tSize = tSize + sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(size_t);
 
     /* Allocate memory for buffer */
     unsigned char* buffer = new unsigned char[tSize];
@@ -348,70 +348,70 @@ transactions transactions::deserialize(const unsigned char* data) {
     offset += sizeof(tSize);
 
     /* Deserialize numAmm */
-    short numAmm;
+    size_t numAmm;
     std::memcpy(&numAmm, data + offset, sizeof(numAmm));
     offset += sizeof(numAmm);
 
     /* Deserialize recAddAmm */
-    short recAddAmm;
+    size_t recAddAmm;
     std::memcpy(&recAddAmm, data + offset, sizeof(recAddAmm));
     offset += sizeof(recAddAmm);
 
     /* Deserialize prkAmm */
-    short prkAmm;
+    size_t prkAmm;
     std::memcpy(&prkAmm, data + offset, sizeof(prkAmm));
     offset += sizeof(prkAmm);
 
     /* Deserialize sendSize */
-    uint32_t sendSize;
+    size_t sendSize;
     std::memcpy(&sendSize, data + offset, sizeof(sendSize));
     offset += sizeof(sendSize);
 
     /* Deserialize txidSize */
-    uint32_t txidSize;
+    size_t txidSize;
     std::memcpy(&txidSize, data + offset, sizeof(txidSize));
     offset += sizeof(txidSize);
 
     /* Deserialize ammSize */
-    uint32_t ammSize;
+    size_t ammSize;
     std::memcpy(&ammSize, data + offset, sizeof(ammSize));
     offset += sizeof(ammSize);
 
     /* Deserialize spkSize */
-    uint32_t spkSize;
+    size_t spkSize;
     std::memcpy(&spkSize, data + offset, sizeof(spkSize));
     offset += sizeof(spkSize);
 
     /* Deserialize recAddSize */
-    uint32_t recAddSize;
+    size_t recAddSize;
     std::memcpy(&recAddSize, data + offset, sizeof(recAddSize));
     offset += sizeof(recAddSize);
 
     /* Deserialize rpkSize */
-    uint32_t rpkSize;
+    size_t rpkSize;
     std::memcpy(&rpkSize, data + offset, sizeof(rpkSize));
     offset += sizeof(rpkSize);
 
     /* Deserialize locktime */
-    unsigned short* lk = 0;
+    unsigned short* lk = nullptr;
     size_t lk_size = sizeof(unsigned short);
     std::memcpy(lk, data + offset, lk_size);
     offset += lk_size;
 
     /* Deserialize version */
-    float* vs = 0;
+    float* vs = nullptr;
     size_t vsSize = sizeof(float);
     std::memcpy(vs, data + offset, vsSize);
     offset += vsSize;
 
     /* Deserialize fee */
-    double* fe = 0;
+    double* fe = nullptr;
     size_t feSize = sizeof(double);
     std::memcpy(fe, data + offset, feSize);
     offset += feSize;
 
     /* Deserialize timestamp */
-    unsigned long long* ts = 0;
+    unsigned long long* ts = nullptr;
     size_t tsSize = sizeof(unsigned long long);
     std::memcpy(ts, data + offset, tsSize);
     offset += tsSize;

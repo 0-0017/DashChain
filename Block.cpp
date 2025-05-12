@@ -83,7 +83,7 @@ unsigned long long Block::getTimestamp() {
 }
 
 /* Gets current block size */
-uint32_t Block::getBlockSize() {
+size_t Block::getBlockSize() {
     return blockSize;
 }
 
@@ -118,14 +118,14 @@ std::vector<transactions> Block::getData() {
 }
 
 
-uint32_t Block::setSize() const{
-    uint32_t size = 0;
+size_t Block::setSize() const{
+    size_t size = 0;
     size += data.size() + head.merkleRoot.size() + sizeof(unsigned long long) + head.prevHash.size() + sizeof(float) + sizeof(head);
     size += sizeof(uint32_t) + sizeof(unsigned int);
     return size;
 }
 
-uint32_t Block::getSize() {
+size_t Block::getSize() {
     return blockSize;
 }
 
@@ -134,19 +134,19 @@ unsigned char* Block::serialize() const {
     // Initial header: blockHeight (unsigned int), versionNum (float),
     // timestamp (unsigned long long), blockSize (uint32_t)
     size_t tSize = sizeof(unsigned int) + sizeof(float)
-        + sizeof(unsigned long long) + sizeof(uint32_t);
+        + sizeof(unsigned long long) + sizeof(size_t);
 
     // Compute sizes for hash data:
-    uint8_t phNum = head.prevHash.size();
-    uint8_t chNum = currHash.size();
-    uint8_t mrNum = head.merkleRoot.size();
-    uint32_t phSize = phNum * sizeof(uint8_t);
-    uint32_t chSize = chNum * sizeof(uint8_t);
-    uint32_t mrSize = mrNum * sizeof(uint8_t);
+    size_t phNum = head.prevHash.size();
+    size_t chNum = currHash.size();
+    size_t mrNum = head.merkleRoot.size();
+    size_t phSize = phNum * sizeof(size_t);
+    size_t chSize = chNum * sizeof(size_t);
+    size_t mrSize = mrNum * sizeof(size_t);
 
     // Calculate serialized transactions
-    uint32_t dSize = 0;
-    uint8_t dNum = 0;
+    size_t dSize = 0;
+    size_t dNum = 0;
     std::vector<unsigned char*> stx;      // Serialized transactions
     std::vector<size_t> txSizes;            // Their sizes
 
@@ -174,10 +174,10 @@ unsigned char* Block::serialize() const {
         + txSizedSize + dSize;
 
     // Add size for 4 uint8_t fields (phNum, chNum, mrNum, dNum)
-    tSize = tSize + 4 * sizeof(uint8_t);
+    tSize = tSize + 4 * sizeof(size_t);
 
     // Add size for 4 uint32_t fields (phSize, chSize, mrSize, dSize field)
-    tSize = tSize + 4 * sizeof(uint32_t);
+    tSize = tSize + 4 * sizeof(size_t);
 
     // *** Add the sizes of the hash vectors ***
     tSize = tSize + phSize + chSize + mrSize;
@@ -273,7 +273,7 @@ Block* Block::deserialize(const unsigned char* buffer) {
     offset += txSizesNum * sizeof(size_t);
 
     // Read number of elements for each hash and data vector
-    uint8_t phNum = 0, chNum = 0, mrNum = 0, dNum = 0;
+    size_t phNum = 0, chNum = 0, mrNum = 0, dNum = 0;
     std::memcpy(&phNum, buffer + offset, sizeof(phNum));
     offset += sizeof(phNum);
     std::memcpy(&chNum, buffer + offset, sizeof(chNum));
@@ -284,7 +284,7 @@ Block* Block::deserialize(const unsigned char* buffer) {
     offset += sizeof(dNum);
 
     // Read total sizes for each hash and data vector
-    uint32_t phSize = 0, chSize = 0, mrSize = 0, dSize = 0;
+    size_t phSize = 0, chSize = 0, mrSize = 0, dSize = 0;
     std::memcpy(&phSize, buffer + offset, sizeof(phSize));
     offset += sizeof(phSize);
     std::memcpy(&chSize, buffer + offset, sizeof(chSize));
@@ -298,7 +298,7 @@ Block* Block::deserialize(const unsigned char* buffer) {
     unsigned int blockHeight = 0;
     float versionNum = 0.0f;
     unsigned long long timestamp = 0;
-    uint32_t blockSize = 0;
+    size_t blockSize = 0;
 
     std::memcpy(&blockHeight, buffer + offset, sizeof(blockHeight));
     offset += sizeof(blockHeight);
@@ -334,7 +334,7 @@ Block* Block::deserialize(const unsigned char* buffer) {
     Block* block = new Block(tempdata, std::move(prevHash), versionNum, blockHeight, timestamp);
 
     /* Current Hash & Merkle Root Equality Check */
-    uint32_t newBlockSiz = block->getSize();
+    size_t newBlockSiz = block->getSize();
     std::vector<uint8_t> newCurrHs = block->getCurrHash();
     std::vector<uint8_t> newMerk = block->getMerkleRoot();
 
@@ -344,9 +344,11 @@ Block* Block::deserialize(const unsigned char* buffer) {
         }
         else {
             std::cout << "Block Size Does Not Match\n";
+            return nullptr;
         }
     }
     else {
         std::cout << "Block Size Does Not Match\n";
+        return nullptr;
     }
 }

@@ -53,7 +53,7 @@ private:
 	const std::vector<uint8_t> currHash;
 
 	/* Current size of block */
-	const uint32_t blockSize;
+	const size_t blockSize;
 
 public:
 	/* Constuctor Ran on Block Creation */
@@ -74,7 +74,7 @@ public:
 	float getVersion();
 
 	/* Sets and gets current block size & Height*/
-	uint32_t getBlockSize();
+	size_t getBlockSize();
 	unsigned int getBlockHeight();
 
 	/* Merkle root of transactions */
@@ -98,8 +98,8 @@ public:
 	*	Precedes Current Hash & Next.
 	*	Negates Utility for simplicity
 	*/
-	uint32_t setSize() const;
-	uint32_t getSize();
+	size_t setSize() const;
+	size_t getSize();
 };
 
 #endif
