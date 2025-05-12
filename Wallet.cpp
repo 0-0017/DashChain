@@ -13,7 +13,7 @@ Wallet::Wallet()
     address = genAddress();
 }
 
-Wallet::EVP_PKEY_ptr Wallet::generateECDSAKeyPair() {
+EVP_PKEY_ptr Wallet::generateECDSAKeyPair() {
     /*
      * The libctx and propq can be set if required, they are included here
      * to show how they are passed to EVP_PKEY_CTX_new_from_name().
@@ -152,7 +152,7 @@ bool Wallet::ecDoVerify(const EVP_PKEY_ptr& pkey, const std::vector<uint8_t>& me
     return ret == 1;
 }
 
-Wallet::EVP_PKEY_ptr Wallet::extract_public_key() const {
+EVP_PKEY_ptr Wallet::extract_public_key() const {
     BIO* bio = BIO_new(BIO_s_mem());
     if (!bio) {
         std::cerr << "Error creating BIO\n";
@@ -178,29 +178,36 @@ Wallet::EVP_PKEY_ptr Wallet::extract_public_key() const {
 }
 
 std::string Wallet::genAddress() {
-
-    /* Convert Pubkey To Unsigned Char */
+    // Get DER size and create buffer
     int len = i2d_PUBKEY(pubKeyP.get(), nullptr);
     std::vector<unsigned char> keyBytes(len);
-    unsigned char* temp = keyBytes.data();
+    unsigned char* bufferStart = keyBytes.data();  // Save the start pointer
+    unsigned char* temp = bufferStart;  // Use temp for i2d_PUBKEY to advance
     i2d_PUBKEY(pubKeyP.get(), &temp);
 
-    /* varialbles for shahash */
-    size_t tempSize = static_cast<size_t>(len);
+    // Use the beginning of the DER encoding for hashing:
+    size_t derSize = keyBytes.size();  // which is len
+    // Get RIPEMD-160 digest size properly using EVP_MD_fetch
     OSSL_LIB_CTX* libctx = nullptr;
     EVP_MD* md = EVP_MD_fetch(libctx, "RIPEMD-160", nullptr);
     if (!md) {
-        std::cerr << "EVP_MD_fetch failed for RIPEMD-160 sha hash\n";
+        std::cerr << "EVP_MD_fetch failed for RIPEMD-160\n";
         return "";
     }
+    size_t ripemdDigestSize = EVP_MD_size(md);
+    EVP_MD_free(md);
 
-    size_t ripemdDigestSize = EVP_MD_size(md);  // Correctly gets RIPEMD-160 digest size (always 20)
-    EVP_MD_free(md);  // Free after retrieving size
+    // IMPORTANT: Pass bufferStart (not temp) to ripemd()
+    unsigned char* ripemdHash = utility.ripemd(bufferStart, derSize);
+    if (!ripemdHash) {
+        return "";
+    }
+    std::vector<uint8_t> publicKeyHash = utility.shaHash(ripemdHash, ripemdDigestSize);
+    // Free the memory allocated by ripemd() once used
+    OPENSSL_free(ripemdHash);
 
-    std::vector<uint8_t> publicKeyHash = utility.shaHash(utility.ripemd(temp, tempSize), ripemdDigestSize);
-
-    /* Step 3: Add a Version Byte(e.g., 0x00 for Bitcoin Mainnet) */
-    std::vector<uint8_t> extPubKeyHash = {0x00, 0x17};
+    /* Step 3: Prepend version bytes and compute Base58 */
+    std::vector<uint8_t> extPubKeyHash = { 0x00, 0x17 };
     extPubKeyHash.insert(extPubKeyHash.end(), publicKeyHash.begin(), publicKeyHash.end());
 
     std::string addr = utility.base58_encode(extPubKeyHash.data(), extPubKeyHash.size());
@@ -323,7 +330,7 @@ std::string Wallet::getWalletAddr() const {
     return address;
 }
 
-Wallet::EVP_PKEY_ptr Wallet::getPubKey() const {
+EVP_PKEY_ptr Wallet::getPubKey() const {
     if (pubKeyP == nullptr) {
         extract_public_key();
     }

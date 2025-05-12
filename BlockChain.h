@@ -1,6 +1,7 @@
 #ifndef BLOCKCHAIN
 #define BLOCKCHAIN
 #include "Block.h"
+#include "CryptoTypes.h"
 #include <iostream>
 /*-- BlockChain.h ---------------------------------------------------------------
   This header file defines the Blockchain Logic that will be the Base for This
@@ -16,17 +17,6 @@ Note:
 class BlockChain
 {
 public:
-	/* using for custom EVP Shared Pointers */
-	using EVP_PKEY_ptr = std::shared_ptr<EVP_PKEY>;
-
-	EVP_PKEY_ptr createEVP_PKEY() {
-		EVP_PKEY* pkey = EVP_PKEY_new();
-		if (!pkey) {
-			throw std::runtime_error("Failed to create EVP_PKEY");
-		}
-		return EVP_PKEY_ptr(pkey, EVP_PKEY_Deleter());
-	}
-
 	/* Blockchain Constructor */
 	BlockChain();
 
@@ -80,13 +70,6 @@ public:
 
 
 private:
-	/* Custom EVP Shared Pointer Deleter */
-	struct EVP_PKEY_Deleter {
-		void operator()(EVP_PKEY* pkey) const {
-			EVP_PKEY_free(pkey);
-		}
-	};
-
 	Block* first;
 	Block* currBlock;
 	unsigned long long timestamp;

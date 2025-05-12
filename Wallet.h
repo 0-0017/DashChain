@@ -3,6 +3,7 @@
 
 #include "util.h"
 #include "transactions.h"
+#include "CryptoTypes.h"
 
 /*-- wallet.h ---------------------------------------------------------------
 
@@ -31,19 +32,6 @@ struct utxout { size_t txSize; size_t shSize; unsigned char* utxo; unsigned char
 class Wallet
 {
 public:
-	/* using for custom EVP Shared Pointers */
-	using EVP_PKEY_ptr = std::shared_ptr<EVP_PKEY>;
-
-
-	EVP_PKEY_ptr createEVP_PKEY() {
-		EVP_PKEY* pkey = EVP_PKEY_new();
-		if (!pkey) { 
-			throw std::runtime_error("Failed to create EVP_PKEY");
-		}
-		return EVP_PKEY_ptr(pkey, EVP_PKEY_Deleter());
-	}
-
-
 	/* Constructor */
 	Wallet();
 
@@ -109,14 +97,6 @@ public:
 	}
 
 private:
-
-	/* Custom EVP Shared Pointer Deleter */
-	struct EVP_PKEY_Deleter {
-		void operator()(EVP_PKEY* pkey) const {
-			EVP_PKEY_free(pkey);
-		}
-	};
-
 	/* Wallet address Function, Creates wallet address for newly created wallets */
 	std::string genAddress();
 

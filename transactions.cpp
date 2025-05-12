@@ -104,11 +104,11 @@ std::vector<double> transactions::getAmmount() const {
     return ammount;
 }
 
-transactions::EVP_PKEY_ptr transactions::getSendPkey() const {
+EVP_PKEY_ptr transactions::getSendPkey() const {
     return sendPkey;
 }
 
-std::vector<transactions::EVP_PKEY_ptr> transactions::getRecievePkeys() const {
+std::vector<EVP_PKEY_ptr> transactions::getRecievePkeys() const {
     return recievePkeys;
 }
 

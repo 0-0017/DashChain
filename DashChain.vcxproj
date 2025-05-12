@@ -139,6 +139,7 @@
     <ClInclude Include="Block.h" />
     <ClInclude Include="BlockChain.h" />
     <ClInclude Include="Coin.h" />
+    <ClInclude Include="CryptoTypes.h" />
     <ClInclude Include="Network.h" />
     <ClInclude Include="transactions.h" />
     <ClInclude Include="util.h" />

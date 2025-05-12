@@ -33,7 +33,7 @@ enum class CustomMsgTypes : uint32_t
 };
 
 struct servID { std::string host = "";  uint16_t portNum = 0; };
-struct walletInfo { uint32_t clientID = 0; std::string walladdr; std::shared_ptr<EVP_PKEY> pubKeyy; };
+struct walletInfo { uint32_t clientID = 0; std::string walladdr; EVP_PKEY_ptr pubKeyy; };
 
 /* Inherits From Net_Client's Interface */
 class Network : public olc::net::client_interface<CustomMsgTypes> {
@@ -183,11 +183,11 @@ protected:
 					if (w1.verifyTx(uin)) {
 						if (tx.getRecieveAddr().size() == tx.getAmmount().size() && tx.getRecieveAddr().size() == tx.getRecievePkeys().size()) {
 							std::vector<std::string> txra = tx.getRecieveAddr();
-							std::vector<std::shared_ptr<EVP_PKEY>> txrpk = tx.getRecievePkeys();
+							std::vector<EVP_PKEY_ptr> txrpk = tx.getRecievePkeys();
 							std::vector<double> txam = tx.getAmmount();
 							for (int i = 0; i < tx.getRecieveAddr().size(); i++) {
 								std::vector<std::string>ra;
-								std::vector<std::shared_ptr<EVP_PKEY>> rpk;
+								std::vector<EVP_PKEY_ptr> rpk;
 								std::vector<double> am;
 								ra.push_back(txra[i]);
 								rpk.push_back(txrpk[i]);

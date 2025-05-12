@@ -1,5 +1,6 @@
 #pragma once
 #include"util.h"
+#include "CryptoTypes.h"
 
 /*-- Transactions.h ---------------------------------------------------------------
   This header file defines the Transaction Logic that will be used to send and recieve
@@ -32,17 +33,6 @@ Note:
 class transactions
 {
 public:
-	/* using for custom EVP Shared Pointers */
-	using EVP_PKEY_ptr = std::shared_ptr<EVP_PKEY>;
-
-	EVP_PKEY_ptr createEVP_PKEY() {
-		EVP_PKEY* pkey = EVP_PKEY_new();
-		if (!pkey) {
-			throw std::runtime_error("Failed to create EVP_PKEY");
-		}
-		return EVP_PKEY_ptr(pkey, EVP_PKEY_Deleter());
-	}
-
 	/* Transaction data Getters and Setters */
 	transactions(std::string sa, std::vector<std::string> ra, EVP_PKEY_ptr spk, std::vector<EVP_PKEY_ptr> rpk, std::vector<double> amm,
 		double fe, unsigned short lk, float v, unsigned long long timestamp = setTimeStamp(), unsigned char* txid = setTxid());
@@ -131,13 +121,6 @@ public:
 	}
 
 private:
-	/* Custom EVP Shared Pointer Deleter */
-	struct EVP_PKEY_Deleter {
-		void operator()(EVP_PKEY* pkey) const {
-			EVP_PKEY_free(pkey);
-		}
-	};
-
 	/* Variables */
 	static util ut;
 	EVP_PKEY_ptr pubKey;

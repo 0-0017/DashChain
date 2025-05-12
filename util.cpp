@@ -77,17 +77,13 @@ cleanup:
 }
 
 unsigned char* util::ripemd(const unsigned char* pubKey, size_t ucSize){
-    /* CTX & Variables */
-    unsigned int hashSize = 0;
-    OSSL_LIB_CTX* libctx = nullptr;
-
-
     if (!pubKey || ucSize == 0) {
         std::cerr << "Invalid input to RIPEMD-160\n";
         return nullptr;
     }
 
     // Fetch the optimized RIPEMD-160 digest algorithm
+    OSSL_LIB_CTX* libctx = nullptr;
     EVP_MD* md = EVP_MD_fetch(libctx, "RIPEMD-160", nullptr);
     if (!md) {
         std::cerr << "EVP_MD_fetch for RIPEMD-160 failed\n";
@@ -95,7 +91,8 @@ unsigned char* util::ripemd(const unsigned char* pubKey, size_t ucSize){
     }
 
     // Allocate buffer for digest output
-    unsigned char* hash = (unsigned char*)OPENSSL_malloc(EVP_MD_size(md));
+    size_t digestSize = EVP_MD_size(md);
+    unsigned char* hash = static_cast<unsigned char*>(OPENSSL_malloc(digestSize));
     if (!hash) {
         std::cerr << "Memory allocation for RIPEMD hash failed\n";
         EVP_MD_free(md);
@@ -124,7 +121,7 @@ unsigned char* util::ripemd(const unsigned char* pubKey, size_t ucSize){
     }
 
     // Finalize and retrieve the hash output
-    if (EVP_DigestFinal_ex(ctx, hash, &hashSize) != 1) {
+    if (EVP_DigestFinal_ex(ctx, hash, nullptr) != 1) {
         std::cerr << "RIPEMD-160 Digest finalization failed\n";
         goto cleanup;
     }
