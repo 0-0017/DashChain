@@ -23,7 +23,8 @@ BlockChain::BlockChain() {
 	std::string dataToHash =
 		"Genesis1:1; Thank you Jesus; Thank You God; A New creation => Your Creation";
 	unsigned char* data = utility.toUnsignedChar(dataToHash);
-	std::vector<uint8_t> GenHash = utility.shaHash(data, true);
+	size_t dataSize = dataToHash.size();
+	std::vector<uint8_t> GenHash = utility.shaHash(data, dataSize);
 	Block* Genesis = new Block(txs, GenHash, 1.0, 1, utility.TimeStamp());
 	first = Genesis;
 	currBlock = Genesis;

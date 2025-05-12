@@ -39,7 +39,9 @@ std::vector<uint8_t> Block::MerkleRoot(const std::vector<transactions>& tx) {
     for (const auto& elem : tx) {
         unsigned char* data = nullptr;
         data = elem.serialize();
-        txHash.push_back(utility.shaHash(data));
+        size_t dataSize = 0;
+        std::memcpy(&dataSize, data, sizeof(size_t));
+        txHash.push_back(utility.shaHash(data, dataSize));
         delete[] data; // Free the allocated memory
         data = nullptr;
     }
@@ -57,7 +59,8 @@ std::vector<uint8_t> Block::MerkleRoot(const std::vector<transactions>& tx) {
             combined.insert(combined.end(), txHash[i + 1].begin(), txHash[i + 1].end());
             unsigned char* combinedData = nullptr;
             combinedData = utility.toUnsignedChar(combined);
-            newLevel.push_back(utility.shaHash(combinedData));
+            size_t combinedSize = combined.size();
+            newLevel.push_back(utility.shaHash(combinedData, combinedSize));
             delete[] combinedData; // Free the allocated memory
             combinedData = nullptr;
         }
@@ -92,7 +95,9 @@ std::vector<uint8_t> Block::setCurrHash() const{
 
     /* Block data used for current hash */
     unsigned char* data = serialize();
-    return utility.shaHash(data);
+    size_t dataSize = 0;
+    std::memcpy(&dataSize, data, sizeof(size_t));
+    return utility.shaHash(data, dataSize);
 }
 
 std::vector<uint8_t> Block::getCurrHash() {

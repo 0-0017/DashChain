@@ -32,8 +32,8 @@ enum class CustomMsgTypes : uint32_t
 	ClientUpdate
 };
 
-struct servID { std::string host;  uint16_t portNum; };
-struct walletInfo { uint32_t clientID; std::string walladdr; std::shared_ptr<EVP_PKEY> pubKeyy; };
+struct servID { std::string host = "";  uint16_t portNum = 0; };
+struct walletInfo { uint32_t clientID = 0; std::string walladdr; std::shared_ptr<EVP_PKEY> pubKeyy; };
 
 /* Inherits From Net_Client's Interface */
 class Network : public olc::net::client_interface<CustomMsgTypes> {

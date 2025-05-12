@@ -5,17 +5,12 @@
 
 /* Wallet Generation w/ Key Pairs */
 Wallet::Wallet() 
-    : address(genAddress()),
-    keyPair(generateECDSAKeyPair()),
+    : keyPair(generateECDSAKeyPair()),
     pubKeyP(extract_public_key())
 {
     locktimeUTXO = 5;
     versionUTXO = 1.0;
-
-    /* Test Sign Function */
-    std::vector<uint8_t> test = utility.shaHash((unsigned char*)"Hello!");
-    ecDoSign(keyPair, test);
-
+    address = genAddress();
 }
 
 Wallet::EVP_PKEY_ptr Wallet::generateECDSAKeyPair() {
@@ -190,13 +185,22 @@ std::string Wallet::genAddress() {
     unsigned char* temp = keyBytes.data();
     i2d_PUBKEY(pubKeyP.get(), &temp);
 
-    /* Hash the Public Key (SHA-256 and RIPEMD-160) */
+    /* varialbles for shahash */
     size_t tempSize = static_cast<size_t>(len);
-    std::vector<uint8_t> publicKeyHash = utility.shaHash(utility.ripemd(temp, tempSize));
+    OSSL_LIB_CTX* libctx = nullptr;
+    EVP_MD* md = EVP_MD_fetch(libctx, "RIPEMD-160", nullptr);
+    if (!md) {
+        std::cerr << "EVP_MD_fetch failed for RIPEMD-160 sha hash\n";
+        return "";
+    }
+
+    size_t ripemdDigestSize = EVP_MD_size(md);  // Correctly gets RIPEMD-160 digest size (always 20)
+    EVP_MD_free(md);  // Free after retrieving size
+
+    std::vector<uint8_t> publicKeyHash = utility.shaHash(utility.ripemd(temp, tempSize), ripemdDigestSize);
 
     /* Step 3: Add a Version Byte(e.g., 0x00 for Bitcoin Mainnet) */
-    uint8_t versionByte = 0x17;
-    std::vector<uint8_t> extPubKeyHash = { versionByte };
+    std::vector<uint8_t> extPubKeyHash = {0x00, 0x17};
     extPubKeyHash.insert(extPubKeyHash.end(), publicKeyHash.begin(), publicKeyHash.end());
 
     std::string addr = utility.base58_encode(extPubKeyHash.data(), extPubKeyHash.size());
@@ -225,7 +229,9 @@ utxout Wallet::outUTXO(double feee, const std::vector<std::string>& rwa, const s
 
     /* Sign UTXO */
     std::shared_ptr<unsigned char> utxoHash(utxo.serialize());
-    std::vector<uint8_t> utxoHashed = utility.shaHash(utxoHash.get());
+    size_t dataSize = 0;
+    std::memcpy(&dataSize, utxoHash.get(), sizeof(size_t));
+    std::vector<uint8_t> utxoHashed = utility.shaHash(utxoHash.get(), dataSize);
     unsigned char* utxoSignedHash = ecDoSign(keyPair, utxoHashed);
 
     /* Update UTXO */
@@ -275,7 +281,9 @@ bool Wallet::verifyTx(const utxout& out) {
 
     /* Verify Hash */
     std::shared_ptr<unsigned char> utxoHash(utxo.serialize());
-    std::vector<uint8_t> utxoHashed = utility.shaHash(utxoHash.get());
+    size_t dataSize = 0;
+    std::memcpy(&dataSize, utxoHash.get(), sizeof(size_t));
+    std::vector<uint8_t> utxoHashed = utility.shaHash(utxoHash.get(), dataSize);
     unsigned char* utxoSignedHash = ecDoSign(sendpk, utxoHashed);
 
     if (std::memcmp(utxoSignedHash, out.utxoSignedHash, out.shSize) != 0) {

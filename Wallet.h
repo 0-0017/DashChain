@@ -47,6 +47,9 @@ public:
 	/* Constructor */
 	Wallet();
 
+	/* ECDSA Function, Creates Public and Private Keys for newly created wallets */
+	EVP_PKEY_ptr generateECDSAKeyPair();
+
 	/* Wallet Methods */
 	unsigned char* ecDoSign(const EVP_PKEY_ptr& keypair, const std::vector<uint8_t>& mesdgst);
 	bool ecDoVerify(const EVP_PKEY_ptr& pkey, const std::vector<uint8_t>& mesdgst, const std::vector<unsigned char>& signature) const ;
@@ -114,14 +117,11 @@ private:
 		}
 	};
 
-	/* ECDSA Function, Creates Public and Private Keys for newly created wallets */
-	EVP_PKEY_ptr generateECDSAKeyPair();
-
 	/* Wallet address Function, Creates wallet address for newly created wallets */
 	std::string genAddress();
 
 	/* Private Wallet Variables */
-	const std::string address;
+	std::string address;
 	util utility;
 	const EVP_PKEY_ptr keyPair = createEVP_PKEY();
 	std::vector<transactions> UTXO;

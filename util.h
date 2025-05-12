@@ -50,7 +50,7 @@ public:
 
 	/* Time Stamp Function, Sets current timestamp */
 	static unsigned long long TimeStamp();
-	static std::vector<uint8_t> shaHash(const unsigned char* data, bool isString = false);
+	static std::vector<uint8_t> shaHash(const unsigned char* data, size_t dataSize);
 	static unsigned char* ripemd(const unsigned char* pubKey, size_t ucSize);
 
 

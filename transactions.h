@@ -125,7 +125,7 @@ public:
 		/* Create Buffer */
 		tSize = tSize + sendSize + txidSize + ammSize + spkSize + recAddSize + rpkSize;
 		tSize = tSize + sizeof(short) + sizeof(short) + sizeof(short) + sizeof(size_t);
-		tSize = tSize + sizeof(uint32_t) + sizeof(uint32_t) + sizeof(uint32_t) + sizeof(uint32_t) + sizeof(uint32_t) + sizeof(uint32_t);
+		tSize = tSize +  sizeof(uint32_t) + sizeof(uint32_t) + sizeof(uint32_t) + sizeof(uint32_t) + sizeof(uint32_t) + sizeof(uint32_t);
 
 		return tSize;
 	}

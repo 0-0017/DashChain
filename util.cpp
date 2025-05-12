@@ -16,76 +16,130 @@ unsigned long long util::TimeStamp(){
     return (unsigned long long)secondsSinceEpoch;
 }
 
-std::vector<uint8_t> util::shaHash(const unsigned char* data, bool isString){
-    const EVP_MD* algorithm = nullptr;
-    size_t dSize;
+#include <openssl/evp.h>
+#include <openssl/core_names.h>
+#include <iostream>
+#include <vector>
 
-    /* If unsigned char || string */
-    if (isString) {
-        algorithm = EVP_sha3_256(); // Use SHA-3 for string data
-        dSize = sizeof(data);
-    }
-    else {
-        algorithm = EVP_sha256(); // Use SHA-256 for non-string data
-        dSize = sizeof(data);
+std::vector<uint8_t> util::shaHash(const unsigned char* data, size_t dataSize) {
+    /* Viability Test*/
+    if (!data || dataSize == 0) {
+        std::cerr << "Invalid input to SHA hashing\n";
+        return {};
     }
 
-    uint8_t digest[EVP_MAX_MD_SIZE];
-    unsigned int digest_length;
-    EVP_MD_CTX* context = EVP_MD_CTX_new();
-    EVP_DigestInit_ex(context, algorithm, nullptr);
-    EVP_DigestUpdate(context, data, dSize);
-    EVP_DigestFinal_ex(context, digest, &digest_length);
-    EVP_MD_CTX_destroy(context);
+    // Fetch the optimized SHA-2 digest algorithm
+    OSSL_LIB_CTX* libctx = nullptr;
+    const char* algorithmName = "SHA-256";
+    EVP_MD* md = EVP_MD_fetch(libctx, algorithmName, nullptr);
+    if (!md) {
+        std::cerr << "EVP_MD_fetch failed for algorithm: " << algorithmName << "\n";
+        return {};
+    }
 
-    /* Convert the digest to a vector of unsigned chars */
-    std::vector<uint8_t> hash_value(digest, digest + digest_length);
-    return hash_value;
-}
-
-unsigned char* util::ripemd(const unsigned char* pubKey, size_t ucSize){
-
-    /* Function Variables */
-    size_t size = ucSize;
-    unsigned char* d = new unsigned char[size];
-    std::memcpy(d, pubKey, size);
-    unsigned int mdSize;
-    unsigned char* md = (unsigned char*)OPENSSL_malloc(EVP_MD_size(EVP_ripemd160()));
-    unsigned long err = 0; // Variable to store the error code //TEMPP
-
-
-    /* RIPEMD-160 cryptographic hash function with a 160 bit output. */
-    // Create a digest verify context
+    // Create a digest context
+    std::vector<uint8_t> digest(EVP_MD_size(md));
+    unsigned int digestLength = EVP_MD_size(md);
     EVP_MD_CTX* ctx = EVP_MD_CTX_new();
-    if (ctx == nullptr) {
-        std::cerr << "ctx creation failed\n";
+    if (!ctx) {
+        std::cerr << "Failed to create EVP_MD_CTX\n";
+        EVP_MD_free(md);
+        return {};
+    }
+
+    // Initialize Digest Context
+    if (EVP_DigestInit_ex(ctx, md, nullptr) != 1) {
+        std::cerr << "SHA Digest initialization failed\n";
         goto cleanup;
     }
 
-    if (EVP_DigestInit_ex(ctx, EVP_ripemd160(), NULL) < 1) {
-        std::cerr << "Initiation failed\n";
+    // Update Digest Context with input data
+    if (EVP_DigestUpdate(ctx, data, dataSize) != 1) {
+        std::cerr << "SHA Digest update failed\n";
         goto cleanup;
     }
 
-    /* Update the hash with the data */
-    if (EVP_DigestUpdate(ctx, d, size) < 1) {
-        std::cerr << "Update failed\n";
+    // Finalize the digest and retrieve the hash output
+    if (EVP_DigestFinal_ex(ctx, digest.data(), &digestLength) != 1) {
+        std::cerr << "SHA Digest finalization failed\n";
         goto cleanup;
     }
 
-    mdSize = sizeof(md);
-    /* Finalize the digest sign operation */
-    if (EVP_DigestFinal_ex(ctx, md, &mdSize) < 1) {
-        std::cerr << "Hash Failed\n";
-        goto cleanup;
-    }
-
-    std::cout << "RIPEMD MSG: " << md << std::endl;
-    return md;
+    // Cleanup
+    EVP_MD_CTX_free(ctx);
+    EVP_MD_free(md);
+    return digest;
 
 cleanup:
     EVP_MD_CTX_free(ctx);
-    return md;
+    EVP_MD_free(md);
+    return {};
+}
+
+unsigned char* util::ripemd(const unsigned char* pubKey, size_t ucSize){
+    /* CTX & Variables */
+    unsigned int hashSize = 0;
+    OSSL_LIB_CTX* libctx = nullptr;
+
+
+    if (!pubKey || ucSize == 0) {
+        std::cerr << "Invalid input to RIPEMD-160\n";
+        return nullptr;
+    }
+
+    // Fetch the optimized RIPEMD-160 digest algorithm
+    EVP_MD* md = EVP_MD_fetch(libctx, "RIPEMD-160", nullptr);
+    if (!md) {
+        std::cerr << "EVP_MD_fetch for RIPEMD-160 failed\n";
+        return nullptr;
+    }
+
+    // Allocate buffer for digest output
+    unsigned char* hash = (unsigned char*)OPENSSL_malloc(EVP_MD_size(md));
+    if (!hash) {
+        std::cerr << "Memory allocation for RIPEMD hash failed\n";
+        EVP_MD_free(md);
+        return nullptr;
+    }
+
+    // Create a digest context
+    EVP_MD_CTX* ctx = EVP_MD_CTX_new();
+    if (!ctx) {
+        std::cerr << "EVP_MD_CTX_new failed\n";
+        OPENSSL_free(hash);
+        EVP_MD_free(md);
+        return nullptr;
+    }
+
+    // Initialize Digest Context for RIPEMD-160
+    if (EVP_DigestInit_ex2(ctx, md, nullptr) != 1) {
+        std::cerr << "RIPEMD-160 Digest initialization failed\n";
+        goto cleanup;
+    }
+
+    // Update Digest Context with input data
+    if (EVP_DigestUpdate(ctx, pubKey, ucSize) != 1) {
+        std::cerr << "RIPEMD-160 Digest update failed\n";
+        goto cleanup;
+    }
+
+    // Finalize and retrieve the hash output
+    if (EVP_DigestFinal_ex(ctx, hash, &hashSize) != 1) {
+        std::cerr << "RIPEMD-160 Digest finalization failed\n";
+        goto cleanup;
+    }
+
+    // Cleanup
+    EVP_MD_CTX_free(ctx);
+    EVP_MD_free(md);
+    return hash;
+
+cleanup:
+    EVP_MD_CTX_free(ctx);
+    EVP_MD_free(md);
+    OPENSSL_free(hash);
+    return nullptr;
+
 }
 
 std::string util::genRandNum(){
@@ -119,7 +173,7 @@ std::string util::base58_encode(const unsigned char* bytes, size_t size) {
     std::string result;
 
     /* Convert big-endian bytes to little-endian */
-    std::vector<unsigned char> temp(size);
+    std::vector<unsigned char> temp(bytes, bytes + size);
     std::copy(bytes, bytes + size, temp.begin());
 
     /* Count leading zeros */
@@ -129,11 +183,11 @@ std::string util::base58_encode(const unsigned char* bytes, size_t size) {
     }
 
     /* Allocate enough space in big-endian base58 representation */
-    std::vector<unsigned char> base58(size * 138 / 100 + 1); // log(256) / log(58), rounded up
+    std::vector<unsigned char> base58(size * 138 / 100 + 1, 0); // log(256) / log(58), rounded up
 
     /* Process the bytes */
     size_t index = base58.size();
-    for (size_t i = leadingZeros; i < temp.size(); ++i) {
+    for (size_t i = 0; i < temp.size(); ++i) {
         unsigned int carry = temp[i];
         for (size_t j = base58.size(); j > 0; --j) {
             carry += 256 * base58[j - 1];
@@ -142,12 +196,13 @@ std::string util::base58_encode(const unsigned char* bytes, size_t size) {
         }
     }
 
-    /* Skip leading zeros in base58 result */
-    size_t start = base58.size() - index;
-    result.reserve(leadingZeros + start);
+    /* Preserve leading zeros in base58 result */
+    result.reserve(leadingZeros + base58.size());
     result.assign(leadingZeros, '1');
-    for (size_t i = start; i < base58.size(); ++i) {
-        result.push_back(base58[i] != 0 ? base58_chars[base58[i]] : '1');
+    for (unsigned char c : base58) {
+        if (c != 0) {
+            result.push_back(base58_chars[c]);
+        }
     }
 
     return result;
