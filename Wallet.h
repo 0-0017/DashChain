@@ -27,7 +27,7 @@
 
 
 /* Struct for hashed utxo & signed hash */
-struct utxout { size_t txSize; size_t shSize; unsigned char* utxo; unsigned char* utxoSignedHash;};
+struct utxout { size_t txSize = 0; size_t shSize = 0; std::shared_ptr<unsigned char> utxo; std::shared_ptr<unsigned char> utxoSignedHash;};
 
 class Wallet
 {
@@ -41,7 +41,7 @@ public:
 	/* Wallet Methods */
 	unsigned char* ecDoSign(const EVP_PKEY_ptr& keypair, const std::vector<uint8_t>& mesdgst);
 	bool ecDoVerify(const EVP_PKEY_ptr& pkey, const std::vector<uint8_t>& mesdgst, const std::vector<unsigned char>& signature) const ;
-	EVP_PKEY_ptr extract_public_key() const ;
+	EVP_PKEY_ptr extract_public_key();
 	utxout outUTXO(double feee, const std::vector<std::string>& rwa, const std::vector<EVP_PKEY_ptr>& rks, const std::vector<double>& amm);
 	void inUTXO(const transactions& txin);
 	bool verifyTx(const utxout& out);
@@ -102,15 +102,15 @@ private:
 
 	/* Private Wallet Variables */
 	std::string address;
-	util utility;
+	static util utility;
 	const EVP_PKEY_ptr keyPair = createEVP_PKEY();
 	std::vector<transactions> UTXO;
 	const char* curvename = "P-256";
 	const EVP_PKEY_ptr pubKeyP = createEVP_PKEY();
-	unsigned short txCount = 0;
-	double balance = 0;
-	unsigned short locktimeUTXO = 0;
-	float versionUTXO = 0;
+	unsigned short txCount;
+	double balance;
+	unsigned short locktimeUTXO;
+	float versionUTXO;
 
 
 	/* UTXO Implementation */

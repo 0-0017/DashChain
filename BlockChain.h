@@ -30,7 +30,7 @@ public:
 	bool empty();
 
 	/* Returns timestamp of Current Blockchain */
-	unsigned long long getTimestamp();
+	unsigned long long getTimestamp() const;
 
 	/* Display Blockchain to stdout */
 	unsigned int getBlockHeight();
@@ -42,7 +42,7 @@ public:
 	double verifyBalance(std::string wa);
 
 	/* Verifies the txid is not already present in the chain */
-	bool isNewTxid(const unsigned char* txid);
+	bool isNewTxid(const std::string txid);
 
 	/* Verifies the integrity of all blocks in the chain */
 	bool verifyBlockchain();
@@ -59,6 +59,12 @@ public:
 	/* Getter for Slot */
 	unsigned long long getChnSlot();
 
+	/* Getter for version */
+	float getVersion();
+
+	/* Setter for version */
+	void setVersion(float vnum);
+
 	/* Uppdate Method for Slot */
 	void updateChnSlot();
 
@@ -72,10 +78,11 @@ public:
 private:
 	Block* first;
 	Block* currBlock;
-	unsigned long long timestamp;
+	const unsigned long long timestamp;
 	unsigned long long slot;
-	util utility;
+	static util utility;
 	unsigned int height;
+	float version;
 };
 
 #endif

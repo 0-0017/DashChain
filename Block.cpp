@@ -27,13 +27,13 @@ Block::Block(const Block& copy)
 {
 }
 
-float Block::getVersion() {
+float Block::getVersion() const {
     return head.versionNum;
 }
 
 /* Merkle root of transactions */
 
-std::vector<uint8_t> Block::MerkleRoot(const std::vector<transactions>& tx) {
+std::vector<uint8_t> Block::MerkleRoot(const std::vector<transactions>& tx) const {
     /* Compute hashes for each transaction */
     std::vector<std::vector<uint8_t>> txHash;
     for (const auto& elem : tx) {
@@ -70,7 +70,7 @@ std::vector<uint8_t> Block::MerkleRoot(const std::vector<transactions>& tx) {
     return txHash.front();
 }
 
-std::vector<uint8_t> Block::getMerkleRoot() {
+std::vector<uint8_t> Block::getMerkleRoot() const {
     return head.merkleRoot;
 }
 
@@ -78,16 +78,11 @@ unsigned long long Block::setTimestamp(){
     return utility.TimeStamp();
 }
 
-unsigned long long Block::getTimestamp() {
+unsigned long long Block::getTimestamp() const {
     return head.timestamp;
 }
 
-/* Gets current block size */
-size_t Block::getBlockSize() {
-    return blockSize;
-}
-
-unsigned int Block::getBlockHeight() {
+unsigned int Block::getBlockHeight() const {
     return blockHeight;
 }
 
@@ -100,20 +95,20 @@ std::vector<uint8_t> Block::setCurrHash() const{
     return utility.shaHash(data, dataSize);
 }
 
-std::vector<uint8_t> Block::getCurrHash() {
+std::vector<uint8_t> Block::getCurrHash() const {
     return currHash;
 }
 
 
-std::vector<uint8_t> Block::getPrevHash() {
+std::vector<uint8_t> Block::getPrevHash() const {
     return head.prevHash;
 }
 
-std::vector<transactions> Block::getTxs() {
+std::vector<transactions> Block::getTxs() const {
     return data;
 }
 
-std::vector<transactions> Block::getData() {
+std::vector<transactions> Block::getData() const {
     return data;
 }
 
@@ -121,11 +116,11 @@ std::vector<transactions> Block::getData() {
 size_t Block::setSize() const{
     size_t size = 0;
     size += data.size() + head.merkleRoot.size() + sizeof(unsigned long long) + head.prevHash.size() + sizeof(float) + sizeof(head);
-    size += sizeof(uint32_t) + sizeof(unsigned int);
+    size += sizeof(size_t) + sizeof(unsigned int);
     return size;
 }
 
-size_t Block::getSize() {
+size_t Block::getSize() const {
     return blockSize;
 }
 
@@ -140,9 +135,9 @@ unsigned char* Block::serialize() const {
     size_t phNum = head.prevHash.size();
     size_t chNum = currHash.size();
     size_t mrNum = head.merkleRoot.size();
-    size_t phSize = phNum * sizeof(size_t);
-    size_t chSize = chNum * sizeof(size_t);
-    size_t mrSize = mrNum * sizeof(size_t);
+    size_t phSize = phNum * sizeof(uint8_t);
+    size_t chSize = chNum * sizeof(uint8_t);
+    size_t mrSize = mrNum * sizeof(uint8_t);
 
     // Calculate serialized transactions
     size_t dSize = 0;
@@ -173,10 +168,10 @@ unsigned char* Block::serialize() const {
         + sizeof(size_t)      // For tSize field? (as originally intended)
         + txSizedSize + dSize;
 
-    // Add size for 4 uint8_t fields (phNum, chNum, mrNum, dNum)
+    // Add size for 4 size_t fields (phNum, chNum, mrNum, dNum)
     tSize = tSize + 4 * sizeof(size_t);
 
-    // Add size for 4 uint32_t fields (phSize, chSize, mrSize, dSize field)
+    // Add size for 4 size_t fields (phSize, chSize, mrSize, dSize field)
     tSize = tSize + 4 * sizeof(size_t);
 
     // *** Add the sizes of the hash vectors ***
@@ -254,7 +249,7 @@ unsigned char* Block::serialize() const {
 /* Deserialize method 
 * Current Has And Merkle Root Checks for Integrity
 */
-Block* Block::deserialize(const unsigned char* buffer) {
+Block* Block::deserialize(const unsigned char* buffer) const {
     size_t offset = 0;
 
     // Read total size (tSize)

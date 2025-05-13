@@ -11,6 +11,8 @@ Wallet::Wallet()
     locktimeUTXO = 5;
     versionUTXO = 1.0;
     address = genAddress();
+    txCount = 0;
+    balance = 0;
 }
 
 EVP_PKEY_ptr Wallet::generateECDSAKeyPair() {
@@ -19,16 +21,16 @@ EVP_PKEY_ptr Wallet::generateECDSAKeyPair() {
      * to show how they are passed to EVP_PKEY_CTX_new_from_name().
      */
 
-    OSSL_LIB_CTX* libctx = NULL;
-    const char* propq = NULL;
-    EVP_PKEY_CTX* genctx = NULL;
+    OSSL_LIB_CTX* libctx = nullptr;
+    const char* propq = nullptr;
+    EVP_PKEY_CTX* genctx = nullptr;
     EVP_PKEY_ptr key(nullptr, EVP_PKEY_free);
     OSSL_PARAM params[3];
     const char* curvename = "P-256";
     int use_cofactordh = 1;
 
     genctx = EVP_PKEY_CTX_new_from_name(libctx, "EC", propq);
-    if (genctx == NULL) {
+    if (genctx == nullptr) {
         std::cout << "EVP_PKEY_CTX_new_from_name() failed\n";
         return nullptr;
     }
@@ -152,7 +154,7 @@ bool Wallet::ecDoVerify(const EVP_PKEY_ptr& pkey, const std::vector<uint8_t>& me
     return ret == 1;
 }
 
-EVP_PKEY_ptr Wallet::extract_public_key() const {
+EVP_PKEY_ptr Wallet::extract_public_key(){
     BIO* bio = BIO_new(BIO_s_mem());
     if (!bio) {
         std::cerr << "Error creating BIO\n";
@@ -217,7 +219,7 @@ std::string Wallet::genAddress() {
 
 utxout Wallet::outUTXO(double feee, const std::vector<std::string>& rwa, const std::vector<EVP_PKEY_ptr>& rks, const std::vector<double>& amm) {
     /* Structure UTXO */
-    transactions utxo(address, rwa, extract_public_key(), rks, amm, feee, locktimeUTXO, versionUTXO);
+    transactions utxo(address, rwa, pubKeyP, rks, amm, feee, locktimeUTXO, versionUTXO);
 
     /* Check for balance */
     setBalance();
@@ -241,49 +243,73 @@ utxout Wallet::outUTXO(double feee, const std::vector<std::string>& rwa, const s
     std::vector<uint8_t> utxoHashed = utility.shaHash(utxoHash.get(), dataSize);
     unsigned char* utxoSignedHash = ecDoSign(keyPair, utxoHashed);
 
+    /* Setup tx & Signed Message for mempool */
+    utxout out;
+    size_t testsz = 0;
+    unsigned char* testSer = utxo.serialize();
+    std::memcpy(&testsz, testSer, sizeof(size_t));
+    size_t utxo_size = utxo.getSize();
+    size_t sh_size = getSignSize(utxoHashed);
+
+    if (testsz == utxo_size) {
+        out.txSize = testsz;
+        out.shSize = sh_size;
+        out.utxo = std::shared_ptr<unsigned char>(testSer, std::default_delete<unsigned char[]>());
+        out.utxoSignedHash = std::shared_ptr<unsigned char>(utxoSignedHash, std::default_delete<unsigned char[]>());
+    }
+    else {
+        std::cout << "TX OUT SIZE INVALID\n";
+        return {};
+    }
+
     /* Update UTXO */
     double utxoup = 0;
-    for (transactions& tx : UTXO) {
+    std::vector<transactions> newUTXO;
+    for (const auto& tx: UTXO) {
         std::vector<double> vecam = tx.getAmmount();
         for (double amount : vecam) {
             utxoup += amount;
         }
 
-        if (utxoup <= check) {
-            vecam.clear();
-            vecam.push_back(check - utxoup);
-            //tx.setAmmount(vecam);
-            break;
+        if (check <= utxoup) {
+            if (utxoup == check) {
+                check = 0.0;
+                continue;
+            }
+            else {
+                std::string mwa = address;
+                std::vector<std::string> mra;
+                mra.push_back(mwa);
+                std::vector<EVP_PKEY_ptr> mrpk;
+                std::vector<double> namm;
+                double mamm = (utxoup - check);
+                namm.push_back(mamm);
+                transactions ttx(address, mra, pubKeyP, mrpk, namm, 0, locktimeUTXO, versionUTXO, utility.TimeStamp());
+                newUTXO.emplace_back(ttx);
+                check = 0.0;
+                continue;
+            }
         }
         else {
-            vecam.clear();
-            vecam.push_back(0);
             check -= utxoup;
+            continue;
         }
     }
+    UTXO = std::move(newUTXO);
+    UTXO.shrink_to_fit();
     setBalance();
-
-    /* Send UTXO & Signed Message to mempool */
-    utxout out;
-    size_t utxo_size = utxo.getSize();
-    size_t sh_size = getSignSize(utxoHashed);
-
-    out.txSize = utxo_size;
-    out.shSize = sh_size;
-    out.utxo = utxo.serialize();
-    out.utxoSignedHash = utxoSignedHash;
 
     return out;
 }
 
 void Wallet::inUTXO(const transactions& txin) {
-    UTXO.push_back(txin);
+    UTXO.emplace_back(txin);
     setBalance();
 }
 
 bool Wallet::verifyTx(const utxout& out) {
     /* Declare variables */
-    transactions utxo = transactions::deserialize(out.utxo);
+    transactions utxo = transactions::deserialize(out.utxo.get());
     EVP_PKEY_ptr sendpk = utxo.getSendPkey();
 
     /* Verify Hash */
@@ -293,7 +319,7 @@ bool Wallet::verifyTx(const utxout& out) {
     std::vector<uint8_t> utxoHashed = utility.shaHash(utxoHash.get(), dataSize);
     unsigned char* utxoSignedHash = ecDoSign(sendpk, utxoHashed);
 
-    if (std::memcmp(utxoSignedHash, out.utxoSignedHash, out.shSize) != 0) {
+    if (std::memcmp(utxoSignedHash, out.utxoSignedHash.get(), out.shSize) != 0) {
         std::cout << "UTXO INVALID!\n";
         return false;
     }
@@ -314,8 +340,8 @@ bool Wallet::verifyTx(const utxout& out) {
 
 void Wallet::setBalance() {
     double amm = 0;
-    unsigned short txsize = UTXO.size();
-    for (unsigned short i = 0; i < txsize; i++) {
+    size_t txsize = UTXO.size();
+    for (int i = 0; i < txsize; i++) {
         amm += UTXO[i].totalAmm();
     }
 
@@ -331,9 +357,6 @@ std::string Wallet::getWalletAddr() const {
 }
 
 EVP_PKEY_ptr Wallet::getPubKey() const {
-    if (pubKeyP == nullptr) {
-        extract_public_key();
-    }
     return pubKeyP;
 }
 
@@ -378,11 +401,11 @@ unsigned char* Wallet::serialize_utxout(const utxout& obj) const {
     offset += sizeof(size_t);
 
     /* Serialize utxo itself */
-    std::memcpy(buffer + offset, &obj.utxo, obj.txSize);
+    std::memcpy(buffer + offset, obj.utxo.get(), obj.txSize);
     offset += obj.txSize;
 
     /* Serialize utxo itself */
-    std::memcpy(buffer + offset, &obj.utxoSignedHash, obj.shSize);
+    std::memcpy(buffer + offset, obj.utxoSignedHash.get(), obj.shSize);
     offset += obj.shSize;
 
     return buffer;
@@ -406,13 +429,13 @@ utxout Wallet::deserialize_utxout(const unsigned char* buffer) const {
     offset += sizeof(size_t);
 
     /* Deserialize utxo */
-    obj.utxo = new unsigned char[obj.txSize];
-    std::memcpy(obj.utxo, buffer + offset, obj.txSize);
+    obj.utxo = std::shared_ptr<unsigned char>(new unsigned char[obj.txSize], std::default_delete<unsigned char[]>());
+    std::memcpy(obj.utxo.get(), buffer + offset, obj.txSize);
     offset += obj.txSize;
 
     /* Deserialize utxoSignedHash */
-    obj.utxoSignedHash = new unsigned char[obj.shSize];
-    std::memcpy(obj.utxoSignedHash, buffer + offset, obj.shSize);
+    obj.utxoSignedHash = std::shared_ptr<unsigned char>(new unsigned char[obj.shSize], std::default_delete<unsigned char[]>());
+    std::memcpy(obj.utxoSignedHash.get(), buffer + offset, obj.shSize);
     offset += obj.shSize;
 
     return obj;

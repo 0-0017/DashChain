@@ -34,8 +34,8 @@ class transactions
 {
 public:
 	/* Transaction data Getters and Setters */
-	transactions(std::string sa, std::vector<std::string> ra, EVP_PKEY_ptr spk, std::vector<EVP_PKEY_ptr> rpk, std::vector<double> amm,
-		double fe, unsigned short lk, float v, unsigned long long timestamp = setTimeStamp(), unsigned char* txid = setTxid());
+	explicit transactions(std::string sa, std::vector<std::string> ra, EVP_PKEY_ptr spk, std::vector<EVP_PKEY_ptr> rpk, std::vector<double> amm,
+		double fe, unsigned short lk, float v, unsigned long long timestamp = setTimeStamp(), std::string tid = setTxid());
 
 	/* Copy Constructor */
 	transactions(const transactions& copy);
@@ -43,7 +43,7 @@ public:
 	/* Destructor to free EVP_PKEY pointers */
 	~transactions();
 	unsigned long long getTimeStamp() const;
-	const unsigned char* getTxid() const;
+	const std::string getTxid() const;
 	std::string getSendAddr() const;
 	std::vector<std::string> getRecieveAddr() const;
 	std::vector<double> getAmmount() const;
@@ -53,7 +53,7 @@ public:
 	unsigned short getLockTime() const;
 	float getVersion() const;
 	static unsigned long long setTimeStamp();
-	static unsigned char* setTxid();
+	static std::string setTxid();
 
 	/* verification */
 	bool inputsValid() const;
@@ -75,6 +75,8 @@ public:
 			4. sendPkey
 			5. recieveAddr                  size_t recAddAmm
 			6. recievePkeys                 size_t prkAmm;
+
+			NOTE: txid will be serialized as a string for efficiency purposes.
 	*/
 
 	/* Variables */
@@ -89,9 +91,7 @@ public:
 		sendSize = sendAddr.size() * sizeof(char); //Calculate size of sendAddr String
 
 		/* Calculate txid Size */
-		size_t pointerSize = sizeof(txid);
-		size_t dataSize = sizeof(unsigned long long);
-		txidSize = pointerSize + dataSize;
+		txidSize = txid.size() * sizeof(char);
 
 		numAmm = ammount.size();
 		ammSize = ammount.size() * sizeof(double); // Calculate size of ammount vector
@@ -109,7 +109,7 @@ public:
 		/* Calculate recievePkeys size */
 		for (const auto& pkey : recievePkeys) {
 			int lenn = i2d_PUBKEY(pkey.get(), nullptr);
-			recAddSize += lenn;
+			rpkSize += lenn;
 		}
 
 		/* Create Buffer */
@@ -125,7 +125,7 @@ private:
 	static util ut;
 	EVP_PKEY_ptr pubKey;
 	const unsigned long long timestamp;
-	const unsigned char* txid;
+	const std::string txid;
 	const std::string sendAddr;
 	const std::vector<std::string> recieveAddr;
 	const EVP_PKEY_ptr sendPkey;

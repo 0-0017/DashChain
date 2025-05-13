@@ -3,12 +3,15 @@
 ------------------------------------------------------------------------------*/
 #include "BlockChain.h"
 
-BlockChain::BlockChain() {
+BlockChain::BlockChain()
+	: timestamp(utility.TimeStamp())
+{
 	//pointer to first */
 	first = NULL;
 	currBlock = NULL;
-	timestamp = utility.TimeStamp();
 	height = 0;
+	slot = 0;
+	version = 1.0;
 
 
 	//Genesis Block Creation */
@@ -23,9 +26,9 @@ BlockChain::BlockChain() {
 	std::string dataToHash =
 		"Genesis1:1; Thank you Jesus; Thank You God; A New creation => Your Creation";
 	unsigned char* data = utility.toUnsignedChar(dataToHash);
-	size_t dataSize = dataToHash.size();
+	size_t dataSize = dataToHash.size() * sizeof(char);
 	std::vector<uint8_t> GenHash = utility.shaHash(data, dataSize);
-	Block* Genesis = new Block(txs, GenHash, 1.0, 1, utility.TimeStamp());
+	Block* Genesis = new Block(txs, GenHash, version, 0, utility.TimeStamp());
 	first = Genesis;
 	currBlock = Genesis;
 	Genesis->next = NULL;
@@ -47,7 +50,7 @@ void BlockChain::GenerateBlock(const std::vector<transactions>& d, Block* b) {
 	if (b == nullptr) {
 		/* Creates Block, set Block Info And Adds Genesis Block */
 		Block* preBlk = currBlock;
-		Block* newBlk = new Block(d,preBlk->getCurrHash(), 1.0, height + 1, utility.TimeStamp());
+		Block* newBlk = new Block(d,preBlk->getCurrHash(), getVersion(), (height + 1), utility.TimeStamp());
 
 		/* Verify Block & update chain */
 		if (verifyBlock(newBlk)) {
@@ -81,21 +84,28 @@ bool BlockChain::empty() {
 	}
 }
 
-unsigned long long BlockChain::getTimestamp() {
-	timestamp = utility.TimeStamp();
+float BlockChain::getVersion() {
+	return version;
+}
+
+void BlockChain::setVersion(float vnum) {
+	version = vnum;
+}
+
+
+unsigned long long BlockChain::getTimestamp() const {
 	return timestamp;
 }
 
 unsigned int BlockChain::getBlockHeight() {
-	unsigned int bHeight = currBlock->getBlockHeight();
-	return (bHeight + 1);
+	return currBlock->getBlockHeight();
 }
 
 void BlockChain::setHeight() {
 	height++;
 }
 
-bool BlockChain::isNewTxid(const unsigned char* txid) {
+bool BlockChain::isNewTxid(const std::string txid) {
 	Block* ptr = first;
 	std::vector<transactions> pbTxs;
 	while (ptr->next != NULL) {
@@ -135,7 +145,7 @@ bool BlockChain::verifyBlock(Block* newBlock) {
 	}
 
 	/* Verify Version */
-	if (newBlock->getVersion() != currBlock->getVersion()) {
+	if (newBlock->getVersion() != getVersion()) {
 		std::cout << "Block rejected: Version mismatch" << std::endl;
 		return false;
 	}
@@ -147,7 +157,7 @@ bool BlockChain::verifyBlock(Block* newBlock) {
 	}
 
 	/* Verify block height matches the current height + 1 */
-	if (newBlock->getBlockHeight() != currBlock->getBlockHeight() + 1) {
+	if (newBlock->getBlockHeight() != getBlockHeight() ) {
 		std::cout << "Block rejected: Invalid block height" << std::endl;
 		return false;
 	}

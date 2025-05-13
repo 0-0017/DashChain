@@ -67,39 +67,38 @@ public:
 	Block* next;
 
 	/* Getter & Setter for timestamp */
-	unsigned long long getTimestamp();
+	unsigned long long getTimestamp() const;
 	static unsigned long long setTimestamp();
 
 	/* Version Control Getter & Setters */
-	float getVersion();
+	float getVersion() const;
 
 	/* Sets and gets current block size & Height*/
-	size_t getBlockSize();
-	unsigned int getBlockHeight();
+	unsigned int getBlockHeight() const;
 
 	/* Merkle root of transactions */
-	std::vector<uint8_t> getMerkleRoot();
-	std::vector<uint8_t> MerkleRoot(const std::vector<transactions>& tx);
+	std::vector<uint8_t> getMerkleRoot() const;
+	std::vector<uint8_t> MerkleRoot(const std::vector<transactions>& tx) const;
 
 	/* Serialize method */
 	unsigned char* serialize() const;
-	Block* deserialize(const unsigned char* buffer);
+	Block* deserialize(const unsigned char* buffer) const;
 
 	/* Getters and Setters for Hashes */
 	std::vector<uint8_t> setCurrHash() const;
-	std::vector<uint8_t> getCurrHash();
-	std::vector<uint8_t> getPrevHash();
+	std::vector<uint8_t> getCurrHash() const;
+	std::vector<uint8_t> getPrevHash() const;
 
 	/* Get trasactions */
-	std::vector<transactions> getTxs();
-	std::vector<transactions> getData();
+	std::vector<transactions> getTxs() const;
+	std::vector<transactions> getData() const;
 
 	/* Size Caculations
 	*	Precedes Current Hash & Next.
 	*	Negates Utility for simplicity
 	*/
 	size_t setSize() const;
-	size_t getSize();
+	size_t getSize() const;
 };
 
 #endif

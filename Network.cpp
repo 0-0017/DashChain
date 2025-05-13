@@ -28,8 +28,6 @@ void Network::upLoop() {
         {
             if (!Incoming().empty())
             {
-
-
                 auto msg = Incoming().pop_front().msg;
 
                 switch (msg.header.id)

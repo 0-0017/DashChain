@@ -4,9 +4,9 @@
 #include "transactions.h"
 
 transactions::transactions(std::string sa, std::vector<std::string> ra, EVP_PKEY_ptr spk, std::vector<EVP_PKEY_ptr> rpk, std::vector<double> amm,
-    double fe, unsigned short lk, float v, unsigned long long timestamp, unsigned char* txid)
+    double fe, unsigned short lk, float v, unsigned long long timestamp, std::string tid)
     : timestamp(timestamp),
-    txid(txid), 
+    txid(tid), 
     sendAddr(sa),
     recieveAddr(ra),
     sendPkey(std::move(spk)),
@@ -57,11 +57,11 @@ unsigned long long transactions::setTimeStamp(){
     return ut.TimeStamp();
 }
 
-const unsigned char* transactions::getTxid() const {
+const std::string transactions::getTxid() const {
     return txid;
 }
 
-unsigned char* transactions::setTxid(){
+std::string transactions::setTxid(){
     /* Create a random number generator */
     std::random_device rd; // Seed for random number generator
     std::mt19937 gen(rd()); // Mersenne Twister engine
@@ -89,7 +89,7 @@ unsigned char* transactions::setTxid(){
     }
 
     std::string txid = ("0X0017" + randomn + ut.toString(ut.TimeStamp()));
-    return ut.toUnsignedChar(txid);
+    return txid;
 }
 
 std::string transactions::getSendAddr() const {
@@ -193,6 +193,8 @@ unsigned char* transactions::serialize() const {
             4. sendPkey
             5. recieveAddr                  short recAddAmm
             6. recievePkeys                 short prkAmm;
+
+            NOTE: txid will be serialized as a string for efficiency purposes, reflected in deserialize
     */
 
     /* Variables */
@@ -207,9 +209,7 @@ unsigned char* transactions::serialize() const {
     sendSize = sendAddr.size() * sizeof(char); //Calculate size of sendAddr String
 
     /* Calculate txid Size */
-    size_t pointerSize = sizeof(txid);
-    size_t dataSize = sizeof(unsigned long long);
-    txidSize = pointerSize + dataSize;
+    txidSize = txid.size() * sizeof(char);
 
     numAmm = ammount.size();
     ammSize = ammount.size() * sizeof(double); // Calculate size of ammount vector
@@ -227,7 +227,7 @@ unsigned char* transactions::serialize() const {
     /* Calculate recievePkeys size */
     for (const auto& pkey : recievePkeys) {
         int lenn = i2d_PUBKEY(pkey.get(), nullptr);
-        recAddSize += lenn;
+        rpkSize += lenn;
     }
 
     /* Create Buffer */
@@ -304,7 +304,7 @@ unsigned char* transactions::serialize() const {
     offset += ammSize;
 
     /* Serialize txid (variable) */
-    std::memcpy(buffer + offset, txid, txidSize);
+    std::memcpy(buffer + offset, &txid, txidSize);
     offset += txidSize;
 
     /* Serialize sendPkey using OpenSSL */
@@ -393,25 +393,25 @@ transactions transactions::deserialize(const unsigned char* data) {
     offset += sizeof(rpkSize);
 
     /* Deserialize locktime */
-    unsigned short* lk = nullptr;
+    unsigned short* lk = new unsigned short[1];
     size_t lk_size = sizeof(unsigned short);
     std::memcpy(lk, data + offset, lk_size);
     offset += lk_size;
 
     /* Deserialize version */
-    float* vs = nullptr;
+    float* vs = new float[1];
     size_t vsSize = sizeof(float);
     std::memcpy(vs, data + offset, vsSize);
     offset += vsSize;
 
     /* Deserialize fee */
-    double* fe = nullptr;
+    double* fe = new double[1];
     size_t feSize = sizeof(double);
     std::memcpy(fe, data + offset, feSize);
     offset += feSize;
 
     /* Deserialize timestamp */
-    unsigned long long* ts = nullptr;
+    unsigned long long* ts = new unsigned long long[1];
     size_t tsSize = sizeof(unsigned long long);
     std::memcpy(ts, data + offset, tsSize);
     offset += tsSize;
@@ -429,8 +429,8 @@ transactions transactions::deserialize(const unsigned char* data) {
     offset += ammSize;
 
     /* Deserialize txid */
-    unsigned char* tid = nullptr;
-    std::memcpy(tid, data + offset, txidSize);
+    std::string temStid;
+    std::memcpy(&temStid, data + offset, txidSize);
     offset += txidSize;
 
     /* Deserialize sendPkey using OpenSSL */
@@ -459,6 +459,13 @@ transactions transactions::deserialize(const unsigned char* data) {
         offset += rpkSize;
     }
 
-    transactions tx(sa, tempra, spk, prk, am, *fe, *lk, *vs, *ts, tid);
+    transactions tx(sa, tempra, spk, prk, am, *fe, *lk, *vs, *ts, temStid);
+
+    /* Cleanup */
+    delete[] fe;
+    delete[] lk;
+    delete[] vs;
+    delete[] ts;
+
     return tx;
 }
