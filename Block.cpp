@@ -88,7 +88,7 @@ unsigned int Block::getBlockHeight() const {
 
 std::vector<uint8_t> Block::setCurrHash() const{
 
-    /* Block data used for current hash:
+    /* Block data used for current hash:clear
      * Data & Timestamp
      * Prev Hash & Version
      * Merkle, Height & Size

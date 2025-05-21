@@ -57,7 +57,7 @@ public:
 	void connectWallet();
 
 	/* Updates the Server for incoming connection */
-	void maintainance();
+	void maintenance();
 	void upLoop();
 
 	/* struct de-serializaton methods */

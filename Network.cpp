@@ -14,7 +14,7 @@ void Network::PingServer() {
     Send(msg);
 }
 
-void  Network::maintainance() {
+void  Network::maintenance() {
     /* Update Loop */
     uploop = std::thread(&Network::upLoop, this);
     uploop.detach();
