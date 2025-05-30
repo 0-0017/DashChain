@@ -42,10 +42,11 @@ public:
 	unsigned char* ecDoSign(const EVP_PKEY_ptr& keypair, const std::vector<uint8_t>& mesdgst);
 	bool ecDoVerify(const EVP_PKEY_ptr& pkey, const std::vector<uint8_t>& mesdgst, const std::vector<unsigned char>& signature) const ;
 	EVP_PKEY_ptr extract_public_key();
-	utxout outUTXO(double feee, const std::vector<std::string>& rwa, const std::vector<EVP_PKEY_ptr>& rks, const std::vector<double>& amm,
-		const std::vector<std::string> &delegates, const std::vector<std::string> &delegateID, const std::vector<std::tuple<std::string, std::string, float>> &votesQueue);
+	utxout outUTXO(double feee, const std::vector<std::string>& rwa, const std::vector<double>& amm, const std::vector<std::string> &delegates,
+		const std::vector<std::string> &delegateID, const std::vector<std::tuple<std::string, std::string, float>> &votesQueue);
 	void inUTXO(const transactions& txin);
 	bool verifyTx(const utxout& out);
+	void listTxs();
 	void setBalance();
 	double getBalance() const;
 	std::string getWalletAddr() const;

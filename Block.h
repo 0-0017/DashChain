@@ -74,6 +74,9 @@ public:
 	/* Sets and gets current block size & Height*/
 	unsigned int getBlockHeight() const;
 
+	/* display current block  */
+	void display();
+
 	/* Merkle root of transactions */
 	std::vector<uint8_t> getMerkleRoot() const;
 	std::vector<uint8_t> MerkleRoot(const std::vector<transactions>& tx) const;

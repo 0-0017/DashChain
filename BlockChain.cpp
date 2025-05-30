@@ -36,7 +36,7 @@ void BlockChain::initial(Block* initial) {
 		std::vector<std::string> del;
 		std::vector<std::string> delID;
 		std::vector<std::tuple<std::string, std::string, float>> votes;
-		transactions tx("", tra, nullptr, trpk, tamm, 0.0, 0.0, 0.0, del, delID, votes);
+		transactions tx("", tra, tamm, 0.0, 0.0, 0.0, del, delID, votes);
 		txs.push_back(tx);
 		//Data To be Hashed */
 		std::string dataToHash =
@@ -130,6 +130,32 @@ bool BlockChain::isNewTxid(const std::string txid) {
 	return true;
 }
 
+transactions BlockChain::getTx(const std::string txid) {
+	Block* ptr = first;
+	std::vector<transactions> pbTxs;
+	while (ptr->next != nullptr) {
+		pbTxs = ptr->getTxs();
+		for (int i = 0; i < pbTxs.size(); i++) {
+			if (pbTxs[i].getTxid() == txid) {
+				return pbTxs[i]; // return tx
+			}
+		}
+		ptr = ptr->next;
+	}
+	delete(ptr);
+
+	/* Return Dummy Tx */
+	std::vector<transactions> txs;
+	std::vector<std::string> tra;
+	std::vector<EVP_PKEY_ptr> trpk;
+	std::vector<double> tamm;
+	std::vector<std::string> del;
+	std::vector<std::string> delID;
+	std::vector<std::tuple<std::string, std::string, float>> votes;
+	transactions dummy("", tra, tamm, 0.0, 0.0, 0.0, del, delID, votes);
+	return dummy;
+}
+
 /* Verifies the integrity of the entire blockchain //inco */
 bool BlockChain::verifyBlockchain() {
 	Block* ptr = first;
@@ -216,11 +242,28 @@ std::vector<transactions> BlockChain::checkWallets(std::string wa) {
 	return txout;
 }
 
+void BlockChain::getBlock(unsigned int height) {
+	Block* ptr = first;
+	while (ptr->next != nullptr) {
+		if (height == ptr->getBlockHeight()) {
+			ptr->display();
+		}
+		ptr = ptr->next;
+	}
+	delete(ptr);
+}
+
 void BlockChain::display() {
-	std::cout << "BlockChain Timestamp: " + util::toString(getTimestamp()) << std::endl;
-	std::cout << "Block TimeStamp: " + util::toString(currBlock->getTimestamp()) << std::endl;
-	std::cout << "Current Hash: " + util::toString(currBlock->getCurrHash()) << std::endl;
-	std::cout << "Previous Hash: " + util::toString(currBlock->getPrevHash()) << std::endl;
-	std::cout << "Block Height: " + util::toString(getBlockHeight()) << std::endl;
-	std::cout << "Merkle Root: " + util::toString(currBlock->getMerkleRoot()) << std::endl;
+	std::cout << "===================================" << std::endl;
+	std::cout << "|        Block Information        |" << std::endl;
+	std::cout << "===================================" << std::endl;
+	std::cout << "Blockchain Timestamp : " << util::toString(getTimestamp()) << std::endl;
+	std::cout << "Block Timestamp      : " << util::toString(currBlock->getTimestamp()) << std::endl;
+	std::cout << "Current Hash         : " << util::toString(currBlock->getCurrHash()) << std::endl;
+	std::cout << "Previous Hash        : " << util::toString(currBlock->getPrevHash()) << std::endl;
+	std::cout << "Block Height         : " << util::toString(getBlockHeight()) << std::endl;
+	std::cout << "Merkle Root          : " << util::toString(currBlock->getMerkleRoot()) << std::endl;
+	std::cout << "Slot Number          : " << util::toString(getChnSlot()) << std::endl;
+	std::cout << "Version              : " << util::toString(getVersion()) << std::endl;
+	std::cout << "===================================" << std::endl;
 }

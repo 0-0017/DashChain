@@ -3,15 +3,13 @@
 ---------------------------------------------------------------------------*/
 #include "transactions.h"
 
-transactions::transactions(std::string sa, std::vector<std::string> ra, EVP_PKEY_ptr spk, std::vector<EVP_PKEY_ptr> rpk, std::vector<double> amm,
-    double fe, unsigned short lk, float v, std::vector<std::string> delegate, std::vector<std::string> delegatesID, std::vector<std::tuple<std::string, std::string, float>> votes,
+transactions::transactions(std::string sa, std::vector<std::string> ra, std::vector<double> amm, double fe, unsigned short lk,
+    float v, std::vector<std::string> delegate, std::vector<std::string> delegatesID, std::vector<std::tuple<std::string, std::string, float>> votes,
     unsigned long long timestamp, std::string tid)
     : timestamp(timestamp),
     txid(tid),
     sendAddr(sa),
     recieveAddr(ra),
-    sendPkey(std::move(spk)),
-    recievePkeys(std::move(rpk)),
     ammount(std::move(amm)),
     fee(fe),
     locktime(lk),
@@ -28,8 +26,6 @@ transactions::transactions(const transactions& copy)
     txid(copy.txid),
     sendAddr(copy.sendAddr),
     recieveAddr(copy.recieveAddr),
-    sendPkey(copy.sendPkey),
-    recievePkeys(copy.recievePkeys),
     ammount(copy.ammount),
     fee(copy.fee),
     locktime(copy.locktime),
@@ -42,18 +38,6 @@ transactions::transactions(const transactions& copy)
 
 
 transactions::~transactions() {
-    /* Free EVP_PKEY pointers
-    if (sendPkey != nullptr) {
-        EVP_PKEY_free(sendPkey);
-        sendPkey = nullptr;
-    }
-    for (auto& pkey : recievePkeys) {
-        if (pkey != nullptr) {
-            EVP_PKEY_free(pkey);
-            pkey = nullptr;
-        }
-    }
-    */
 };
 
 unsigned long long transactions::getTimeStamp() const {
@@ -111,14 +95,6 @@ std::vector<double> transactions::getAmmount() const {
     return ammount;
 }
 
-EVP_PKEY_ptr transactions::getSendPkey() const {
-    return sendPkey;
-}
-
-std::vector<EVP_PKEY_ptr> transactions::getRecievePkeys() const {
-    return recievePkeys;
-}
-
 double transactions::getFee() const {
     return fee;
 }
@@ -144,7 +120,7 @@ std::vector<std::tuple<std::string, std::string, float>> transactions::getVotes(
 }
 
 bool transactions::inputsValid() const {
-    if (timestamp == 0 || sendPkey == nullptr || locktime == 0 || version == 0) {
+    if (timestamp == 0 || locktime == 0 || version == 0) {
         return false;
     }
 
@@ -158,13 +134,8 @@ bool transactions::inputsValid() const {
 }
 
 bool transactions::outputsValid() const {
-    if (!recievePkeys.empty()) {
-        if (!recieveAddr.empty()) {
-            return true;
-        }
-        else {
-            return false;
-        }
+    if (!recieveAddr.empty()) {
+        return true;
     }
     else {
         return false;
@@ -180,6 +151,46 @@ double transactions::totalAmm() const {
     }
 
     return amm;
+}
+
+void transactions::display() {
+    std::cout << "===================================\n";
+    std::cout << "         TRANSACTION DETAILS       \n";
+    std::cout << "===================================\n";
+
+    std::cout << "\n**General Info**\n";
+    std::cout << "Transaction ID   : " << txid << "\n";
+    std::cout << "Timestamp        : " << timestamp << "\n";
+    std::cout << "Version         : " << version << "\n";
+    std::cout << "Locktime        : " << locktime << "\n";
+    std::cout << "Transaction Fee  : " << fee << " Dash\n";
+
+    std::cout << "\n**Sender Information**\n";
+    std::cout << "Sender Address   : " << sendAddr << "\n";
+
+    std::cout << "\n**Recipients**\n";
+    for (size_t i = 0; i < recieveAddr.size(); ++i) {
+        std::cout << "Recipient " << (i + 1) << " : " << recieveAddr[i]
+            << " | Amount: " << ammount[i] << " Dash\n";
+    }
+
+    std::cout << "\n**Delegates & Voting**\n";
+    std::cout << "Delegates        : ";
+    for (const auto& d : delegates) std::cout << d << " ";
+    std::cout << "\n";
+
+    std::cout << "Delegate IDs     : ";
+    for (const auto& id : delegateID) std::cout << id << " ";
+    std::cout << "\n";
+
+    std::cout << "\n**Votes Queue**\n";
+    for (const auto& vote : votesQueue) {
+        std::cout << "Voter: " << std::get<0>(vote)
+            << " | Delegate: " << std::get<1>(vote)
+            << " | Weight: " << std::get<2>(vote) << "\n";
+    }
+
+    std::cout << "===================================\n";
 }
 
 /* Serialize method */
@@ -201,11 +212,10 @@ unsigned char* transactions::serialize() const {
     /* Variables */
     // Sizes of: Locktime, Version, Fee & Timestamp (In That Order)
     size_t tSize = 0;
-    tSize = sizeof(unsigned short) + sizeof(float) + sizeof(double) + sizeof(unsigned long long);
 
     /* Variable Vars */
-    size_t numAmm = 0, recAddAmm = 0, prkAmm = 0, delAmm = 0, delIDAmm = 0, vQueAmm = 0;
-    size_t sendSize = 0, txidSize = 0, ammSize = 0, spkSize = 0, recAddSize = 0, rpkSize = 0, delSize = 0, delIDSize = 0, vQueSize = 0;
+    size_t numAmm = 0, recAddAmm = 0, delAmm = 0, delIDAmm = 0, vQueAmm = 0;
+    size_t sendSize = 0, txidSize = 0, ammSize = 0, recAddSize = 0, delSize = 0, delIDSize = 0, vQueSize = 0;
 
     sendSize = sendAddr.size() * sizeof(char); //Calculate size of sendAddr String
 
@@ -215,21 +225,10 @@ unsigned char* transactions::serialize() const {
     numAmm = ammount.size();
     ammSize = ammount.size() * sizeof(double); // Calculate size of amount vector
 
-    /* Calculate sendPkey Size */
-    int len = i2d_PUBKEY(sendPkey.get(), nullptr);
-    spkSize = len;
-
     /* Calculate recieveAddr Size */
     recAddAmm = recieveAddr.size();
     for (const auto& addr : recieveAddr) {
         recAddSize += addr.size() + 1; // Size for length + actual string content
-    }
-
-    /* Calculate recievePkeys size */
-    prkAmm = recievePkeys.size();
-    for (const auto& pkey : recievePkeys) {
-        int lenn = i2d_PUBKEY(pkey.get(), nullptr);
-        rpkSize += lenn;
     }
 
     delAmm = delegates.size();
@@ -251,10 +250,10 @@ unsigned char* transactions::serialize() const {
 
     /* Create Buffer */
     tSize = tSize + sizeof(unsigned long long) + sizeof(double) + sizeof(unsigned short) + sizeof(float);
-    tSize = tSize + sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(size_t);
-    tSize = tSize + sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(size_t);
-    tSize = tSize + sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(size_t);
-    tSize = tSize + sendSize + txidSize + ammSize + spkSize + recAddSize + rpkSize + delSize + delIDSize + vQueSize;
+    tSize = tSize + sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(size_t);
+    tSize = tSize + sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(size_t);
+    tSize = tSize + sizeof(size_t) + sizeof(size_t) + sizeof(size_t);
+    tSize = tSize + sendSize + txidSize + ammSize + recAddSize + delSize + delIDSize + vQueSize;
 
     /* Allocate memory for buffer */
     unsigned char* buffer = new unsigned char[tSize];
@@ -271,10 +270,6 @@ unsigned char* transactions::serialize() const {
     /* Serialize recAddAmm itself */
     std::memcpy(buffer + offset, &recAddAmm, sizeof(recAddAmm));
     offset += sizeof(recAddAmm);
-
-    /* Serialize prkAmm itself */
-    std::memcpy(buffer + offset, &prkAmm, sizeof(prkAmm));
-    offset += sizeof(prkAmm);
 
     /* Serialize delAmm itself */
     std::memcpy(buffer + offset, &delAmm, sizeof(delAmm));
@@ -300,17 +295,11 @@ unsigned char* transactions::serialize() const {
     std::memcpy(buffer + offset, &ammSize, sizeof(ammSize));
     offset += sizeof(ammSize);
 
-    /* Serialize spkSize itself */
-    std::memcpy(buffer + offset, &spkSize, sizeof(spkSize));
-    offset += sizeof(spkSize);
 
     /* Serialize recAddSize itself */
     std::memcpy(buffer + offset, &recAddSize, sizeof(recAddSize));
     offset += sizeof(recAddSize);
 
-    /* Serialize rpkSize itself */
-    std::memcpy(buffer + offset, &rpkSize, sizeof(rpkSize));
-    offset += sizeof(rpkSize);
 
     /* Serialize delSize itself */
     std::memcpy(buffer + offset, &delSize, sizeof(delSize));
@@ -352,13 +341,6 @@ unsigned char* transactions::serialize() const {
     std::memcpy(buffer + offset, &txid, txidSize);
     offset += txidSize;
 
-    /* Serialize sendPkey using OpenSSL */
-    int lennn = i2d_PUBKEY(sendPkey.get(), nullptr);
-    std::vector<unsigned char> keyBytes(lennn);
-    unsigned char* temp = keyBytes.data();
-    i2d_PUBKEY(sendPkey.get(), &temp);
-    std::memcpy(buffer + offset, keyBytes.data(), keyBytes.size());
-    offset += keyBytes.size();
 
     /* Serialize recieveAddr (variable) */
     unsigned char* tbuff = new unsigned char[recAddSize];
@@ -403,16 +385,6 @@ unsigned char* transactions::serialize() const {
         offset += sizeof(flt);
     }
 
-    /* Serialize recievePkeys */
-    for (const auto& pkey : recievePkeys) {
-        int llen = i2d_PUBKEY(pkey.get(), nullptr);
-        std::vector<unsigned char> pkeyBytes(llen);
-        unsigned char* temp = pkeyBytes.data();
-        i2d_PUBKEY(pkey.get(), &temp);
-        std::memcpy(buffer + offset, pkeyBytes.data(), pkeyBytes.size()); // Copy the serialized key
-        offset += pkeyBytes.size(); // Move the offset forward
-    }
-
     return buffer; // Return the serialized buffer
 }
 
@@ -434,11 +406,6 @@ transactions transactions::deserialize(const unsigned char* data) {
     size_t recAddAmm;
     std::memcpy(&recAddAmm, data + offset, sizeof(recAddAmm));
     offset += sizeof(recAddAmm);
-
-    /* Deserialize prkAmm */
-    size_t prkAmm;
-    std::memcpy(&prkAmm, data + offset, sizeof(prkAmm));
-    offset += sizeof(prkAmm);
 
     /* Deserialize delAmm */
     size_t delAmm;
@@ -470,20 +437,10 @@ transactions transactions::deserialize(const unsigned char* data) {
     std::memcpy(&ammSize, data + offset, sizeof(ammSize));
     offset += sizeof(ammSize);
 
-    /* Deserialize spkSize */
-    size_t spkSize;
-    std::memcpy(&spkSize, data + offset, sizeof(spkSize));
-    offset += sizeof(spkSize);
-
     /* Deserialize recAddSize */
     size_t recAddSize;
     std::memcpy(&recAddSize, data + offset, sizeof(recAddSize));
     offset += sizeof(recAddSize);
-
-    /* Deserialize rpkSize */
-    size_t rpkSize;
-    std::memcpy(&rpkSize, data + offset, sizeof(rpkSize));
-    offset += sizeof(rpkSize);
 
     /* Deserialize delSize */
     size_t delSize;
@@ -541,12 +498,6 @@ transactions transactions::deserialize(const unsigned char* data) {
     std::memcpy(&temStid, data + offset, txidSize);
     offset += txidSize;
 
-    /* Deserialize sendPkey using OpenSSL */
-    const unsigned char* temp = data + offset;
-    EVP_PKEY* tempspk = d2i_PUBKEY(nullptr, &temp, spkSize);
-    EVP_PKEY_ptr spk(tempspk, EVP_PKEY_Deleter());
-    offset += spkSize;
-
     /* Deserialize recieveAddr */
     std::vector<std::string> tempra;
     tempra.resize(recAddAmm);
@@ -595,16 +546,7 @@ transactions transactions::deserialize(const unsigned char* data) {
         votesQueue[i] = std::make_tuple(voteStr1, voteStr2, voteFloat);
     }
 
-    /* Deserialize recievePkeys */
-    std::vector<EVP_PKEY_ptr> prk;
-    prk.resize(prkAmm);
-    for (auto& pkey : prk) {
-        const unsigned char* tempp = data + offset;
-        pkey.reset(d2i_PUBKEY(nullptr, &tempp, rpkSize), EVP_PKEY_Deleter());
-        offset += rpkSize;
-    }
-
-    transactions tx(sa, tempra, spk, prk, am, *fe, *lk, *vs, delegates, delegateID, votesQueue, *ts, temStid);
+    transactions tx(sa, tempra, am, *fe, *lk, *vs, delegates, delegateID, votesQueue, *ts, temStid);
 
     /* Cleanup */
     delete[] fe;

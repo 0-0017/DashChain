@@ -157,21 +157,18 @@ protected:
 					/* check for double spend */
 					if (chain->isNewTxid(tx.getTxid())) {
 						if (w1.verifyTx(uin)) {
-							if (tx.getRecieveAddr().size() == tx.getAmmount().size() && tx.getRecieveAddr().size() == tx.getRecievePkeys().size()) {
+							if (tx.getRecieveAddr().size() == tx.getAmmount().size()) {
 								std::vector<std::string> txra = tx.getRecieveAddr();
-								std::vector<EVP_PKEY_ptr> txrpk = tx.getRecievePkeys();
 								std::vector<double> txam = tx.getAmmount();
 								std::vector<std::string> delegates = tx.getDelegates();
 								std::vector<std::string> delegateID = tx.getDelegatesID();
 								std::vector<std::tuple<std::string, std::string, float>> votesQueue = tx.getVotes();
 								for (int i = 0; i < tx.getRecieveAddr().size(); i++) {
 									std::vector<std::string>ra;
-									std::vector<EVP_PKEY_ptr> rpk;
 									std::vector<double> am;
 									ra.push_back(txra[i]);
-									rpk.push_back(txrpk[i]);
 									am.push_back(txam[i]);
-									transactions confirmed(w1.getWalletAddr(), ra, tx.getSendPkey(), rpk, am, (tx.getFee() / txra.size()),
+									transactions confirmed(w1.getWalletAddr(), ra, am, (tx.getFee() / txra.size()),
 										tx.getLockTime(),tx.getVersion(), delegates, delegateID, votesQueue);
 									mempool.push_back(confirmed);
 									verifyMempool();
@@ -290,6 +287,23 @@ public:
 
 	/* Update Wallets */
 	void updateWallets();
+
+	/* Get Wallets Balance */
+	double getBalance() const;
+
+	/* Get List of UTXOs In Wallet */
+	void listTx();
+
+	/* sends transaction and returns success factor */
+	bool sendTx(std::vector<std::string>& recipients, std::vector<double> amounts);
+
+	/* Display transaction present in blockchain */
+	void getKnownTx(std::string& txid);
+
+	/* get current blockchain information */
+	void currBlockInfo();
+
+	void getBlock(unsigned int height);
 
 	// Utility function to initiate an outbound connection to a remote peer.
 	bool ConnectTo(const std::string& host, uint16_t port);

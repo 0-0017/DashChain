@@ -34,8 +34,8 @@ class transactions
 {
 public:
 	/* Transaction data Getters and Setters */
-	explicit transactions(std::string sa, std::vector<std::string> ra, EVP_PKEY_ptr spk, std::vector<EVP_PKEY_ptr> rpk, std::vector<double> amm,
-		double fe, unsigned short lk, float v, std::vector<std::string> delegate, std::vector<std::string> delegatesID, std::vector<std::tuple<std::string, std::string, float>> votes,
+	explicit transactions(std::string sa, std::vector<std::string> ra,std::vector<double> amm, double fe, unsigned short lk,
+		float v, std::vector<std::string> delegate, std::vector<std::string> delegatesID, std::vector<std::tuple<std::string, std::string, float>> votes,
 		unsigned long long timestamp = setTimeStamp(), std::string tid = setTxid());
 
 	/* Copy Constructor */
@@ -48,8 +48,6 @@ public:
 	std::string getSendAddr() const;
 	std::vector<std::string> getRecieveAddr() const;
 	std::vector<double> getAmmount() const;
-	EVP_PKEY_ptr getSendPkey() const;
-	std::vector<EVP_PKEY_ptr> getRecievePkeys() const;
 	double getFee() const;
 	unsigned short getLockTime() const;
 	float getVersion() const;
@@ -58,6 +56,7 @@ public:
 	std::vector<std::tuple<std::string, std::string, float>> getVotes() const;
 	static unsigned long long setTimeStamp();
 	static std::string setTxid();
+	void display();
 
 	/* verification */
 	bool inputsValid() const;
@@ -85,61 +84,49 @@ public:
 
 	    /* Variables */
 	    // Sizes of: Locktime, Version, Fee & Timestamp (In That Order)
-	    size_t tSize = 0;
-	    tSize = sizeof(unsigned short) + sizeof(float) + sizeof(double) + sizeof(unsigned long long);
+		size_t tSize = 0;
 
-	    /* Variable Vars */
-	    size_t numAmm = 0, recAddAmm = 0, prkAmm = 0, delAmm = 0, delIDAmm = 0, vQueAmm = 0;
-	    size_t sendSize = 0, txidSize = 0, ammSize = 0, spkSize = 0, recAddSize = 0, rpkSize = 0, delSize = 0, delIDSize = 0, vQueSize = 0;
+		/* Variable Vars */
+		size_t numAmm = 0, recAddAmm = 0, delAmm = 0, delIDAmm = 0, vQueAmm = 0;
+		size_t sendSize = 0, txidSize = 0, ammSize = 0, recAddSize = 0, delSize = 0, delIDSize = 0, vQueSize = 0;
 
-	    sendSize = sendAddr.size() * sizeof(char); //Calculate size of sendAddr String
+		sendSize = sendAddr.size() * sizeof(char); //Calculate size of sendAddr String
 
-	    /* Calculate txid Size */
-	    txidSize = txid.size() * sizeof(char);
+		/* Calculate txid Size */
+		txidSize = txid.size() * sizeof(char);
 
-	    numAmm = ammount.size();
-	    ammSize = ammount.size() * sizeof(double); // Calculate size of amount vector
+		numAmm = ammount.size();
+		ammSize = ammount.size() * sizeof(double); // Calculate size of amount vector
 
-	    /* Calculate sendPkey Size */
-	    int len = i2d_PUBKEY(sendPkey.get(), nullptr);
-	    spkSize = len;
+		/* Calculate recieveAddr Size */
+		recAddAmm = recieveAddr.size();
+		for (const auto& addr : recieveAddr) {
+			recAddSize += addr.size() + 1; // Size for length + actual string content
+		}
 
-	    /* Calculate recieveAddr Size */
-	    recAddAmm = recieveAddr.size();
-	    for (const auto& addr : recieveAddr) {
-	        recAddSize += addr.size() + 1; // Size for length + actual string content
-	    }
+		delAmm = delegates.size();
+		for (const auto& d: delegates) {
+			delSize +=  d.size() + 1;
+		}
 
-	    /* Calculate recievePkeys size */
-	    prkAmm = recievePkeys.size();
-	    for (const auto& pkey : recievePkeys) {
-	        int lenn = i2d_PUBKEY(pkey.get(), nullptr);
-	        rpkSize += lenn;
-	    }
+		delIDAmm = delegateID.size();
+		for (const auto& id: delegateID) {
+			delIDSize += id.size() + 1;
+		}
 
-	    delAmm = delegates.size();
-	    for (const auto& d: delegates) {
-	        delSize +=  d.size() + 1;
-	    }
+		vQueAmm = votesQueue.size();
+		for (const auto& vote: votesQueue) {
+			vQueSize += std::get<0>(vote).size() + 1;
+			vQueSize += std::get<1>(vote).size() + 1;
+			vQueSize += sizeof(float);
+		}
 
-	    delIDAmm = delegateID.size();
-	    for (const auto& id: delegateID) {
-	        delIDSize += id.size() + 1;
-	    }
-
-	    vQueAmm = votesQueue.size();
-	    for (const auto& vote: votesQueue) {
-	        vQueSize += std::get<0>(vote).size() + 1;
-	        vQueSize += std::get<1>(vote).size() + 1;
-	        vQueSize += sizeof(float);
-	    }
-
-	    /* Create Buffer */
-	    tSize = tSize + sizeof(unsigned long long) + sizeof(double) + sizeof(unsigned short) + sizeof(float);
-	    tSize = tSize + sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(size_t);
-	    tSize = tSize + sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(size_t);
-	    tSize = tSize + sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(size_t);
-	    tSize = tSize + sendSize + txidSize + ammSize + spkSize + recAddSize + rpkSize + delSize + delIDSize + vQueSize;
+		/* Create Buffer */
+		tSize = tSize + sizeof(unsigned long long) + sizeof(double) + sizeof(unsigned short) + sizeof(float);
+		tSize = tSize + sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(size_t);
+		tSize = tSize + sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(size_t);
+		tSize = tSize + sizeof(size_t) + sizeof(size_t) + sizeof(size_t);
+		tSize = tSize + sendSize + txidSize + ammSize + recAddSize + delSize + delIDSize + vQueSize;
 
 		return tSize;
 	}
@@ -155,8 +142,6 @@ private:
 	const std::string txid;
 	const std::string sendAddr;
 	const std::vector<std::string> recieveAddr;
-	const EVP_PKEY_ptr sendPkey;
-	const std::vector<EVP_PKEY_ptr> recievePkeys;
 	const std::vector<double> ammount;
 	const double fee;
 	const unsigned short locktime;

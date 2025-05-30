@@ -47,6 +47,9 @@ public:
 	/* Verifies the tx-id is not already present in the chain */
 	bool isNewTxid(const std::string txid);
 
+	/* Gets transaction if present in the chain */
+	transactions getTx(const std::string txid);
+
 	/* Verifies the integrity of all blocks in the chain */
 	bool verifyBlockchain();
 
@@ -77,8 +80,11 @@ public:
 	/* check Method for if wallets in new block */
 	std::vector<transactions> checkWallets(std::string wa);
 
+	/* Display block in Blockchain at any height */
+	void getBlock(unsigned int height);
+
 	/* Display Blockchain to stdout */
-	void display(); //*
+	void display();
 
 
 private:

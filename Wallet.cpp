@@ -217,10 +217,10 @@ std::string Wallet::genAddress() {
     return addr;
 }
 
-utxout Wallet::outUTXO(double feee, const std::vector<std::string>& rwa, const std::vector<EVP_PKEY_ptr>& rks, const std::vector<double>& amm,
-    const std::vector<std::string> &delegates, const std::vector<std::string> &delegateID, const std::vector<std::tuple<std::string, std::string, float>> &votesQueue) {
+utxout Wallet::outUTXO(double feee, const std::vector<std::string>& rwa, const std::vector<double>& amm, const std::vector<std::string> &delegates,
+    const std::vector<std::string> &delegateID, const std::vector<std::tuple<std::string, std::string, float>> &votesQueue) {
     /* Structure UTXO */
-    transactions utxo(address, rwa, pubKeyP, rks, amm, feee, locktimeUTXO, versionUTXO, delegates, delegateID, votesQueue);
+    transactions utxo(address, rwa, amm, feee, locktimeUTXO, versionUTXO, delegates, delegateID, votesQueue);
 
     /* Check for balance */
     setBalance();
@@ -284,11 +284,10 @@ utxout Wallet::outUTXO(double feee, const std::vector<std::string>& rwa, const s
                 std::string mwa = address;
                 std::vector<std::string> mra;
                 mra.push_back(mwa);
-                std::vector<EVP_PKEY_ptr> mrpk;
                 std::vector<double> namm;
                 double mamm = (utxoup - check);
                 namm.push_back(mamm);
-                transactions ttx(address, mra, pubKeyP, mrpk, namm, 0, locktimeUTXO, versionUTXO, del,
+                transactions ttx(address, mra, namm, 0, locktimeUTXO, versionUTXO, del,
                     delID, votesQ, util::TimeStamp());
                 newUTXO.emplace_back(ttx);
                 check = 0.0;
@@ -315,7 +314,7 @@ void Wallet::inUTXO(const transactions& txin) {
 bool Wallet::verifyTx(const utxout& out) {
     /* Declare variables */
     transactions utxo = transactions::deserialize(out.utxo.get());
-    EVP_PKEY_ptr sendpk = utxo.getSendPkey();
+    EVP_PKEY_ptr sendpk = getPubKey(); //*****************************************************
 
     /* Verify Hash */
     std::shared_ptr<unsigned char> utxoHash(utxo.serialize());
@@ -341,6 +340,12 @@ bool Wallet::verifyTx(const utxout& out) {
     }
 
     return true;
+}
+
+void Wallet::listTxs() {
+    for (auto& tx: UTXO) {
+        tx.display();
+    }
 }
 
 void Wallet::setBalance() {

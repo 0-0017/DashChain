@@ -206,8 +206,8 @@ void Peer::blkRqMethod() {
     rpk.push_back(w1.getPubKey());
     amm.push_back(X0017.getReward());
 
-    transactions reward(w1.getWalletAddr(), ra, w1.getPubKey(), rpk, amm, 0, w1.getLockTime(),
-        w1.getVersion(), delegates, delegateID, votesQueue);
+    transactions reward(w1.getWalletAddr(), ra, amm, 0, w1.getLockTime(), w1.getVersion(), delegates,
+        delegateID, votesQueue);
     txs.push_back(reward);
     chain->GenerateBlock(txs);
     updateCoins(reward);
@@ -225,6 +225,35 @@ void Peer::updateWallets() {
     std::cout << "Wallets Updated\n";
 }
 
+double Peer::getBalance() const {
+    return w1.getBalance();
+}
+
+void Peer::listTx() {
+    w1.listTxs();
+}
+
+bool Peer::sendTx(std::vector<std::string>& recipients, std::vector<double> amounts) {
+    std::vector<std::string> delegates;
+    std::vector<std::string> delegateID;
+    std::vector<std::tuple<std::string, std::string, float>> votesQueue;
+    utxout u1 = w1.outUTXO(X0017.getTxFee(), recipients, amounts, delegates, delegateID, votesQueue);
+    broadcastTransaction(u1);
+
+    return true;
+}
+
+void Peer::getKnownTx(std::string& txid) {
+    chain->getTx(txid).display();
+}
+
+void Peer::currBlockInfo() {
+    chain->display();
+}
+
+void Peer::getBlock(unsigned int height) {
+    chain->getBlock(height);
+}
 
 void Peer::updateCoins(transactions rew) {
     double totus = 0;

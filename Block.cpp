@@ -176,6 +176,20 @@ size_t Block::getSize() const {
     return blockSize;
 }
 
+void Block::display() {
+    std::cout << "===================================" << std::endl;
+    std::cout << "|         Block Details           |" << std::endl;
+    std::cout << "===================================" << std::endl;
+    std::cout << "Timestamp       : " << util::toString(head.timestamp) << std::endl;
+    std::cout << "Previous Hash   : " << util::toString(head.prevHash) << std::endl;
+    std::cout << "Version         : " << util::toString(head.versionNum) << std::endl;
+    std::cout << "Merkle Root     : " << util::toString(head.merkleRoot) << std::endl;
+    std::cout << "Block Height    : " << util::toString(blockHeight) << std::endl;
+    std::cout << "Block Size      : " << util::toString(blockSize) << " bytes" << std::endl;
+    std::cout << "Current Hash    : " << util::toString(currHash) << std::endl;
+    std::cout << "===================================" << std::endl;
+}
+
 /* Serialize method */
 unsigned char* Block::serialize() const {
     // Initial header: blockHeight (unsigned int), versionNum (float),
