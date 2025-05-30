@@ -1,0 +1,449 @@
+/*-- Network.cpp------------------------------------------------------------
+   This file implements Network & Server member functions.
+---------------------------------------------------------------------------*/
+#include "Network.h"
+
+/* Server Setup */
+void Peer::serverOnStart(Peer& server) {
+    /* Setting initial Server Node */
+    created = util::TimeStamp();
+    sPeriod = 15;
+    chain = nullptr;
+    servID initialNode;
+    initialNode.host = "99.105.19.8";
+    initialNode.portNum = 50507;
+    setNodeID(initialNode);
+    setTimeCreated();
+    setServerID();
+
+    /* Server Startup Logic */
+    for (int i = 0; i < nodeID.size(); i++) {
+        if (serverID.host == nodeID[i].host && serverID.portNum == nodeID[i].portNum) {
+            chain = new BlockChain();
+            chain->initial();
+            std::cout << "Chain Created!\n";
+
+            /* Prepare D-POS Consensus */
+            consensus.setTimestamp(created);
+            if (auto delegates = consensus.getDelegates(); delegates.empty()) {
+                std::tuple<bool, std::string> ret = consensus.requestDelegate(w1.getBalance());
+                if (get<0>(ret) == true) {
+                    delegateID = get<1>(ret);
+                    broadcastDelegateUpdate(delegateID);
+                }
+                else {
+                    std::cerr << "Failed to request delegate!\n";
+                }
+            }
+
+            std::tuple<std::string, std::string, float> initialVote(w1.getWalletAddr(), delegateID, 1);
+            std::vector<std::tuple<std::string, std::string, float>> iv_Vector;
+            iv_Vector.emplace_back(initialVote);
+            consensus.updatedVotes(iv_Vector);
+            consensus.updateDelegates();
+            consensus.setVotingPeriod(3600);
+            currentDelegate = consensus.getCurrentDelegate();
+
+            /* Update Loops */
+            //up-loop = std::thread(&Server::upLoop, this, std::ref(server));
+            //up-loop.detach();
+
+        }
+        else
+        {
+            /* Connect To Initial Node */
+            chain = new BlockChain();
+            ConnectTo(nodeID[0].host, nodeID[0].portNum);
+
+            olc::net::message<CustomMsgTypes> msg;
+            msg.header.id = CustomMsgTypes::ServerStart;
+            msg << serializeStruct(serverID);
+            SendToPeer(m_connections.front(), msg);
+
+            /* Update Loop */
+            //up-loop = std::thread(&Server::upLoop, this, std::ref(server));
+            //up-loop.detach();
+        }
+    }
+}
+
+/* Update loop keeps server busy listening for connections */
+void Peer::upLoop(Peer& server) {
+    /* update loop */
+    while (true)
+    {
+        /* Lock mutex for the update operation */
+        std::lock_guard<std::mutex> lock(mtx);
+        updateSlot();
+        updateWallets();
+        server.Update(-1, true);  // Call server update in a loop
+
+        //only initial updates slot
+        //if(serverID.host == )
+    }
+}
+
+void Peer::updateD_POS() {
+    while (true) {
+        consensus.updateDelegates();
+        currentDelegate = consensus.getCurrentDelegate();
+        broadcastDelegates();
+    }
+}
+
+/* Add a ServerID JSON object to the Node vector */
+void Peer::setNodeID(const servID& sid) {
+    // Ensure the JSON object is valid if needed
+    // You can also perform validation checks here
+    nodeID.push_back(sid);
+}
+
+/* Time of Server Creation */
+void Peer::setTimeCreated() {
+    created = util::TimeStamp();
+}
+
+/* Get public IP address of server */
+void Peer::setServerID() {
+    try
+    {
+        asio::io_context io_context;
+        asio::ip::tcp::resolver resolver(io_context);
+        asio::ip::tcp::socket socket(io_context);
+
+        // Connect to api.ipify.org:80
+        auto endpoints = resolver.resolve("api.ipify.org", "80");
+        asio::connect(socket, endpoints);
+
+        // Send GET request
+        std::string request =
+            "GET / HTTP/1.1\r\n"
+            "Host: api.ipify.org\r\n"
+            "Connection: close\r\n\r\n";
+        asio::write(socket, asio::buffer(request));
+
+        // Read status line
+        asio::streambuf response_buf;
+        asio::read_until(socket, response_buf, "\r\n");
+        std::istream response_stream(&response_buf);
+        std::string http_version;
+        unsigned int status_code;
+        std::string status_message;
+        response_stream >> http_version >> status_code;
+        std::getline(response_stream, status_message);
+
+        if (!response_stream || http_version.substr(0, 5) != "HTTP/" || status_code != 200) {
+            throw std::runtime_error("Bad response from server");
+        }
+
+        // Skip headers
+        asio::read_until(socket, response_buf, "\r\n\r\n");
+        std::string header;
+        while (std::getline(response_stream, header) && header != "\r") {}
+
+        // Read the response body (IP)
+        std::ostringstream ip_data;
+        ip_data << &response_buf;
+        asio::error_code ec;
+        while (asio::read(socket, response_buf, ec)) {
+            ip_data << &response_buf;
+        }
+        if (ec != asio::error::eof) {
+            throw asio::system_error(ec);
+        }
+
+        // Assign to class member
+        serverID.host = ip_data.str();
+        serverID.portNum = port;
+    }
+    catch (const std::exception& e) {
+        std::cerr << "Error getting public IP: " << e.what() << std::endl;
+        serverID.host = "0.0.0.0"; // fallback or sentinel value
+        serverID.portNum = port;
+    }
+}
+
+void Peer::updateSlot() {
+    const unsigned long long timeNow = util::TimeStamp();
+
+    if (const unsigned long long lastTimestamp = chain->getTimestamp(); timeNow - lastTimestamp >= sPeriod) {
+        if (delegateID == currentDelegate) {
+            chain->updateChnSlot();
+            blkRqMethod();
+            verifyMempool();
+            broadcastBlock(chain->getCurrBlock());
+            std::cout << "blk & vmem\n";
+        }
+    }
+}
+
+void Peer::verifyMempool() {
+    for (int i = 0; i < mempool.size(); i++) {
+        do {
+            if (chain->isNewTxid(mempool[i].getTxid())) {
+                continue;
+            }
+            else {
+                mempool[i].setTxid();
+            }
+        } while (!chain->isNewTxid(mempool[i].getTxid()));
+    }
+}
+
+void Peer::blkRqMethod() {
+    std::vector<transactions> txs;
+    for (int i = 0; i < mempool.size(); i++) {
+        txs.push_back(mempool[i]);
+    }
+
+    std::vector<std::string> ra;
+    std::vector<EVP_PKEY_ptr> rpk;
+    std::vector<double> amm;
+    std::vector<std::string> delegates = consensus.getDelegates();
+    std::vector<std::string> delegateID = consensus.getDelegateIDs();
+    std::vector<std::tuple<std::string, std::string, float>> votesQueue = consensus.getVotesQueue();
+    ra.push_back(w1.getWalletAddr());
+    rpk.push_back(w1.getPubKey());
+    amm.push_back(X0017.getReward());
+
+    transactions reward(w1.getWalletAddr(), ra, w1.getPubKey(), rpk, amm, 0, w1.getLockTime(),
+        w1.getVersion(), delegates, delegateID, votesQueue);
+    txs.push_back(reward);
+    chain->GenerateBlock(txs);
+    updateCoins(reward);
+}
+
+void Peer::updateWallets() {
+    /* check wallets of clients & my wallet */
+    std::vector<transactions> tx;
+    tx = chain->checkWallets(w1.getWalletAddr());
+    for (int k = 0; k < tx.size(); k++) {
+        if (!tx[k].getRecieveAddr().empty()) {
+            w1.inUTXO(tx[k]);
+        }
+    }
+    std::cout << "Wallets Updated\n";
+}
+
+
+void Peer::updateCoins(transactions rew) {
+    double totus = 0;
+    std::vector<double> amm = rew.getAmmount();
+
+    for (int i = 0; i < amm.size(); i++) {
+        totus += amm[i];
+    }
+
+    X0017.setTotalSupply(totus);
+    X0017.setCircSupply(totus);
+}
+
+void Peer::voteDelegate(const std::vector<std::tuple<std::string, std::string, float>>&){
+
+}
+
+// Initiates an outbound connection to the peer at the specified host and port.
+bool Peer::ConnectTo(const std::string& host, uint16_t port) {
+    std::cout << "[NetworkManager] Connecting to " << host << ":" << port << "\n";
+    return this->ConnectToPeer(host, port);
+}
+
+// Broadcasts a chat message to all connected peers.
+void Peer::BroadcastChat(const std::string& text) {
+    olc::net::message<CustomMsgTypes> msg;
+    msg.header.id = CustomMsgTypes::ChatMessage;
+
+    // Use the overloaded operator<< to serialize the text into the message.
+    msg << text;
+
+    // Broadcast the message using the base class function.
+    this->Broadcast(msg);
+}
+void Peer::broadcastNode(unsigned char* sid) {
+    olc::net::message<CustomMsgTypes> msg;
+    msg.header.id = CustomMsgTypes::KnownNode;
+    msg << sid;
+
+    // Broadcast the message using the base class function.
+    this->Broadcast(msg);
+}
+
+void Peer::broadcastBlock(const Block* block) {
+    olc::net::message<CustomMsgTypes> msg;
+    msg.header.id = CustomMsgTypes::BlkRecieved;
+    msg << block->serialize();
+
+    // Broadcast the message using the base class function.
+    this->Broadcast(msg);
+}
+
+void Peer::broadcastTransaction(const utxout& u_out) {
+    olc::net::message<CustomMsgTypes> msg;
+    msg.header.id = CustomMsgTypes::TxRecieved;
+    msg << w1.serialize_utxout(u_out);
+
+    // Broadcast the message using the base class function.
+    this->Broadcast(msg);
+}
+
+void Peer::broadcastDelegates() {
+    olc::net::message<CustomMsgTypes> msg;
+    msg.header.id = CustomMsgTypes::Delegate;
+    msg << currentDelegate;
+
+    // Broadcast the message using the base class function.
+    this->Broadcast(msg);
+}
+
+void Peer::broadcastDelegateUpdate(const std::string& delID) {
+    olc::net::message<CustomMsgTypes> msg;
+    msg.header.id = CustomMsgTypes::DelegateUpdate;
+    msg << delID;
+
+    // Broadcast the message using the base class function.
+    this->Broadcast(msg);
+}
+
+unsigned char* Peer::serializeStruct(const servID& sid) {
+    /* Calculate the total size needed: size of portNum + size of host string + size of host size */
+    size_t outSize = sizeof(uint16_t) + sizeof(size_t) + sid.host.size();
+
+    /* Allocate memory for the serialized data */
+    unsigned char* buffer = new unsigned char[outSize];
+    size_t offset = 0;
+
+    /* Copy the port number */
+    std::memcpy(buffer + offset, &sid.portNum, sizeof(uint16_t));
+    offset += sizeof(uint16_t);
+
+    /* Serialize the size of the host string */
+    size_t hostSize = sid.host.size();
+    std::memcpy(buffer + offset, &hostSize, sizeof(size_t));
+    offset += sizeof(size_t);
+
+    /* Copy the host string data */
+    std::memcpy(buffer + offset, sid.host.data(), hostSize);
+
+    return buffer;
+}
+
+servID Peer::deserializeStruct(const unsigned char* buffer) {
+    servID sid;
+    size_t offset = 0;
+
+    /* Deserialize the port number */
+    std::memcpy(&sid.portNum, buffer + offset, sizeof(uint16_t));
+    offset += sizeof(uint16_t);
+
+    /* Deserialize the size of the host string */
+    size_t hostSize;
+    std::memcpy(&hostSize, buffer + offset, sizeof(size_t));
+    offset += sizeof(size_t);
+
+    /* Resize the host string and copy the data */
+    sid.host.resize(hostSize);
+    std::memcpy(&sid.host[0], buffer + offset, hostSize); // Use &sid.host[0] for string data
+
+    return sid;
+}
+
+/* Serialization Methods */
+// serialize
+unsigned char* Peer::serializeWalletInfo(const walletInfo& info) {
+
+    /* Calculate the size required for serialization: */
+    size_t tSize = 0;
+
+    // Size of clientID (uint32_t), walladdr length (size_t), walladdr content, and public key length */
+    size_t clientSize = sizeof(size_t);
+    size_t addrSize = info.walladdr.size() * sizeof(char);
+    size_t pubKeySize = (info.pubKeyy != nullptr) ? i2d_PUBKEY(info.pubKeyy.get(), nullptr) : 0;
+    tSize += sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + clientSize + addrSize + pubKeySize;
+
+    /* Allocate buffer for serialization */
+    unsigned char* buffer = new unsigned char[tSize];
+    size_t offset = 0;
+
+    /* serialize utx-out */
+
+    /* Serialize tSize itself */
+    std::memcpy(buffer + offset, &tSize, sizeof(tSize));
+    offset += sizeof(tSize);
+
+    /* Serialize cID Size itself */
+    std::memcpy(buffer + offset, &clientSize, sizeof(size_t));
+    offset += sizeof(size_t);
+
+    /* Serialize addrSize Size itself */
+    std::memcpy(buffer + offset, &addrSize, sizeof(size_t));
+    offset += sizeof(size_t);
+
+    /* Serialize pubKeySize Size itself */
+    std::memcpy(buffer + offset, &pubKeySize, sizeof(size_t));
+    offset += sizeof(size_t);
+
+    /* Serialize clientID itself */
+    std::memcpy(buffer + offset, &info.clientID, clientSize);
+    offset += clientSize;
+
+    /* Serialize WallAddress itself */
+    std::memcpy(buffer + offset, &info.walladdr, addrSize);
+    offset += addrSize;
+
+    /* Serialize pubKeyy (EVP_PKEY*) */
+    if (info.pubKeyy != nullptr) {
+        unsigned char* tempPtr = buffer + offset;
+        i2d_PUBKEY(info.pubKeyy.get(), &tempPtr);
+        offset += pubKeySize;
+    }
+
+    return buffer;
+}
+
+/* Deserialize Wallet info */
+walletInfo Peer::deserializeWalletInfo(const unsigned char* buffer) {
+    walletInfo info;
+    size_t offset = 0;
+
+    /* Deserialize tSize (not used in this function, but read to advance the offset) */
+    size_t tSize;
+    std::memcpy(&tSize, buffer + offset, sizeof(size_t));
+    offset += sizeof(size_t);
+
+    /* Deserialize clientSize */
+    size_t clientSize;
+    std::memcpy(&clientSize, buffer + offset, sizeof(size_t));
+    offset += sizeof(size_t);
+
+    /* Deserialize addrSize */
+    size_t addrSize;
+    std::memcpy(&addrSize, buffer + offset, sizeof(size_t));
+    offset += sizeof(size_t);
+
+    /* Deserialize pubKeySize */
+    size_t pubKeySize;
+    std::memcpy(&pubKeySize, buffer + offset, sizeof(size_t));
+    offset += sizeof(size_t);
+
+    /* Deserialize clientID */
+    std::memcpy(&info.clientID, buffer + offset, clientSize);
+    offset += clientSize;
+
+    /* Deserialize WallAddress */
+    info.walladdr.resize(addrSize / sizeof(char));
+    std::memcpy(&info.walladdr[0], buffer + offset, addrSize);
+    offset += addrSize;
+
+    /* Deserialize pubKeyy (EVP_PKEY*) */
+    if (pubKeySize > 0) {
+        const unsigned char* tempPtr = buffer + offset;
+        EVP_PKEY* temp = d2i_PUBKEY(nullptr, &tempPtr, pubKeySize);
+        info.pubKeyy.reset(temp, EVP_PKEY_Deleter());
+        offset += pubKeySize;
+    }
+    else {
+        info.pubKeyy = nullptr;
+    }
+
+    return info;
+}
