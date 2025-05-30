@@ -111,6 +111,7 @@ public:
 	    }
 
 	    /* Calculate recievePkeys size */
+	    prkAmm = recievePkeys.size();
 	    for (const auto& pkey : recievePkeys) {
 	        int lenn = i2d_PUBKEY(pkey.get(), nullptr);
 	        rpkSize += lenn;
@@ -134,9 +135,11 @@ public:
 	    }
 
 	    /* Create Buffer */
-	    tSize = tSize + sendSize + txidSize + ammSize + spkSize + recAddSize + rpkSize + delSize + delIDSize + vQueSize;
-	    tSize = tSize + sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(size_t);
+	    tSize = tSize + sizeof(unsigned long long) + sizeof(double) + sizeof(unsigned short) + sizeof(float);
 	    tSize = tSize + sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(size_t);
+	    tSize = tSize + sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(size_t);
+	    tSize = tSize + sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(size_t);
+	    tSize = tSize + sendSize + txidSize + ammSize + spkSize + recAddSize + rpkSize + delSize + delIDSize + vQueSize;
 
 		return tSize;
 	}
