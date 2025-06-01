@@ -31,16 +31,16 @@ private:
 		const unsigned long long timestamp;
 
 		/* Vector unsigned int of binary data */
-		const std::vector<uint8_t> prevHash;
+		const std::vector<unsigned char> prevHash;
 
 		/* Version Control */
 		const float versionNum;//*
 
 		/* Merkle Root of transactions */
-		const std::vector<uint8_t> merkleRoot;
+		const std::vector<unsigned char> merkleRoot;
 
 		// Constructor to initialize all const members
-		Head(unsigned long long ts, std::vector<uint8_t> prev, float ver, std::vector<uint8_t> merkle)
+		Head(unsigned long long ts, std::vector<unsigned char> prev, float ver, std::vector<unsigned char> merkle)
 			: timestamp(ts), prevHash(std::move(prev)), versionNum(ver), merkleRoot(std::move(merkle)) {
 		}
 	};
@@ -51,11 +51,11 @@ private:
 	/* Current height, hash & Size of Block */
 	const unsigned int blockHeight;
 	const size_t blockSize;
-	const std::vector<uint8_t> currHash;
+	const std::vector<unsigned char> currHash;
 
 public:
 	/* Constructor Ran on Block Creation */
-	Block(const std::vector<transactions>& d, std::vector<uint8_t> prevHash, float versionNum, unsigned int blockHeight,
+	Block(const std::vector<transactions>& d, std::vector<unsigned char> prevHash, float versionNum, unsigned int blockHeight,
 		unsigned long long ts = setTimestamp(), Block* n = nullptr);
 
 	/* Copy Constructor */
@@ -78,17 +78,17 @@ public:
 	void display();
 
 	/* Merkle root of transactions */
-	std::vector<uint8_t> getMerkleRoot() const;
-	std::vector<uint8_t> MerkleRoot(const std::vector<transactions>& tx) const;
+	std::vector<unsigned char> getMerkleRoot() const;
+	std::vector<unsigned char> MerkleRoot(const std::vector<transactions>& tx) const;
 
 	/* Serialize method */
 	unsigned char* serialize() const;
 	Block* deserialize(const unsigned char* buffer) const;
 
 	/* Getters and Setters for Hashes */
-	std::vector<uint8_t> setCurrHash() const;
-	std::vector<uint8_t> getCurrHash() const;
-	std::vector<uint8_t> getPrevHash() const;
+	std::vector<unsigned char> setCurrHash() const;
+	std::vector<unsigned char> getCurrHash() const;
+	std::vector<unsigned char> getPrevHash() const;
 
 	/* Get transactions */
 	std::vector<transactions> getTxs() const;

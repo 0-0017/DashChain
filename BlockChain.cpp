@@ -39,15 +39,17 @@ void BlockChain::initial(Block* initial) {
 		transactions tx("", tra, tamm, 0.0, 0.0, 0.0, del, delID, votes);
 		txs.push_back(tx);
 		//Data To be Hashed */
-		std::string dataToHash =
-			"Genesis1:1; Thank you Jesus; Thank You God; A New creation => Your Creation";
-		unsigned char* data = util::toUnsignedChar(dataToHash);
-		size_t dataSize = dataToHash.size() * sizeof(char);
-		std::vector<uint8_t> GenHash = util::shaHash(data, dataSize);
-		Block* Genesis = new Block(txs, GenHash, version, height, util::TimeStamp());
-		first = Genesis;
-		currBlock = Genesis;
-		Genesis->next = nullptr;
+		std::string dataToHash = "Genesis1:1; Thank you Jesus; Thank You God; A New creation => Your Creation";
+		std::vector<unsigned char> genhash;
+		if (util::shaHash(dataToHash, genhash)) {
+			Block* Genesis = new Block(txs, genhash, version, height, util::TimeStamp());
+			first = Genesis;
+			currBlock = Genesis;
+			Genesis->next = nullptr;
+		}
+		else {
+			std::cerr << "BlockChain::initial(): Block could not be created" << std::endl;
+		}
 	}
 	else {
 		first = initial;

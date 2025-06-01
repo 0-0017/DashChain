@@ -63,95 +63,47 @@ EVP_PKEY_ptr Wallet::generateECDSAKeyPair() {
 }
 
 /* A function that takes a keypair and a message digest and signs it */
-unsigned char* Wallet::ecDoSign(const EVP_PKEY_ptr& keypair, const std::vector<uint8_t>& mesdgst) {
-    /* Method Variables */
-    unsigned char* sig = nullptr;
+bool Wallet::ecDoSign(const std::vector<unsigned char> &hash, std::vector<unsigned char> &signature) const {
+    EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
+    if (!mdctx) return false;
 
-    const unsigned char* md = mesdgst.data();
-    size_t mdlen = mesdgst.size();
-
-    EVP_MD_CTX* ctx = EVP_MD_CTX_new();
-    if (ctx == nullptr) {
-        std::cerr << "ctx creation failed\n";
-        return nullptr;
+    if (!EVP_DigestSignInit(mdctx, nullptr, EVP_sha3_512(), nullptr, keyPair.get())) {
+        EVP_MD_CTX_free(mdctx);
+        return false;
     }
 
-    if (EVP_DigestSignInit(ctx, nullptr, nullptr, nullptr, keypair.get()) <= 0) {
-        std::cerr << "sign_init Failed\n";
-        EVP_MD_CTX_free(ctx);
-        return nullptr;
+    size_t sig_len = 0;
+    if (!EVP_DigestSign(mdctx, nullptr, &sig_len, hash.data(), hash.size())) {
+        EVP_MD_CTX_free(mdctx);
+        return false;
     }
 
-    if (EVP_DigestSignUpdate(ctx, md, mdlen) <= 0) {
-        std::cerr << "sign_update Failed\n";
-        EVP_MD_CTX_free(ctx);
-        return nullptr;
+    signature.resize(sig_len);
+    if (EVP_DigestSign(mdctx, signature.data(), &sig_len, hash.data(), hash.size())) {
+        signature.resize(sig_len);
+        EVP_MD_CTX_free(mdctx);
+        return true;
     }
 
-    size_t siglen;
-    if (EVP_DigestSignFinal(ctx, nullptr, &siglen) <= 0) {
-        std::cerr << "sign_final Failed\n";
-        EVP_MD_CTX_free(ctx);
-        return nullptr;
-    }
-
-    sig = static_cast<unsigned char*>(OPENSSL_malloc(siglen));
-    if (sig == nullptr) {
-        std::cerr << "Memory allocation failed for sig\n";
-        EVP_MD_CTX_free(ctx);
-        return nullptr;
-    }
-
-    if (EVP_DigestSignFinal(ctx, sig, &siglen) <= 0) {
-        std::cerr << "sign_final Failed\n";
-        EVP_MD_CTX_free(ctx);
-        return nullptr;
-    }
-
-    EVP_MD_CTX_free(ctx);
-    return sig;
+    EVP_MD_CTX_free(mdctx);
+    return false;
 }
 
 
 
 /* A function that takes a keypair, a message digest, and a signature and verifies it */
-bool Wallet::ecDoVerify(const EVP_PKEY_ptr& pkey, const std::vector<uint8_t>& mesdgst, const std::vector<unsigned char>& signature) const {
-    /* Method Variables */
-    const unsigned char* md = mesdgst.data();
-    size_t mdlen = mesdgst.size();
-    const unsigned char* sig = signature.data();
-    size_t siglen = signature.size();
+bool Wallet::ecDoVerify(const EVP_PKEY_ptr& pubKey, const std::vector<unsigned char> &hash, const std::vector<unsigned char> &signature){
+    EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
+    if (!mdctx) return false;
 
-    /* Create a digest verify context */
-    EVP_MD_CTX* ctx = EVP_MD_CTX_new();
-    if (ctx == nullptr) {
-        std::cerr << "ctx creation failed\n";
+    if (!EVP_DigestVerifyInit(mdctx, nullptr, EVP_sha3_512(), nullptr, pubKey.get())) {
+        EVP_MD_CTX_free(mdctx);
         return false;
     }
 
-    /* Initialize the digest verify operation */
-    if (EVP_DigestVerifyInit(ctx, nullptr, nullptr, nullptr, pkey.get()) <= 0) {
-        std::cerr << "verify_init Failed\n";
-        EVP_MD_CTX_free(ctx);
-        return false;
-    }
-
-    /* Update the digest verify operation with the message digest */
-    if (EVP_DigestVerifyUpdate(ctx, md, mdlen) <= 0) {
-        std::cerr << "verify_update Failed\n";
-        EVP_MD_CTX_free(ctx);
-        return false;
-    }
-
-    /* Finalize the digest verify operation and get the verification result */
-    int ret = EVP_DigestVerifyFinal(ctx, sig, siglen);
-    std::cout << "Verified: " << ret << std::endl;
-
-    /* Clean up memory */
-    EVP_MD_CTX_free(ctx);
-
-    /* Return the verification result as a boolean */
-    return ret == 1;
+    bool result = EVP_DigestVerify(mdctx, signature.data(), signature.size(), hash.data(), hash.size()) == 1;
+    EVP_MD_CTX_free(mdctx);
+    return result;
 }
 
 EVP_PKEY_ptr Wallet::extract_public_key(){
@@ -179,42 +131,35 @@ EVP_PKEY_ptr Wallet::extract_public_key(){
     return temp;
 }
 
-std::string Wallet::genAddress() {
-    // Get DER size and create buffer
-    int len = i2d_PUBKEY(pubKeyP.get(), nullptr);
-    std::vector<unsigned char> keyBytes(len);
-    unsigned char* bufferStart = keyBytes.data();  // Save the start pointer
-    unsigned char* temp = bufferStart;  // Use temp for i2d_PUBKEY to advance
-    i2d_PUBKEY(pubKeyP.get(), &temp);
+std::string Wallet::genAddress() const {
+    // Get DER and create buffer
+    unsigned char* temp = nullptr;  // Use temp for i2d_PUBKEY to advance
+    int len = i2d_PUBKEY(pubKeyP.get(), &temp);
 
-    // Use the beginning of the DER encoding for hashing:
-    size_t derSize = keyBytes.size();  // which is len
-    // Get RIPEMD-160 digest size properly using EVP_MD_fetch
-    OSSL_LIB_CTX* libctx = nullptr;
-    EVP_MD* md = EVP_MD_fetch(libctx, "RIPEMD-160", nullptr);
-    if (!md) {
-        std::cerr << "EVP_MD_fetch failed for RIPEMD-160\n";
-        return "";
+    /* 512 SHA_HASH*/
+    std::string msg(reinterpret_cast<char*>(temp), len);
+    std::vector<unsigned char> md;
+    if (util::shaHash(msg, md)) {
+        std::vector<unsigned char> ripe;
+        if (util::ripemd(md, ripe)) {
+
+            /* Base 58 Encode */
+            const std::string output = util::base58_encode(ripe.data(), ripe.size());
+            std::string addr = "Ox17" + output;
+
+            /* Return Address */
+            std::cout << "Wallet Address: " << addr << std::endl;
+            return addr;
+        }
+        else {
+            std::cerr << "RIPEMD-320 computation failed!\n";
+        }
     }
-    size_t ripemdDigestSize = EVP_MD_size(md);
-    EVP_MD_free(md);
-
-    // IMPORTANT: Pass bufferStart (not temp) to ripemd()
-    unsigned char* ripemdHash = utility.ripemd(bufferStart, derSize);
-    if (!ripemdHash) {
-        return "";
+    else {
+        std::cerr << "SHA3-512 computation failed!\n";
     }
-    std::vector<uint8_t> publicKeyHash = utility.shaHash(ripemdHash, ripemdDigestSize);
-    // Free the memory allocated by ripemd() once used
-    OPENSSL_free(ripemdHash);
 
-    /* Step 3: Prepend version bytes and compute Base58 */
-    std::vector<uint8_t> extPubKeyHash = { 0x00, 0x17 };
-    extPubKeyHash.insert(extPubKeyHash.end(), publicKeyHash.begin(), publicKeyHash.end());
-
-    std::string addr = utility.base58_encode(extPubKeyHash.data(), extPubKeyHash.size());
-    std::cout << "Wallet Address: " << addr << std::endl;
-    return addr;
+    return "";
 }
 
 utxout Wallet::outUTXO(double feee, const std::vector<std::string>& rwa, const std::vector<double>& amm, const std::vector<std::string> &delegates,
@@ -238,28 +183,38 @@ utxout Wallet::outUTXO(double feee, const std::vector<std::string>& rwa, const s
     }
 
     /* Sign UTXO */
-    std::shared_ptr<unsigned char> utxoHash(utxo.serialize());
-    size_t dataSize = 0;
-    std::memcpy(&dataSize, utxoHash.get(), sizeof(size_t));
-    std::vector<uint8_t> utxoHashed = utility.shaHash(utxoHash.get(), dataSize);
-    unsigned char* utxoSignedHash = ecDoSign(keyPair, utxoHashed);
-
-    /* Setup tx & Signed Message for mempool */
     utxout out;
-    size_t testsz = 0;
-    unsigned char* testSer = utxo.serialize();
-    std::memcpy(&testsz, testSer, sizeof(size_t));
-    size_t utxo_size = utxo.getSize();
-    size_t sh_size = getSignSize(utxoHashed);
+    std::vector<unsigned char> hash;
+    std::vector<unsigned char> sig;
+    std::string msg = util::toString(utxo.serialize());
 
-    if (testsz == utxo_size) {
-        out.txSize = testsz;
-        out.shSize = sh_size;
-        out.utxo = std::shared_ptr<unsigned char>(testSer, std::default_delete<unsigned char[]>());
-        out.utxoSignedHash = std::shared_ptr<unsigned char>(utxoSignedHash, std::default_delete<unsigned char[]>());
+    if (util::shaHash(msg, hash)) {
+        if (ecDoSign(hash, sig)) {
+            /* Setup tx & Signed Message for mempool */
+            size_t testsz = 0;
+            unsigned char* testSer = utxo.serialize();
+            std::memcpy(&testsz, testSer, sizeof(size_t));
+            size_t ts_size = utxo.getSize();
+
+            if (testsz == ts_size) {
+                out.txSize = msg.size();
+                out.shSize = sig.size();
+                out.pkeySize = i2d_PUBKEY(pubKeyP.get(), nullptr);
+                out.utxo = msg;
+                out.utxoSignedHash = sig;
+                out.pubkey = pubKeyP;
+            }
+            else {
+                std::cout << "TX OUT SIZE INVALID\n";
+                return {};
+            }
+        }
+        else {
+            std::cerr << "Signature computation failed!\n";
+        }
     }
     else {
-        std::cout << "TX OUT SIZE INVALID\n";
+        std::cerr << "Hash computation failed!\n";
         return {};
     }
 
@@ -311,35 +266,35 @@ void Wallet::inUTXO(const transactions& txin) {
     setBalance();
 }
 
-bool Wallet::verifyTx(const utxout& out) {
+bool Wallet::verifyTx(const utxout& out) { //***************************
     /* Declare variables */
-    transactions utxo = transactions::deserialize(out.utxo.get());
-    EVP_PKEY_ptr sendpk = getPubKey(); //*****************************************************
+    transactions utxo = transactions::deserialize(util::toUnsignedChar(out.utxo));
+    std::vector<unsigned char> hash;
+    if (util::shaHash(out.utxo, hash)) {
+        /* Verify Hash */
+        if (ecDoVerify(out.pubkey, hash, out.utxoSignedHash)) {
+            /* Verify UTXO amount > zero */
+            double totalbal = 0.0;
+            std::vector<double> tempBal = utxo.getAmmount();
+            for (double amount : tempBal) {
+                totalbal += amount;
+            }
+            if (totalbal <= 0) {
+                std::cout << "UTXO amount is invalid (must be greater than 0)!\n";
+                return false;
+            }
 
-    /* Verify Hash */
-    std::shared_ptr<unsigned char> utxoHash(utxo.serialize());
-    size_t dataSize = 0;
-    std::memcpy(&dataSize, utxoHash.get(), sizeof(size_t));
-    std::vector<uint8_t> utxoHashed = utility.shaHash(utxoHash.get(), dataSize);
-    unsigned char* utxoSignedHash = ecDoSign(sendpk, utxoHashed);
-
-    if (std::memcmp(utxoSignedHash, out.utxoSignedHash.get(), out.shSize) != 0) {
-        std::cout << "UTXO INVALID!\n";
+            return true;
+        }
+        else {
+            std::cerr << "INVALID SIGNATURE\n";
+            return false;
+        }
+    }
+    else {
+        std::cerr << "Hash Failed\n";
         return false;
     }
-
-    /* Verify UTXO amount > zero */
-    double totalbal = 0.0;
-    std::vector<double> tempBal = utxo.getAmmount();
-    for (double amount : tempBal) {
-        totalbal += amount;
-    }
-    if (totalbal <= 0) {
-        std::cout << "UTXO amount is invalid (must be greater than 0)!\n";
-        return false;
-    }
-
-    return true;
 }
 
 void Wallet::listTxs() {
@@ -391,7 +346,12 @@ unsigned char* Wallet::serialize_utxout(const utxout& obj) const {
     /* Calculate sizes */
     size_t tSize = 0;
 
-    tSize += sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + obj.txSize + obj.shSize;
+    /* Calculate size and serialze public key */
+    unsigned char *buf = nullptr;
+    const int len = i2d_PUBKEY(obj.pubkey.get(), &buf);
+
+
+    tSize += sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(int) + obj.utxo.size() + obj.utxoSignedHash.size() + len;
 
     unsigned char* buffer = new unsigned char[tSize];
     size_t offset = 0;
@@ -403,20 +363,29 @@ unsigned char* Wallet::serialize_utxout(const utxout& obj) const {
     offset += sizeof(tSize);
 
     /* Serialize txSize itself */
-    std::memcpy(buffer + offset, &obj.txSize, sizeof(size_t));
+    size_t utxoSize = obj.utxo.size();
+    std::memcpy(buffer + offset, &utxoSize, sizeof(size_t));
     offset += sizeof(size_t);
 
     /* Serialize shSize itself */
-    std::memcpy(buffer + offset, &obj.shSize, sizeof(size_t));
+    size_t shSize = obj.utxoSignedHash.size();
+    std::memcpy(buffer + offset, &shSize, sizeof(size_t));
     offset += sizeof(size_t);
 
-    /* Serialize utxo itself */
-    std::memcpy(buffer + offset, obj.utxo.get(), obj.txSize);
-    offset += obj.txSize;
+    /* Serialize key length itself */
+    std::memcpy(buffer + offset, &len, sizeof(int));
+    offset += sizeof(int);
 
     /* Serialize utxo itself */
-    std::memcpy(buffer + offset, obj.utxoSignedHash.get(), obj.shSize);
-    offset += obj.shSize;
+    std::memcpy(buffer + offset, obj.utxo.data(), obj.utxo.size());
+    offset += obj.utxo.size();
+
+    /* Serialize signed hash itself */
+    std::memcpy(buffer + offset, obj.utxoSignedHash.data(), obj.utxoSignedHash.size());
+    offset += obj.utxoSignedHash.size();
+
+    /* Serialize public key itself */
+    std::memcpy(buffer + offset, buf, len);
 
     return buffer;
 }
@@ -438,15 +407,22 @@ utxout Wallet::deserialize_utxout(const unsigned char* buffer) const {
     std::memcpy(&obj.shSize, buffer + offset, sizeof(size_t));
     offset += sizeof(size_t);
 
+    /* Deserialize public key size */
+    std::memcpy(&obj.pkeySize, buffer + offset, sizeof(int));
+    offset += sizeof(int);
+
     /* Deserialize utxo */
-    obj.utxo = std::shared_ptr<unsigned char>(new unsigned char[obj.txSize], std::default_delete<unsigned char[]>());
-    std::memcpy(obj.utxo.get(), buffer + offset, obj.txSize);
+    obj.utxo.assign(reinterpret_cast<const char*>(buffer + offset), obj.txSize);
     offset += obj.txSize;
 
     /* Deserialize utxoSignedHash */
-    obj.utxoSignedHash = std::shared_ptr<unsigned char>(new unsigned char[obj.shSize], std::default_delete<unsigned char[]>());
-    std::memcpy(obj.utxoSignedHash.get(), buffer + offset, obj.shSize);
+    obj.utxoSignedHash.assign(buffer + offset, buffer + offset + obj.shSize);
     offset += obj.shSize;
+
+    /* Deserialize Public Key */
+    const unsigned char* pk = buffer + offset;
+    EVP_PKEY* raw_key = d2i_PUBKEY(nullptr, &pk, obj.pkeySize);
+    obj.pubkey = EVP_PKEY_ptr(raw_key, EVP_PKEY_Deleter());
 
     return obj;
 }

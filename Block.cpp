@@ -7,7 +7,7 @@
 using namespace std;
 
 
-Block::Block(const std::vector<transactions>& d, std::vector<uint8_t> prevHash, float versionNum, unsigned int blockHeight, unsigned long long ts, Block* n)
+Block::Block(const std::vector<transactions>& d, std::vector<unsigned char> prevHash, float versionNum, unsigned int blockHeight, unsigned long long ts, Block* n)
     : data(d),
     head(ts, std::move(prevHash), versionNum, std::move(MerkleRoot(data))),
     blockHeight(blockHeight),
@@ -33,44 +33,47 @@ float Block::getVersion() const {
 
 /* Merkle root of transactions */
 
-std::vector<uint8_t> Block::MerkleRoot(const std::vector<transactions>& tx) const {
+std::vector<unsigned char> Block::MerkleRoot(const std::vector<transactions>& tx) const {
     /* Compute hashes for each transaction */
-    std::vector<std::vector<uint8_t>> txHash;
+    std::vector<std::vector<unsigned char>> txHash;
     for (const auto& elem : tx) {
-        unsigned char* data = nullptr;
-        data = elem.serialize();
-        size_t dataSize = 0;
-        std::memcpy(&dataSize, data, sizeof(size_t));
-        txHash.push_back(util::shaHash(data, dataSize));
-        delete[] data; // Free the allocated memory
-        data = nullptr;
+        std::string txHashStr(reinterpret_cast<char*>(elem.serialize()));
+        if (std::vector<unsigned char> hash; util::shaHash(txHashStr, hash)) {
+            txHash.emplace_back(std::move(hash));
+        }
+        else {
+            std::cerr << "Failed to hash tx" << std::endl;
+            return {};
+        }
     }
 
     /* Ensure even number of hashes */
     if (txHash.size() % 2 != 0) {
-        txHash.push_back(txHash.back());
+        txHash.emplace_back(txHash.back());
     }
 
     /* Compute the Merkle root */
     while (txHash.size() > 1) {
-        std::vector<std::vector<uint8_t>> newLevel;
+        std::vector<std::vector<unsigned char>> newLevel;
         for (size_t i = 0; i < txHash.size(); i += 2) {
-            std::vector<uint8_t> combined(txHash[i].begin(), txHash[i].end());
-            combined.insert(combined.end(), txHash[i + 1].begin(), txHash[i + 1].end());
-            unsigned char* combinedData = nullptr;
-            combinedData = util::toUnsignedChar(combined);
-            size_t combinedSize = combined.size();
-            newLevel.push_back(util::shaHash(combinedData, combinedSize));
-            delete[] combinedData; // Free the allocated memory
-            combinedData = nullptr;
+            // Convert hashes to a single string for hashing
+            std::string combinedHashStr(txHash[i].begin(), txHash[i].end());
+            combinedHashStr.append(txHash[i + 1].begin(), txHash[i + 1].end());
+
+            if (std::vector<unsigned char> newHash; util::shaHash(combinedHashStr, newHash)) {
+                newLevel.emplace_back(std::move(newHash));
+            } else {
+                std::cerr << "Failed to hash combined data" << std::endl;
+                return {};
+            }
         }
         txHash = newLevel;
     }
 
-    return txHash.front();
+    return txHash.front(); // Final Merkle Root
 }
 
-std::vector<uint8_t> Block::getMerkleRoot() const {
+std::vector<unsigned char> Block::getMerkleRoot() const {
     return head.merkleRoot;
 }
 
@@ -86,7 +89,7 @@ unsigned int Block::getBlockHeight() const {
     return blockHeight;
 }
 
-std::vector<uint8_t> Block::setCurrHash() const{
+std::vector<unsigned char> Block::setCurrHash() const{
 
     /* Block data used for current hash:clear
      * Data & Timestamp
@@ -105,9 +108,9 @@ std::vector<uint8_t> Block::setCurrHash() const{
     }
 
     tSize += sizeof(unsigned long long) + sizeof(float) + sizeof(unsigned int) + sizeof(size_t);
-    const std::vector<uint8_t> t_hash = getPrevHash();
-    const std::vector<uint8_t> t_merkle = getMerkleRoot();
-    tSize += (t_hash.size() * sizeof(uint8_t)) + (t_merkle.size() * sizeof(uint8_t));
+    const std::vector<unsigned char> t_hash = getPrevHash();
+    const std::vector<unsigned char> t_merkle = getMerkleRoot();
+    tSize += (t_hash.size() * sizeof(unsigned char)) + (t_merkle.size() * sizeof(unsigned char));
 
     /* Add Each Transaction to Hash Data */
     unsigned char* h_data = new unsigned char[tSize];
@@ -143,16 +146,24 @@ std::vector<uint8_t> Block::setCurrHash() const{
     const size_t t_bsize = getSize();
     std::memcpy(h_data + offset2, &t_bsize, sizeof(size_t));
 
-    // tdata remains allocated
-    return util::shaHash(h_data, tSize);
+    // tdata remains
+    std::string msg(reinterpret_cast<char*>(h_data));
+    std::vector<unsigned char> hash;
+    if (util::shaHash(msg, hash)) {
+        return hash;
+    }
+    else {
+        std::cerr << "Failed to hash block" << std::endl;
+        return {};
+    }
 }
 
-std::vector<uint8_t> Block::getCurrHash() const {
+std::vector<unsigned char> Block::getCurrHash() const {
     return currHash;
 }
 
 
-std::vector<uint8_t> Block::getPrevHash() const {
+std::vector<unsigned char> Block::getPrevHash() const {
     return head.prevHash;
 }
 
@@ -201,9 +212,9 @@ unsigned char* Block::serialize() const {
     size_t phNum = head.prevHash.size();
     size_t chNum = currHash.size();
     size_t mrNum = head.merkleRoot.size();
-    size_t phSize = phNum * sizeof(uint8_t);
-    size_t chSize = chNum * sizeof(uint8_t);
-    size_t mrSize = mrNum * sizeof(uint8_t);
+    size_t phSize = phNum * sizeof(unsigned char);
+    size_t chSize = chNum * sizeof(unsigned char);
+    size_t mrSize = mrNum * sizeof(unsigned char);
 
     // Calculate serialized transactions
     size_t dSize = 0;
@@ -371,15 +382,15 @@ Block* Block::deserialize(const unsigned char* buffer) const {
     offset += sizeof(blockSize);
 
     // Read prevHash, currHash, merkleRoot
-    std::vector<uint8_t> prevHash(phSize);
+    std::vector<unsigned char> prevHash(phSize);
     std::memcpy(prevHash.data(), buffer + offset, phSize);
     offset += phSize;
 
-    std::vector<uint8_t> currHash(chSize);
+    std::vector<unsigned char> currHash(chSize);
     std::memcpy(currHash.data(), buffer + offset, chSize);
     offset += chSize;
 
-    std::vector<uint8_t> merkleRoot(mrSize);
+    std::vector<unsigned char> merkleRoot(mrSize);
     std::memcpy(merkleRoot.data(), buffer + offset, mrSize);
     offset += mrSize;
 
@@ -396,8 +407,8 @@ Block* Block::deserialize(const unsigned char* buffer) const {
 
     /* Current Hash & Merkle Root Equality Check */
     size_t newBlockSiz = block->getSize();
-    std::vector<uint8_t> newCurrHs = block->getCurrHash();
-    std::vector<uint8_t> newMerk = block->getMerkleRoot();
+    std::vector<unsigned char> newCurrHs = block->getCurrHash();
+    std::vector<unsigned char> newMerk = block->getMerkleRoot();
 
     if (newMerk == merkleRoot && newCurrHs == currHash) {
         if (newBlockSiz == blockSize) {

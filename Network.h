@@ -149,7 +149,7 @@ protected:
 				unsigned char* body;
 				std::memcpy(&body, msg.body.data(), msg.body.size());
 				uin = w1.deserialize_utxout(body);
-				transactions tx = tx.deserialize(uin.utxo.get());
+				transactions tx = tx.deserialize(util::toUnsignedChar(uin.utxo));
 
 
 				/* Verify if the transaction is valid */

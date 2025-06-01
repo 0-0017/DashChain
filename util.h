@@ -54,8 +54,8 @@ public:
 
 	/* Time Stamp Function, Sets current timestamp */
 	static unsigned long long TimeStamp();
-	static std::vector<uint8_t> shaHash(const unsigned char* data, size_t dataSize);
-	static unsigned char* ripemd(const unsigned char* pubKey, size_t ucSize);
+	static bool shaHash(const std::string &message, std::vector<unsigned char> &hash);
+	static bool ripemd(const std::vector<unsigned char> &input, std::vector<unsigned char> &hash);
 
 
 	/* To String Method Using Templates for Generic Typing */
@@ -88,8 +88,8 @@ public:
 
 		/* Case 1: Handle std::string */
 		if constexpr (std::is_same_v<T, std::string>) {
-			result = new unsigned char[value.length() + 1];
-			std::memcpy(result, value.c_str(), value.length() + 1);
+			result = new unsigned char[value.length()];
+			std::memcpy(result, value.c_str(), value.length());
 		}
 		/* Case 2: Handle std::vector<uint8_t> */
 		else if constexpr (std::is_same_v <T, std::vector<uint8_t>> || std::is_same_v <T, std::vector<unsigned char>>) {
@@ -102,8 +102,8 @@ public:
 			for (const auto& elem : value) {
 				jsonStr += elem.dump(); // Convert JSON to string and concatenate
 			}
-			result = new unsigned char[jsonStr.length() + 1];
-			std::memcpy(result, jsonStr.c_str(), jsonStr.length() + 1); // Copy to unsigned char*
+			result = new unsigned char[jsonStr.length()];
+			std::memcpy(result, jsonStr.c_str(), jsonStr.length()); // Copy to unsigned char*
 		}
 		/* Case 4: Handle unsigned long-long */
 		else if constexpr (std::is_same_v<T, unsigned long long>) {

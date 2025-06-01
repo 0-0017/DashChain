@@ -21,122 +21,36 @@ unsigned long long util::TimeStamp(){
 #include <iostream>
 #include <vector>
 
-std::vector<uint8_t> util::shaHash(const unsigned char* data, size_t dataSize) {
-    /* Viability Test*/
-    if (!data || dataSize == 0) {
-        std::cerr << "Invalid input to SHA hashing\n";
-        return {};
-    }
+bool util::shaHash(const std::string &message, std::vector<unsigned char> &hash) {
+    hash.resize(SHA512_DIGEST_LENGTH);
+    EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
+    if (!mdctx) return false;
 
-    // Fetch the optimized SHA-2 digest algorithm
-    OSSL_LIB_CTX* libctx = nullptr;
-    const char* algorithmName = "SHA-256";
-    EVP_MD* md = EVP_MD_fetch(libctx, algorithmName, nullptr);
-    if (!md) {
-        std::cerr << "EVP_MD_fetch failed for algorithm: " << algorithmName << "\n";
-        return {};
-    }
+    if (EVP_DigestInit_ex(mdctx, EVP_sha3_512(), nullptr) &&
+        EVP_DigestUpdate(mdctx, message.data(), message.size()) &&
+        EVP_DigestFinal_ex(mdctx, hash.data(), nullptr)) {
+        EVP_MD_CTX_free(mdctx);
+        return true;
+        }
 
-    // Create a digest context
-    std::vector<uint8_t> digest(EVP_MD_size(md));
-    unsigned int digestLength = EVP_MD_size(md);
-    EVP_MD_CTX* ctx = EVP_MD_CTX_new();
-    if (!ctx) {
-        std::cerr << "Failed to create EVP_MD_CTX\n";
-        EVP_MD_free(md);
-        return {};
-    }
-
-    // Initialize Digest Context
-    if (EVP_DigestInit_ex(ctx, md, nullptr) != 1) {
-        std::cerr << "SHA Digest initialization failed\n";
-        goto cleanup;
-    }
-
-    // Update Digest Context with input data
-    if (EVP_DigestUpdate(ctx, data, dataSize) != 1) {
-        std::cerr << "SHA Digest update failed\n";
-        goto cleanup;
-    }
-
-    // Finalize the digest and retrieve the hash output
-    if (EVP_DigestFinal_ex(ctx, digest.data(), &digestLength) != 1) {
-        std::cerr << "SHA Digest finalization failed\n";
-        goto cleanup;
-    }
-
-    // Cleanup
-    EVP_MD_CTX_free(ctx);
-    EVP_MD_free(md);
-    return digest;
-
-cleanup:
-    EVP_MD_CTX_free(ctx);
-    EVP_MD_free(md);
-    return {};
+    EVP_MD_CTX_free(mdctx);
+    return false;
 }
 
-unsigned char* util::ripemd(const unsigned char* pubKey, size_t ucSize){
-    if (!pubKey || ucSize == 0) {
-        std::cerr << "Invalid input to RIPEMD-160\n";
-        return nullptr;
-    }
+bool util::ripemd(const std::vector<unsigned char> &input, std::vector<unsigned char> &hash){
+    hash.resize(RIPEMD160_DIGEST_LENGTH * 2); // RIPEMD-320 is twice the length of RIPEMD-160
+    EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
+    if (!mdctx) return false;
 
-    // Fetch the optimized RIPEMD-160 digest algorithm
-    OSSL_LIB_CTX* libctx = nullptr;
-    EVP_MD* md = EVP_MD_fetch(libctx, "RIPEMD-160", nullptr);
-    if (!md) {
-        std::cerr << "EVP_MD_fetch for RIPEMD-160 failed\n";
-        return nullptr;
-    }
+    if (EVP_DigestInit_ex(mdctx, EVP_ripemd160(), nullptr) && // OpenSSL uses RIPEMD-160 alias
+        EVP_DigestUpdate(mdctx, input.data(), input.size()) &&
+        EVP_DigestFinal_ex(mdctx, hash.data(), nullptr)) {
+        EVP_MD_CTX_free(mdctx);
+        return true;
+        }
 
-    // Allocate buffer for digest output
-    size_t digestSize = EVP_MD_size(md);
-    unsigned char* hash = static_cast<unsigned char*>(OPENSSL_malloc(digestSize));
-    if (!hash) {
-        std::cerr << "Memory allocation for RIPEMD hash failed\n";
-        EVP_MD_free(md);
-        return nullptr;
-    }
-
-    // Create a digest context
-    EVP_MD_CTX* ctx = EVP_MD_CTX_new();
-    if (!ctx) {
-        std::cerr << "EVP_MD_CTX_new failed\n";
-        OPENSSL_free(hash);
-        EVP_MD_free(md);
-        return nullptr;
-    }
-
-    // Initialize Digest Context for RIPEMD-160
-    if (EVP_DigestInit_ex2(ctx, md, nullptr) != 1) {
-        std::cerr << "RIPEMD-160 Digest initialization failed\n";
-        goto cleanup;
-    }
-
-    // Update Digest Context with input data
-    if (EVP_DigestUpdate(ctx, pubKey, ucSize) != 1) {
-        std::cerr << "RIPEMD-160 Digest update failed\n";
-        goto cleanup;
-    }
-
-    // Finalize and retrieve the hash output
-    if (EVP_DigestFinal_ex(ctx, hash, nullptr) != 1) {
-        std::cerr << "RIPEMD-160 Digest finalization failed\n";
-        goto cleanup;
-    }
-
-    // Cleanup
-    EVP_MD_CTX_free(ctx);
-    EVP_MD_free(md);
-    return hash;
-
-cleanup:
-    EVP_MD_CTX_free(ctx);
-    EVP_MD_free(md);
-    OPENSSL_free(hash);
-    return nullptr;
-
+    EVP_MD_CTX_free(mdctx);
+    return false;
 }
 
 std::string util::genRandNum(){
