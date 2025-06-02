@@ -49,22 +49,52 @@ std::string Consensus::genDelegateID(){
         else if (random_number < 100000) {
             random = "00000" + util::toString(random_number);
         }
+        else if (random_number < 1000000) {
+            random = "0000" + util::toString(random_number);
+        }
+        else if (random_number < 10000000) {
+            random = "000" + util::toString(random_number);
+        }
+        else if (random_number < 100000000) {
+            random = "00" + util::toString(random_number);
+        }
+        else if (random_number < 1000000000) {
+            random = "0" + util::toString(random_number);
+        }
+        else {
+            random = util::toString(random_number);
+        }
 
         /* Achieve Uniformity For Second Random Number */
         if (random_numberA < 10) {
-            random = "000000000" + util::toString(random_number);
+            randomA = "000000000" + util::toString(random_number);
         }
-        else if (random_numberA < 100) {
-            random = "00000000" + util::toString(random_number);
+        else if (random_number < 100) {
+            randomA = "00000000" + util::toString(random_number);
         }
-        else if (random_numberA < 1000) {
-            random = "0000000" + util::toString(random_number);
+        else if (random_number < 1000) {
+            randomA = "0000000" + util::toString(random_number);
         }
-        else if (random_numberA < 10000) {
-            random = "000000" + util::toString(random_number);
+        else if (random_number < 10000) {
+            randomA = "000000" + util::toString(random_number);
         }
-        else if (random_numberA < 100000) {
-            random = "00000" + util::toString(random_number);
+        else if (random_number < 100000) {
+            randomA = "00000" + util::toString(random_number);
+        }
+        else if (random_number < 1000000) {
+            randomA = "0000" + util::toString(random_number);
+        }
+        else if (random_number < 10000000) {
+            randomA = "000" + util::toString(random_number);
+        }
+        else if (random_number < 100000000) {
+            randomA = "00" + util::toString(random_number);
+        }
+        else if (random_number < 1000000000) {
+            randomA = "0" + util::toString(random_number);
+        }
+        else {
+            randomA = util::toString(random_number);
         }
 
         random += randomA;
@@ -99,8 +129,10 @@ std::tuple<bool, std::string> Consensus::requestDelegate(const double balance) {
         delegates.push_back(id);
         return {true, id};
     }
-    std::cout << "Peer Already Confirmed Delegate || Balance Too Low!\n";
-    return {false, ""};
+    else {
+        std::cout << "Peer Already Confirmed Delegate || Balance Too Low!\n";
+        return {false, ""};
+    }
 }
 
 void Consensus::updatedVotes(const std::vector<std::tuple<std::string, std::string, float>>& votes) {
@@ -194,7 +226,7 @@ void Consensus::updateDelegates() {
             }
             else {
                 auto& entry = votesQueue[first_Occur[key]];
-                std::get<2>(entry) += decayFactor;
+                std::get<2>(entry) *= decayFactor;
             }
         }
 
@@ -206,7 +238,8 @@ void Consensus::updateDelegates() {
         /* Create Helper Vector for top voted delegates*/
         if (votesQueue.size() > maxDelegates) {
             /* votes in queue surpasses maximum delegates*/
-            std::vector<std::string> topDelegates(maxDelegates);
+            std::vector<std::string> topDelegates;
+            topDelegates.reserve(maxDelegates);
             for (unsigned short i = 0; i < maxDelegates; i++) {
                 topDelegates.emplace_back(std::get<1>(votesQueue[i]));
             }
@@ -226,7 +259,8 @@ void Consensus::updateDelegates() {
         }
         else {
             /* votes in queue <= maximum delegates*/
-            std::vector<std::string> topDelegates(votesQueue.size());
+            std::vector<std::string> topDelegates;
+            topDelegates.reserve(votesQueue.size());
             for (unsigned short i = 0; i < votesQueue.size(); i++) {
                 topDelegates.emplace_back(std::get<1>(votesQueue[i]));
             }

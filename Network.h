@@ -252,17 +252,9 @@ protected:
 					unsigned char* body;
 					std::memcpy(&body, msg.body.data(), msg.body.size());
 					Block* nb = chain->getCurrBlock()->deserialize(body);
-					if (chain->verifyBlock(nb)) {
-						chain->getCurrBlock()->next = nb;
-						nb->next = nullptr;
-						chain->updateChnSlot();
-						chain->setHeight();
-						chain->setVersion(nb->getVersion());
-						verifyMempool();
-					}
-					else {
-						std::cout << "Invalid block inputs or outputs!\n";
-					}
+					chain->GenerateBlock(nb->getData(), nb);
+					chain->setVersion(nb->getVersion());
+					verifyMempool();
 				}
 			}
 			break;
@@ -327,7 +319,9 @@ protected:
 	}
 private:
 	/* Variable */
-	std::mutex mtx;  // Shared mutex
+	std::mutex mtxA;  // Shared mutex for messages
+	std::mutex mtxB;  // Shared mutex for blocks
+	std::mutex mtxC;  // Shared mutex consensus
 
 
 public:

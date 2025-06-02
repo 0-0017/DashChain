@@ -69,7 +69,9 @@ void BlockChain::GenerateBlock(const std::vector<transactions>& d, Block* b) {
 		if (verifyBlock(newBlk)) {
 			preBlk->next = newBlk;
 			currBlock = newBlk;
+			currBlock->next = nullptr;
 			setHeight();
+			updateChnSlot();
 		}
 		else {
 			std::cout << "Block Cannot Be Verified\n";
@@ -82,7 +84,9 @@ void BlockChain::GenerateBlock(const std::vector<transactions>& d, Block* b) {
 		if (verifyBlock(b)) {
 			preBlk->next = b;
 			currBlock = b;
+			currBlock->next = nullptr;
 			setHeight();
+			updateChnSlot();
 		}
 
 	}

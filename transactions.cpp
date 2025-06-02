@@ -79,24 +79,53 @@ std::string transactions::setTxid(){
     else if (random_number < 100000) {
         random = "00000" + util::toString(random_number);
     }
+    else if (random_number < 1000000) {
+        random = "0000" + util::toString(random_number);
+    }
+    else if (random_number < 10000000) {
+        random = "000" + util::toString(random_number);
+    }
+    else if (random_number < 100000000) {
+        random = "00" + util::toString(random_number);
+    }
+    else if (random_number < 1000000000) {
+        random = "0" + util::toString(random_number);
+    }
+    else {
+        random = util::toString(random_number);
+    }
 
     /* Achieve Uniformity For Second Random Number */
     if (random_numberA < 10) {
-        random = "000000000" + util::toString(random_number);
+        randomA = "000000000" + util::toString(random_number);
     }
-    else if (random_numberA < 100) {
-        random = "00000000" + util::toString(random_number);
+    else if (random_number < 100) {
+        randomA = "00000000" + util::toString(random_number);
     }
-    else if (random_numberA < 1000) {
-        random = "0000000" + util::toString(random_number);
+    else if (random_number < 1000) {
+        randomA = "0000000" + util::toString(random_number);
     }
-    else if (random_numberA < 10000) {
-        random = "000000" + util::toString(random_number);
+    else if (random_number < 10000) {
+        randomA = "000000" + util::toString(random_number);
     }
-    else if (random_numberA < 100000) {
-        random = "00000" + util::toString(random_number);
+    else if (random_number < 100000) {
+        randomA = "00000" + util::toString(random_number);
     }
-
+    else if (random_number < 1000000) {
+        randomA = "0000" + util::toString(random_number);
+    }
+    else if (random_number < 10000000) {
+        randomA = "000" + util::toString(random_number);
+    }
+    else if (random_number < 100000000) {
+        randomA = "00" + util::toString(random_number);
+    }
+    else if (random_number < 1000000000) {
+        randomA = "0" + util::toString(random_number);
+    }
+    else {
+        randomA = util::toString(random_number);
+    }
 
     random += randomA;
     std::string tx_id = ("0X0017" + random + util::toString(util::TimeStamp()));

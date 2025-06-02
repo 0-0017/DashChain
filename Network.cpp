@@ -36,13 +36,12 @@ void Peer::serverOnStart(Peer& server) {
                 }
             }
 
-            std::tuple<std::string, std::string, float> initialVote(w1.getWalletAddr(), delegateID, 1);
+            std::tuple<std::string, std::string, float> initialVote(w1.getWalletAddr(), delegateID, 0);
             std::vector<std::tuple<std::string, std::string, float>> iv_Vector;
             iv_Vector.emplace_back(initialVote);
             vote(iv_Vector);
             consensus.updateDelegates();
             consensus.setVotingPeriod(3600);
-            currentDelegate = consensus.getCurrentDelegate();
 
             /* Server Threads */
             tMsg = std::thread(&Peer::msgLoop, this, std::ref(server));
@@ -79,7 +78,7 @@ void Peer::msgLoop(Peer& server) {
     while (true)
     {
         /* Lock mutex for the update operation */
-        std::lock_guard<std::mutex> lock(mtx);
+        std::lock_guard<std::mutex> lock(mtxA);
         server.Update(-1, true);  // Call server update in a loop
     }
 }
@@ -88,7 +87,7 @@ void Peer::blkLoop(Peer& server) {
     while (true)
     {
         /* Lock mutex for the update operation */
-        std::lock_guard<std::mutex> lock(mtx);
+        std::lock_guard<std::mutex> lock(mtxB);
         unsigned long long timestamp = util::TimeStamp();
 
         if ((timestamp - chain->getCurrBlock()->getTimestamp()) >= 15) {
@@ -103,7 +102,7 @@ void Peer::blkLoop(Peer& server) {
 void Peer::cnsLoop(Peer& server) {
     while (true) {
         /* Lock mutex for the update operation */
-        std::lock_guard<std::mutex> lock(mtx);
+        std::lock_guard<std::mutex> lock(mtxC);
         consensus.updateDelegates();
     }
 }
