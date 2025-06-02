@@ -60,9 +60,10 @@ std::string transactions::setTxid(){
 
     /* Generate a random number */
     const unsigned int random_number = distrib(gen);
-    std::string random;
+    const unsigned int random_numberA = distrib(gen);
+    std::string random, randomA;
 
-    /* Achieve Uniformity */
+    /* Achieve Uniformity For First Random Number */
     if (random_number < 10) {
         random = "000000000" + util::toString(random_number);
     }
@@ -79,6 +80,25 @@ std::string transactions::setTxid(){
         random = "00000" + util::toString(random_number);
     }
 
+    /* Achieve Uniformity For Second Random Number */
+    if (random_numberA < 10) {
+        random = "000000000" + util::toString(random_number);
+    }
+    else if (random_numberA < 100) {
+        random = "00000000" + util::toString(random_number);
+    }
+    else if (random_numberA < 1000) {
+        random = "0000000" + util::toString(random_number);
+    }
+    else if (random_numberA < 10000) {
+        random = "000000" + util::toString(random_number);
+    }
+    else if (random_numberA < 100000) {
+        random = "00000" + util::toString(random_number);
+    }
+
+
+    random += randomA;
     std::string tx_id = ("0X0017" + random + util::toString(util::TimeStamp()));
     return tx_id;
 }
@@ -120,26 +140,25 @@ std::vector<std::tuple<std::string, std::string, float>> transactions::getVotes(
 }
 
 bool transactions::inputsValid() const {
-    if (timestamp == 0 || locktime == 0 || version == 0) {
+    if (timestamp == 0 || locktime == 0 || version == 0 || txid.empty() || sendAddr.empty()) {
         return false;
-    }
-
-    for (size_t i = 0; i < ammount.size(); i++) {
-        if (ammount[i] == 0) {
-            return false;
-        }
     }
 
     return true; // Return only after checking all values
 }
 
 bool transactions::outputsValid() const {
-    if (!recieveAddr.empty()) {
-        return true;
-    }
-    else {
+    if (recieveAddr.empty()) {
         return false;
     }
+
+    for (const double i : ammount) {
+        if (i == 0) {
+            return false;
+        }
+    }
+
+    return true; // Return only after checking all values
 }
 
 double transactions::totalAmm() const {

@@ -134,7 +134,6 @@ public:
 private:
 	/* Variables */
 	static util ut;
-	EVP_PKEY_ptr pubKey;
 	const std::vector<std::string> delegates;
 	const std::vector<std::string> delegateID;
 	const std::vector<std::tuple<std::string, std::string, float>> votesQueue;

@@ -29,7 +29,7 @@ void Peer::serverOnStart(Peer& server) {
                 std::tuple<bool, std::string> ret = consensus.requestDelegate(w1.getBalance());
                 if (get<0>(ret) == true) {
                     delegateID = get<1>(ret);
-                    broadcastDelegateUpdate(delegateID);
+                    broadcastDelegateID(delegateID);
                 }
                 else {
                     std::cerr << "Failed to request delegate!\n";
@@ -39,14 +39,18 @@ void Peer::serverOnStart(Peer& server) {
             std::tuple<std::string, std::string, float> initialVote(w1.getWalletAddr(), delegateID, 1);
             std::vector<std::tuple<std::string, std::string, float>> iv_Vector;
             iv_Vector.emplace_back(initialVote);
-            consensus.updatedVotes(iv_Vector);
+            vote(iv_Vector);
             consensus.updateDelegates();
             consensus.setVotingPeriod(3600);
             currentDelegate = consensus.getCurrentDelegate();
 
-            /* Update Loops */
-            //up-loop = std::thread(&Server::upLoop, this, std::ref(server));
-            //up-loop.detach();
+            /* Server Threads */
+            tMsg = std::thread(&Peer::msgLoop, this, std::ref(server));
+            tBlk = std::thread(&Peer::blkLoop, this, std::ref(server));
+            tCns = std::thread(&Peer::cnsLoop, this, std::ref(server));
+            tMsg.detach();
+            tBlk.detach();
+            tCns.detach();
 
         }
         else
@@ -60,34 +64,47 @@ void Peer::serverOnStart(Peer& server) {
             msg << serializeStruct(serverID);
             SendToPeer(m_connections.front(), msg);
 
-            /* Update Loop */
-            //up-loop = std::thread(&Server::upLoop, this, std::ref(server));
-            //up-loop.detach();
+            /* Server Threads */
+            tMsg = std::thread(&Peer::msgLoop, this, std::ref(server));
+            tBlk = std::thread(&Peer::blkLoop, this, std::ref(server));
+            tCns = std::thread(&Peer::cnsLoop, this, std::ref(server));
+            tMsg.detach();
+            tBlk.detach();
+            tCns.detach();
         }
     }
 }
 
-/* Update loop keeps server busy listening for connections */
-void Peer::upLoop(Peer& server) {
-    /* update loop */
+void Peer::msgLoop(Peer& server) {
     while (true)
     {
         /* Lock mutex for the update operation */
         std::lock_guard<std::mutex> lock(mtx);
-        updateSlot();
-        updateWallets();
         server.Update(-1, true);  // Call server update in a loop
-
-        //only initial updates slot
-        //if(serverID.host == )
     }
 }
 
-void Peer::updateD_POS() {
+void Peer::blkLoop(Peer& server) {
+    while (true)
+    {
+        /* Lock mutex for the update operation */
+        std::lock_guard<std::mutex> lock(mtx);
+        unsigned long long timestamp = util::TimeStamp();
+
+        if ((timestamp - chain->getCurrBlock()->getTimestamp()) >= 15) {
+            currentDelegate = consensus.getCurrentDelegate();
+            if (currentDelegate == delegateID) {
+                blkRqMethod();
+            }
+        }
+    }
+}
+
+void Peer::cnsLoop(Peer& server) {
     while (true) {
+        /* Lock mutex for the update operation */
+        std::lock_guard<std::mutex> lock(mtx);
         consensus.updateDelegates();
-        currentDelegate = consensus.getCurrentDelegate();
-        broadcastDelegates();
     }
 }
 
@@ -164,38 +181,27 @@ void Peer::setServerID() {
 }
 
 void Peer::updateSlot() {
-    const unsigned long long timeNow = util::TimeStamp();
-
-    if (const unsigned long long lastTimestamp = chain->getTimestamp(); timeNow - lastTimestamp >= sPeriod) {
-        if (delegateID == currentDelegate) {
-            chain->updateChnSlot();
-            blkRqMethod();
-            verifyMempool();
-            broadcastBlock(chain->getCurrBlock());
-            std::cout << "blk & vmem\n";
-        }
-    }
+    chain->updateChnSlot();
 }
 
 void Peer::verifyMempool() {
+    std::vector<transactions> new_mempool;
     for (int i = 0; i < mempool.size(); i++) {
-        do {
-            if (chain->isNewTxid(mempool[i].getTxid())) {
-                continue;
-            }
-            else {
-                mempool[i].setTxid();
-            }
-        } while (!chain->isNewTxid(mempool[i].getTxid()));
+        if (chain->isNewTxid(mempool[i].getTxid())) {
+            new_mempool.emplace_back(mempool[i]);
+        }
+        else {
+            continue;
+        }
     }
+    mempool = std::move(new_mempool);
+    mempool.shrink_to_fit();
 }
 
 void Peer::blkRqMethod() {
     std::vector<transactions> txs;
-    for (int i = 0; i < mempool.size(); i++) {
-        txs.push_back(mempool[i]);
-    }
 
+    /* Reward For Miner */
     std::vector<std::string> ra;
     std::vector<EVP_PKEY_ptr> rpk;
     std::vector<double> amm;
@@ -203,14 +209,22 @@ void Peer::blkRqMethod() {
     std::vector<std::string> delegateID = consensus.getDelegateIDs();
     std::vector<std::tuple<std::string, std::string, float>> votesQueue = consensus.getVotesQueue();
     ra.push_back(w1.getWalletAddr());
-    rpk.push_back(w1.getPubKey());
     amm.push_back(X0017.getReward());
 
-    transactions reward(w1.getWalletAddr(), ra, amm, 0, w1.getLockTime(), w1.getVersion(), delegates,
+    transactions reward(w1.getWalletAddr(), ra, amm, 0.0, w1.getLockTime(), w1.getVersion(), delegates,
         delegateID, votesQueue);
-    txs.push_back(reward);
+    txs.emplace_back(reward);
+
+    /* Add confirmed transactions To Block */
+    for (int i = 0; i < mempool.size(); i++) {
+        txs.push_back(mempool[i]);
+    }
+
+    /* Generate Block And Add To Network */
     chain->GenerateBlock(txs);
-    updateCoins(reward);
+    updateCoins(reward); //************
+    verifyMempool();
+    broadcastBlock(chain->getCurrBlock());
 }
 
 void Peer::updateWallets() {
@@ -227,6 +241,10 @@ void Peer::updateWallets() {
 
 double Peer::getBalance() const {
     return w1.getBalance();
+}
+
+std::string Peer::getWalletAddress() const {
+    return w1.getWalletAddr();
 }
 
 void Peer::listTx() {
@@ -267,8 +285,22 @@ void Peer::updateCoins(transactions rew) {
     X0017.setCircSupply(totus);
 }
 
-void Peer::voteDelegate(const std::vector<std::tuple<std::string, std::string, float>>&){
+/* Vote For Delegates */
+void Peer::vote(std::vector<std::tuple<std::string, std::string, float>> votes) {
+    consensus.updatedVotes(votes);
+    broadcastVotes(votes);
+}
 
+std::string Peer::requestDelegate(){
+    if (std::tuple<bool, std::string> ret = consensus.requestDelegate(w1.getBalance()); std::get<0>(ret) == true) {
+        delegateID = std::get<1>(ret);
+        broadcastDelegateID(delegateID);
+        return std::get<1>(ret);
+    }
+    else {
+        std::cout << "Balance Too Low\n";
+        return "";
+    }
 }
 
 // Initiates an outbound connection to the peer at the specified host and port.
@@ -315,19 +347,19 @@ void Peer::broadcastTransaction(const utxout& u_out) {
     this->Broadcast(msg);
 }
 
-void Peer::broadcastDelegates() {
+void Peer::broadcastDelegateID(const std::string& id) {
     olc::net::message<CustomMsgTypes> msg;
-    msg.header.id = CustomMsgTypes::Delegate;
-    msg << currentDelegate;
+    msg.header.id = CustomMsgTypes::DelegateID;
+    msg << id;
 
     // Broadcast the message using the base class function.
     this->Broadcast(msg);
 }
 
-void Peer::broadcastDelegateUpdate(const std::string& delID) {
+void Peer::broadcastVotes(std::vector<std::tuple<std::string, std::string, float>> votes) {
     olc::net::message<CustomMsgTypes> msg;
-    msg.header.id = CustomMsgTypes::DelegateUpdate;
-    msg << delID;
+    msg.header.id = CustomMsgTypes::Votes;
+    msg << Consensus::serializeVector(votes);
 
     // Broadcast the message using the base class function.
     this->Broadcast(msg);

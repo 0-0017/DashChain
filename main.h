@@ -12,10 +12,12 @@
 // Function declarations
 void displayHelp();
 void getBalance();
+void vote();
 void getTransactionHistory();
 void sendTransaction();
 void getTransactionInfo();
 void getBlockchainInfo();
+void requestDelegate();
 void getSpecificBlock();
 void processCommand(std::string& command, Peer& p);
 

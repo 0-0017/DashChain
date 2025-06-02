@@ -29,9 +29,11 @@ std::string Consensus::genDelegateID(){
 
         /* Generate a random number */
         const unsigned int random_number = distrib(gen);
-        std::string random;
+        const unsigned int random_numberA = distrib(gen);
+        std::string random, randomA;
 
-        /* Achieve Uniformity */
+
+        /* Achieve Uniformity For First Random Number */
         if (random_number < 10) {
             random = "000000000" + util::toString(random_number);
         }
@@ -48,7 +50,26 @@ std::string Consensus::genDelegateID(){
             random = "00000" + util::toString(random_number);
         }
 
+        /* Achieve Uniformity For Second Random Number */
+        if (random_numberA < 10) {
+            random = "000000000" + util::toString(random_number);
+        }
+        else if (random_numberA < 100) {
+            random = "00000000" + util::toString(random_number);
+        }
+        else if (random_numberA < 1000) {
+            random = "0000000" + util::toString(random_number);
+        }
+        else if (random_numberA < 10000) {
+            random = "000000" + util::toString(random_number);
+        }
+        else if (random_numberA < 100000) {
+            random = "00000" + util::toString(random_number);
+        }
+
+        random += randomA;
         delID = ("D" + random + util::toString(util::TimeStamp()));
+
     }while (delIDExist(delID));
 
     delegateID.push_back(delID);
@@ -62,6 +83,11 @@ std::vector<std::string>  Consensus::getDelegates() {
 std::vector<std::string> Consensus::getDelegateIDs() {
     return delegateID;
 }
+
+void Consensus::addDelegateID(const std::string& delegate_id) {
+    delegateID.push_back(delegate_id);
+}
+
 std::vector<std::tuple<std::string, std::string, float>> Consensus::getVotesQueue() {
     return votesQueue;
 }
@@ -88,6 +114,13 @@ void Consensus::setTimestamp(const unsigned long long ts) {
 }
 unsigned long long Consensus::getTimestamp() const {
     return timestamp;
+}
+
+void Consensus::setLastUpd(const unsigned long long lu) {
+    lastUpd = lu;
+}
+unsigned long long Consensus::getLastUpd() const {
+    return lastUpd;
 }
 
 unsigned long Consensus::getVotingPeriod() const {
@@ -132,6 +165,7 @@ void Consensus::setMinBalance(const float mb) {
 std::string Consensus::getCurrentDelegate() {
     std::string currentDelegate = delegates.front();
     delegates.erase(delegates.begin());
+    delegates.shrink_to_fit();
     return currentDelegate;
 }
 
@@ -288,4 +322,67 @@ unsigned short, unsigned short, float, float> Consensus::deserializeConsensus(un
     float>consensus(timestamp, lastUpd, votingPeriod, windowPeriod, maxDelegates, decayFactor, minBalance);
 
     return consensus;
+}
+
+unsigned char* Consensus::serializeVector(const std::vector<std::tuple<std::string, std::string, float>>& vec) {
+    std::vector<unsigned char> buffer;
+    size_t totalSize = sizeof(size_t);  // Reserve space for total buffer size
+
+    size_t numTuples = vec.size();
+    buffer.insert(buffer.end(), reinterpret_cast<unsigned char*>(&numTuples), reinterpret_cast<unsigned char*>(&numTuples) + sizeof(numTuples));
+    totalSize += sizeof(numTuples);
+
+    auto appendString = [&](const std::string& str) {
+        uint32_t length = str.length();
+        totalSize += sizeof(length) + length;
+        buffer.insert(buffer.end(), reinterpret_cast<unsigned char*>(&length), reinterpret_cast<unsigned char*>(&length) + sizeof(length));
+        buffer.insert(buffer.end(), str.begin(), str.end());
+    };
+
+    for (const auto& tup : vec) {
+        appendString(std::get<0>(tup));
+        appendString(std::get<1>(tup));
+
+        float value = std::get<2>(tup);
+        buffer.insert(buffer.end(), reinterpret_cast<unsigned char*>(&value), reinterpret_cast<unsigned char*>(&value) + sizeof(value));
+        totalSize += sizeof(value);
+    }
+
+    // Allocate heap memory for serialization
+    unsigned char* serializedData = new unsigned char[totalSize];
+    std::memcpy(serializedData, &totalSize, sizeof(totalSize));  // Store total buffer size
+    std::memcpy(serializedData + sizeof(totalSize), buffer.data(), buffer.size());
+
+    return serializedData;
+}
+
+std::vector<std::tuple<std::string, std::string, float>> Consensus::deserializeVector(const unsigned char* data) {
+    size_t offset = sizeof(size_t);  // Start after total size
+    size_t numTuples;
+    std::memcpy(&numTuples, data + offset, sizeof(numTuples));
+    offset += sizeof(numTuples);
+
+    std::vector<std::tuple<std::string, std::string, float>> vec;
+
+    auto extractString = [&](std::string& str) {
+        uint32_t length;
+        std::memcpy(&length, data + offset, sizeof(length));
+        offset += sizeof(length);
+        str.assign(reinterpret_cast<const char*>(data + offset), length);
+        offset += length;
+    };
+
+    for (size_t i = 0; i < numTuples; ++i) {
+        std::string str1, str2;
+        extractString(str1);
+        extractString(str2);
+
+        float value;
+        std::memcpy(&value, data + offset, sizeof(value));
+        offset += sizeof(value);
+
+        vec.emplace_back(str1, str2, value);
+    }
+
+    return vec;
 }

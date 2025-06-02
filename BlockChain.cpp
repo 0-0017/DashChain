@@ -4,7 +4,6 @@
 #include "BlockChain.h"
 
 BlockChain::BlockChain()
-	: timestamp(util::TimeStamp())
 {
 	//pointer to first */
 	first = nullptr;
@@ -12,6 +11,7 @@ BlockChain::BlockChain()
 	height = 0;
 	slot = 0;
 	version = 1.0;
+	timestamp = util::TimeStamp();
 }
 
 BlockChain::~BlockChain() {
@@ -32,11 +32,13 @@ void BlockChain::initial(Block* initial) {
 		std::vector<transactions> txs;
 		std::vector<std::string> tra;
 		std::vector<EVP_PKEY_ptr> trpk;
+		tra.emplace_back("NA");
 		std::vector<double> tamm;
+		tamm.push_back(1.0);
 		std::vector<std::string> del;
 		std::vector<std::string> delID;
 		std::vector<std::tuple<std::string, std::string, float>> votes;
-		transactions tx("", tra, tamm, 0.0, 0.0, 0.0, del, delID, votes);
+		transactions tx("NA", tra, tamm, 0.0, 7, 1.0, del, delID, votes);
 		txs.push_back(tx);
 		//Data To be Hashed */
 		std::string dataToHash = "Genesis1:1; Thank you Jesus; Thank You God; A New creation => Your Creation";
@@ -106,6 +108,10 @@ void BlockChain::setVersion(float vnum) {
 
 unsigned long long BlockChain::getTimestamp() const {
 	return timestamp;
+}
+
+void BlockChain::setChnTmstmp(unsigned long long ts) {
+	timestamp = ts;
 }
 
 unsigned int BlockChain::getBlockHeight() {
@@ -194,7 +200,7 @@ bool BlockChain::verifyBlock(Block* newBlock) {
 	}
 
 	/* Verify block height matches the current height + 1 */
-	if (newBlock->getBlockHeight() != getBlockHeight() ) {
+	if (newBlock->getBlockHeight() != (getBlockHeight() + 1)) {
 		std::cout << "Block rejected: Invalid block height" << std::endl;
 		return false;
 	}

@@ -28,8 +28,8 @@ enum class CustomMsgTypes : uint32_t
 	InitialBlock,
 	BlkRecieved,
 	WalletInfo,
-	Delegate,
-	DelegateUpdate,
+	DelegateID,
+	Votes,
 };
 
 struct servID { std::string host;  uint16_t portNum = 0; };
@@ -49,8 +49,9 @@ protected:
 	std::string currentDelegate;
 	unsigned short sPeriod;
 	BlockChain* chain;
-	std::thread tMsg;  // This Thread Manages Messages
-	std::thread tTx; // This Thread Manages Transactions & everything else
+	std::thread tMsg; // This Thread Manages Messages
+	std::thread tBlk; // This Thread Manages Block Creation
+	std::thread tCns; // This Thread Manages Consensus
 	unsigned long long created; // Time Server Was Created
 	std::vector<servID> nodeID; // List of Servers Structs
 	std::vector<walletInfo> wallets;
@@ -94,6 +95,26 @@ protected:
 				std::cout << "[This Peer] Chat from peer " << (peer ? std::to_string(peer->GetID()) : "unknown")
 						  << ": " << chatText << "\n";
 			}
+			case CustomMsgTypes::Consensus:
+			{
+				std::tuple<unsigned long long, unsigned long long, unsigned long, unsigned short, unsigned short,
+				float, float> cns = consensus.deserializeConsensus(msg.body.data());
+				unsigned long long timestamp = std::get<0>(cns);
+				unsigned long long lastUPD = std::get<1>(cns);
+				unsigned long votingPeriod = std::get<2>(cns);
+				unsigned short windowPeriod = std::get<3>(cns);
+				unsigned short maxDelegates = std::get<4>(cns);
+				float decayFactor = std::get<5>(cns);
+				float minBalance = std::get<6>(cns);
+				consensus.setTimestamp(timestamp);
+				consensus.setLastUpd(lastUPD);
+				consensus.setVotingPeriod(votingPeriod);
+				consensus.setWindowPeriod(windowPeriod);
+				consensus.setMaxDelegates(maxDelegates);
+				consensus.setDecayFactor(decayFactor);
+				consensus.setMinBalance(minBalance);
+			}
+				break;
 			case CustomMsgTypes::ServerStart:
 			{
 				servID newNode = deserializeStruct(msg.body.data());
@@ -123,6 +144,14 @@ protected:
 					}
 				}
 
+				/* Send Node List */
+				for (auto& it : nodeID) {
+					olc::net::message<CustomMsgTypes> list;
+					list.header.id = CustomMsgTypes::KnownNode;
+					list << serializeStruct(it);
+					SendToPeer(peer, list);
+				}
+
 				/* Send Consensus Info */
 				olc::net::message<CustomMsgTypes> cons;
 				cons.header.id = CustomMsgTypes::Consensus;
@@ -139,7 +168,17 @@ protected:
 			case CustomMsgTypes::KnownNode:
 			{
 				servID newNode = deserializeStruct(msg.body.data());
-				nodeID.push_back(newNode);
+				bool present = false;
+				for (auto& it : nodeID) {
+					if (newNode.portNum == it.portNum && newNode.host == it.host) {
+						present = true;
+					}
+				}
+
+				if (!present) {
+					nodeID.push_back(newNode);
+					this->broadcastNode(serializeStruct(newNode));
+				}
 			}
 				break;
 			case CustomMsgTypes::TxRecieved:
@@ -149,7 +188,7 @@ protected:
 				unsigned char* body;
 				std::memcpy(&body, msg.body.data(), msg.body.size());
 				uin = w1.deserialize_utxout(body);
-				transactions tx = tx.deserialize(util::toUnsignedChar(uin.utxo));
+				transactions tx = transactions::deserialize(util::toUnsignedChar(uin.utxo));
 
 
 				/* Verify if the transaction is valid */
@@ -203,32 +242,85 @@ protected:
 				std::memcpy(&body, msg.body.data(), msg.body.size());
 				Block* nb = chain->getCurrBlock()->deserialize(body);
 				chain->initial(nb);
+				chain->setChnTmstmp(nb->getTimestamp());
 				verifyMempool();
 			}
 				break;
-			case CustomMsgTypes::BlkRecieved: //***
+			case CustomMsgTypes::BlkRecieved:
 			{
-				unsigned char* body;
-				std::memcpy(&body, msg.body.data(), msg.body.size());
-				Block* nb = chain->getCurrBlock()->deserialize(body);
-				chain->getCurrBlock()->next = nb;
-				nb->next = nullptr;
-				verifyMempool();
-				/////***** PUT VERIFY CHAIN IN UPLOOP!
+				if (chain->verifyBlockchain()) {
+					unsigned char* body;
+					std::memcpy(&body, msg.body.data(), msg.body.size());
+					Block* nb = chain->getCurrBlock()->deserialize(body);
+					if (chain->verifyBlock(nb)) {
+						chain->getCurrBlock()->next = nb;
+						nb->next = nullptr;
+						chain->updateChnSlot();
+						chain->setHeight();
+						chain->setVersion(nb->getVersion());
+						verifyMempool();
+					}
+					else {
+						std::cout << "Invalid block inputs or outputs!\n";
+					}
+				}
 			}
 			break;
-			case CustomMsgTypes::WalletInfo: ///*****
+			case CustomMsgTypes::WalletInfo:
 			{
 				walletInfo wi;
 				unsigned char* body;
 				std::memcpy(&body, msg.body.data(), msg.body.size());
 				wi = deserializeWalletInfo(body);
-				wallets.push_back(wi);
+				bool present = false;
+				for (auto& wal: wallets) {
+					if (wal.walladdr == wi.walladdr) {
+						present = true;
+					}
+				}
+
+				if (!present) {
+					wallets.push_back(wi);
+				}
 			}
 			break;
-			case CustomMsgTypes::Delegate:
+			case CustomMsgTypes::DelegateID:
 			{
+				std::string id = util::toString(msg.body.data());
+				std::vector<std::string> IDs = consensus.getDelegateIDs();
+				bool present = false;
 
+				for (auto& it: IDs) {
+					if (id == it) {
+						present = true;
+					}
+				}
+
+				if (!present) {
+					consensus.addDelegateID(id);
+					broadcastDelegateID(id);
+				}
+			}
+				break;
+			case CustomMsgTypes::Votes:
+			{
+				std::vector<std::tuple<std::string, std::string, float>> votes = Consensus::deserializeVector(msg.body.data());
+
+				/* Compare for Duplicates */
+				bool present = false;
+				std::vector<std::tuple<std::string, std::string, float>> vQueue = consensus.getVotesQueue();
+
+				for (auto& it: votes) {
+					for (auto& it2: vQueue) {
+						if (std::get<0>(it) == std::get<0>(it2) && std::get<1>(it) == std::get<1>(it2) && std::get<2>(it) == std::get<2>(it2)) {
+							present = true;
+						}
+
+						if (!present) {
+							vote(votes);
+						}
+					}
+				}
 			}
 				break;
 		}
@@ -248,15 +340,21 @@ public:
 	}
 
 	~Peer() {
+		tMsg.join();
+		tBlk.join();
+		tCns.join();
 		delete chain;
 		this->Stop();
 	}
 
-	/* Updates the Server for incoming connection */
-	void upLoop(Peer& server);
+	/* Updates the Server for incoming messages */
+	void msgLoop(Peer& server);
 
-	/* Updates the D-POS consensus for each voting period  */
-	void updateD_POS();
+	/* Updates the Server for Block Creation */
+	void blkLoop(Peer& server);
+
+	/* Updates the Server for consensus */
+	void cnsLoop(Peer& server);
 
 	/* Setter to add a ServerID object to the vector */
 	void setNodeID(const servID& sid);
@@ -285,11 +383,19 @@ public:
 	/*Alert Delegate to Generate block*/
 	void voteDelegate(const std::vector<std::tuple<std::string, std::string, float>>&);
 
+	std::string requestDelegate();
+
 	/* Update Wallets */
 	void updateWallets();
 
 	/* Get Wallets Balance */
 	double getBalance() const;
+
+	/* Get Wallets Address */
+	std::string getWalletAddress() const;
+
+	/* Vote For Delegates */
+	void vote(std::vector<std::tuple<std::string, std::string, float>> votes);
 
 	/* Get List of UTXOs In Wallet */
 	void listTx();
@@ -315,11 +421,11 @@ public:
 
 	void broadcastBlock(const Block* block);
 
+	void broadcastVotes(std::vector<std::tuple<std::string, std::string, float>> votes);
+
 	void broadcastTransaction(const utxout& u_out);
 
-	void broadcastDelegates();
-
-	void broadcastDelegateUpdate(const std::string& delID);
+	void broadcastDelegateID(const std::string& id);
 
 	/* struct de-serialization methods */
 	unsigned char* serializeStruct(const servID& sid);

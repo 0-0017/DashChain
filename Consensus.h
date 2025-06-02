@@ -13,6 +13,7 @@ public:
 
     std::vector<std::string> getDelegates();
     std::vector<std::string> getDelegateIDs();
+    void addDelegateID(const std::string& delegate_id);
     std::vector<std::tuple<std::string, std::string, float>> getVotesQueue();
     std::tuple<bool, std::string> requestDelegate(double balance);
     std::string genDelegateID();
@@ -22,6 +23,8 @@ public:
     void updateDelegates();
     unsigned long long getTimestamp() const;
     void setTimestamp(unsigned long long ts);
+    void setLastUpd(unsigned long long lu);
+    unsigned long long getLastUpd() const;
     unsigned long getVotingPeriod() const;
     void setVotingPeriod(unsigned long vp);
     unsigned long getWindowPeriod() const;
@@ -35,6 +38,8 @@ public:
     unsigned char* serializeConsensus();
     std::tuple<unsigned long long, unsigned long long, unsigned long,
     unsigned short, unsigned short, float, float> deserializeConsensus(unsigned char* data);
+    static unsigned char* serializeVector(const std::vector<std::tuple<std::string, std::string, float>>& vec);
+    static std::vector<std::tuple<std::string, std::string, float>> deserializeVector(const unsigned char* data);
 
 private:
     /*

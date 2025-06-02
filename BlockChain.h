@@ -65,6 +65,9 @@ public:
 	/* Getter for timestamp */
 	unsigned long long getChnTmstmp();
 
+	/* Getter for timestamp */
+	void setChnTmstmp(unsigned long long ts);
+
 	/* Getter for Slot */
 	unsigned long long getChnSlot();
 
@@ -90,7 +93,7 @@ public:
 private:
 	Block* first;
 	Block* currBlock;
-	const unsigned long long timestamp;
+	unsigned long long timestamp;
 	unsigned long long slot;
 	static util utility;
 	unsigned int height;
