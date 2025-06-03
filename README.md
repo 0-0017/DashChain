@@ -1,6 +1,6 @@
 # Project DASH
 
-Project DASH merges the realms of cryptocurrency and blockchain technology to pioneer innovative investment solutions. This blockchain implementation offers a secure and efficient framework for managing digital transactions, with future plans to integrate AI for enhanced decision-making capabilities.
+Project DASH's blockchain implementation offers a secure and efficient framework for managing digital transactions, with future plans to integrate AI for enhanced decision-making capabilities.
 
 ## Table of Contents
 
@@ -14,40 +14,40 @@ Project DASH merges the realms of cryptocurrency and blockchain technology to pi
 
 ## Overview
 
-Project DASH utilizes a robust blockchain architecture that emphasizes security, efficiency, and scalability. The project features a comprehensive transaction management system, verification protocols for blocks and transactions, and an intended Delegated Proof of Stake (DPoS) consensus mechanism for governance. Future updates will also include AI-driven analytics to assist in market trend analysis and investment strategy improvements.
+Project DASH utilizes a robust blockchain architecture that emphasizes security, efficiency, and scalability. The project features a comprehensive transaction management system, verification protocols for blocks and transactions, and an intended Delegated Proof of Stake (DPoS) consensus mechanism for governance. Future updates will also include AI Solutions to Aid the network.
 
-**Note:** Currently, this program has only been tested on **Windows systems**. Compatibility with other operating systems has not yet been confirmed.
+**Note:** Currently, this program has only been tested on **Linux Systems**. Compatibility with other operating systems has not yet been confirmed.
 
 ## Installation
 
 Ensure you have the necessary dependencies installed before proceeding:
 
-- **OpenSSL** � Required for cryptographic functions.
-- **C++ Compiler** � Ensure you have a compiler that supports C++17 or later.
-- **CMake (Optional)** � Useful for managing builds across different environments.
+- **OpenSSL** Required for cryptographic functions.
+- **Asio** Required for Networking functionality.
+- **Nlohmann/json** Header Only Library Required for json data transfer and future smart contract implementations.
+- **C++ Compiler** Ensure you have a compiler that supports C++17 or later.
+- **CMake** For managing builds across different environments.
 
 ## Build Instructions
 
-To compile and run Project DASH:
+To compile and run Project DASH (From Source):
 
 1. Clone the repository:
    ```sh
    git clone https://github.com/0-0017/DashChain
    cd DashChain
 
-2. Compile the program using a C++ compiler:
+2. Build the program using cmake:
    ```sh
-   g++ -o DashChain source.cpp -lssl -lcrypto
+   mkdir build && cd build
+   cmake ..
 
 3. Run The Program
    ```sh
-   ./DashChain
+   ./bin/DashChain
 
 
 ## Key Components
-
-### Libraries
-- **OpenSSL**: Utilized for cryptographic functions to ensure secure transactions and data integrity.
 
 ### Blockchain Implementation
 
@@ -127,7 +127,15 @@ Each block within the blockchain is structured with a distinct head and body.
     - `validate()`: Verifies the integrity and validity of a transaction.
     - `execute()`: Processes the transaction on the blockchain.
 
-#### 6. **Network Class (`Network.h`)**
+#### 6. **Consensus Class (`Consensus.h`)**
+- **Purpose**: Manages peer-to-peer network communications for the blockchain.
+- **Key Methods**: 
+    - `updatedVotes()`: Updates votes.
+    - `updateDelegates()`: Refreshes the list of delegates.
+    - `genDelegateID()`: Generates a unique delegate ID.
+
+
+#### 7. **Network Class (`Network.h`)**
 - **Purpose**: Manages peer-to-peer network communications for the blockchain.
 - **Key Methods**:
     - `sendTransaction()`: Sends a transaction to peers in the network.
@@ -135,7 +143,7 @@ Each block within the blockchain is structured with a distinct head and body.
     - `receiveData()`: Receives and processes data from peers.
     - `connect()`: Establishes connections with other nodes in the network.
 
-#### 7. **Utility Class (`util.h`)**
+#### 8. **Utility Class (`util.h`)**
 - **Purpose**: Provides essential utility functions for the blockchain.
 - **Key Methods**:
     - `TimeStamp()`: Generates a timestamp for blockchain entries.
@@ -144,45 +152,62 @@ Each block within the blockchain is structured with a distinct head and body.
 
 ### Blockchain Initialization
 
-The project starts with the creation of a Genesis Block, which intentionally lacks a previous hash. This design choice enhances security and prevents potential leaks.
+The project starts with the creation of a Genesis Block, which creates a previous hash. This design choice enhances security and prevents potential leaks.
 
 ## Usage
+Launch Project DASH using the command-line interface.
+To interact with the blockchain, use the available commands listed below.
 
-To utilize Project DASH, follow these key steps:
+---
 
-1. **Installation:**
-    - Ensure OpenSSL is installed, as it is a crucial library for cryptographic operations.
+## Available Commands
 
-2. **Block and Blockchain Initialization:**
-    - Create instances of the `Block`, `Blockchain`, and `Wallet` classes.
+### General Commands
+| **Command**          | **Description**                                         | **Usage Example**             |
+|----------------------|---------------------------------------------------------|-------------------------------|
+| `help`              | Displays available commands and their descriptions.     | `help`                        |
+| `exit`              | Terminates the program safely.                          | `exit`                        |
 
-3. **Genesis Block Creation:**
-    - Initialize the blockchain with a Genesis Block, setting the stage for subsequent blocks.
+---
 
-4. **Blockchain Operations:**
-    - Generate new blocks using the `GenerateBlock` function.
-    - Validate blocks for integrity using the `ValidateBlock` and `verifyBlock` functions.
+### Wallet & Transactions
+| **Command**          | **Description**                                         | **Usage Example**             |
+|----------------------|---------------------------------------------------------|-------------------------------|
+| `balance`           | Retrieves the current balance of your wallet.          | `balance`                     |
+| `tx_history`        | Displays the list of completed transactions.           | `tx_history`                  |
+| `send_tx`           | Sends cryptocurrency to a recipient.                   | `send_tx` (then follow prompts) |
+| `get_tx [txid]`     | Retrieves details of a specific transaction.           | `get_tx TX123456`             |
 
-5. **Timestamp and Hashing:**
-    - Leverage the blockchain's timestamp and cryptographic hashing mechanisms.
+---
 
-6. **Version Control:**
-    - Manage blockchain evolution through version control.
+### Blockchain Information
+| **Command**          | **Description**                                         | **Usage Example**             |
+|----------------------|---------------------------------------------------------|-------------------------------|
+| `blockchain_info`   | Displays overall blockchain details.                    | `blockchain_info`             |
+| `get_block [num]`   | Retrieves details of a specific block.                   | `get_block 5`                 |
 
-7. **Transactions:**
-    - Record and manage transactions using the `Transaction` class and the `Wallet` class.
+---
 
-8. **Network Operations:**
-    - Use the `Network` class to handle communications with other peers in the network.
+### Consensus & Voting
+| **Command**          | **Description**                                         | **Usage Example**             |
+|----------------------|---------------------------------------------------------|-------------------------------|
+| `request_delegate`  | Generates a **Delegate ID** for voting participation.   | `request_delegate`            |
+| `vote`              | Allows users to vote for delegates based on balance.    | `vote` (then follow prompts)  |
 
-9. **Display Blockchain:**
-    - Use the `display` function to visualize the current state of the blockchain.
+---
+
+### Network Operations
+| **Command**          | **Description**                                         | **Usage Example**             |
+|----------------------|---------------------------------------------------------|-------------------------------|
+| `connected_peers`   | Displays the list of connected peers in the network.    | `connected_peers`             |
+
+---
 
 ## What's Next
 Project DASH is still in development. While currently functional, it has known memory leaks that need to be addressed. Once these are resolved, future improvements will focus on:
 
 	- Expanding the Coin class to track more than just circulation.
 
-	- Implementing Delegated Proof of Stake (DPoS).
+	- Implement Storage and Logging functionality
 
 	- Enhancing network functionality for better peer-to-peer interaction.

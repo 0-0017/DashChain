@@ -1,10 +1,4 @@
 /*
-	MMO Client/Server Framework using ASIO
-	"Happy Birthday Mrs Javidx9!" - javidx9
-
-	Videos:
-	Part #1: https://youtu.be/2hNdkYInj4g
-	Part #2: https://youtu.be/UbjxGvrDrbw
 
 	License (OLC-3)
 	~~~~~~~~~~~~~~~
@@ -38,19 +32,6 @@
 	THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 	(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 	OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-	Links
-	~~~~~
-	YouTube:	https://www.youtube.com/javidx9
-	Discord:	https://discord.gg/WhwHUMV
-	Twitter:	https://www.twitter.com/javidx9
-	Twitch:		https://www.twitch.tv/javidx9
-	GitHub:		https://www.github.com/onelonecoder
-	Homepage:	https://www.onelonecoder.com
-
-	Author
-	~~~~~~
-	David Barr, aka javidx9, ©OneLoneCoder 2019, 2020
 
 */
 
