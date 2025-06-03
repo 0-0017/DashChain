@@ -9,7 +9,7 @@ Consensus::Consensus()
     timestamp = util::TimeStamp();
     lastUpd = timestamp;
     votingPeriod = 0;
-    windowPeriod = 1;
+    windowPeriod = 240;
     minBalance = 0;
     decayFactor = .90;
     maxDelegates = 10;
