@@ -10,7 +10,6 @@
 
 #include<iostream>
 #include <olc_net.h>
-#include <curl/curl.h>
 #include "util.h"
 #include "BlockChain.h"
 #include "Wallet.h"
