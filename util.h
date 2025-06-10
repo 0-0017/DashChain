@@ -40,13 +40,13 @@
 #include <random>
 #include <atomic>
 #include <cstdint>
+#include <ctime>
 #include <fstream>
 #include <memory>
 #include <algorithm> // For std::copy
 #include <cstring> // For std::mem-copy
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
-
 
 class util
 {
@@ -134,6 +134,26 @@ public:
 			static_assert(std::false_type::value, "Unsupported type for toConstChar");
 		}
 	}
+
+
+	void logCall(const std::string& className, const std::string& methodName, bool success, const std::string& error = "NONE") {
+		std::ofstream logFile("log.txt", std::ios::app);
+
+		if (!logFile) {
+			std::cerr << "Error opening log file." << std::endl;
+			return;
+		}
+
+		// Get current timestamp
+		std::time_t now = std::time(nullptr);
+		char timestamp[20];
+		std::strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", std::localtime(&now));
+
+		// Write log entry
+		logFile << timestamp << " | " << className << " | " << methodName << " | "
+				<< (success ? "SUCCESS" : "FAIL") << " | " << error << std::endl;
+	}
+
 	/* Random Number Generator Function, Generates 17 Digit Random Number */
 	static std::string genRandNum();
 
