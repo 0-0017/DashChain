@@ -79,6 +79,7 @@ public:
 			ss << value; // Use the default behavior for other types
 		}
 
+		logCall("UTIL", "toString()", true);
 		return ss.str();
 	}
 
@@ -112,11 +113,13 @@ public:
 		}
 		/* Unsupported type */
 		else {
+			logCall("UTIL", "Unsupported type for toUnsignedChar()", true);
 			static_assert(std::is_same_v<T, std::string> || std::is_same_v<T, std::vector<uint8_t>>
 				|| std::is_same_v<T, std::vector<uint32_t>> || std::is_same_v<T, std::vector<nlohmann::json>>,
 				"Unsupported type for toUnsignedChar");
 		}
 
+		logCall("UTIL", "toUnsignedChar()", true);
 		return result;
 	}
 
@@ -124,19 +127,22 @@ public:
 	template<typename T>
 	static const char* toConstChar(const T& input) {
 		if constexpr (std::is_same_v<T, std::string>) {
+			logCall("UTIL", "toConstChar()", true);
 			return input.c_str();
 		}
 		else if constexpr (std::is_same_v<T, std::vector<uint8_t>>) {
+			logCall("UTIL", "toConstChar()", true);
 			return reinterpret_cast<const char*>(input.data());
 		}
 		else {
 			// You can add more specialized cases for other types if needed
+			logCall("UTIL", "toConstChar()", false, "Unsupported type for toConstChar");
 			static_assert(std::false_type::value, "Unsupported type for toConstChar");
 		}
 	}
 
 
-	void logCall(const std::string& className, const std::string& methodName, bool success, const std::string& error = "NONE") {
+	static void logCall(const std::string& className, const std::string& methodName, bool success, const std::string& error = "NONE") {
 		std::ofstream logFile("log.txt", std::ios::app);
 
 		if (!logFile) {

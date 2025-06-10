@@ -60,6 +60,7 @@ protected:
 	{
 		std::cout << "[NetworkManager] New peer connected, ID: " << peer->GetID() << "\n";
 		// Accept the connection
+		util::logCall("NETWORK", "OnPeerConnect()", true);
 		return true;
 	}
 
@@ -68,9 +69,11 @@ protected:
 	{
 		if (peer) {
 			std::cout << "[NetworkManager] Peer disconnected, ID: " << peer->GetID() << "\n";
+			util::logCall("NETWORK", "OnPeerDisconnect()", true);
 		}
 		else {
 			std::cout << "[NetworkManager] A peer disconnected (unknown ID)\n";
+			util::logCall("NETWORK", "OnPeerDisconnect()", true);
 		}
 	}
 
@@ -80,6 +83,7 @@ protected:
 		std::string txt;
 		// >> operator is defined to pull data from the message's body in LIFO order.
 		msg >> txt;
+		util::logCall("NETWORK", "ExtractString()", true);
 		return txt;
 	}
 
@@ -93,6 +97,7 @@ protected:
 				std::string chatText = ExtractString(msg);
 				std::cout << "[This Peer] Chat from peer " << (peer ? std::to_string(peer->GetID()) : "unknown")
 						  << ": " << chatText << "\n";
+				util::logCall("NETWORK", "OnMessage(ChatMessage)", true);
 			}
 			case CustomMsgTypes::Consensus:
 			{
@@ -112,6 +117,7 @@ protected:
 				consensus.setMaxDelegates(maxDelegates);
 				consensus.setDecayFactor(decayFactor);
 				consensus.setMinBalance(minBalance);
+				util::logCall("NETWORK", "OnMessage(Consensus)", true);
 			}
 				break;
 			case CustomMsgTypes::ServerStart:
@@ -162,6 +168,7 @@ protected:
 				node.header.id = CustomMsgTypes::KnownNode;
 				node << msg.body.data();
 				this->Broadcast(node);
+				util::logCall("NETWORK", "OnMessage(ServerStart)", true);
 			}
 			break;
 			case CustomMsgTypes::KnownNode:
@@ -178,6 +185,7 @@ protected:
 					nodeID.push_back(newNode);
 					this->broadcastNode(serializeStruct(newNode));
 				}
+				util::logCall("NETWORK", "OnMessage(KnownNode)", true);
 			}
 				break;
 			case CustomMsgTypes::TxRecieved:
@@ -210,26 +218,31 @@ protected:
 										tx.getLockTime(),tx.getVersion(), delegates, delegateID, votesQueue);
 									mempool.push_back(confirmed);
 									verifyMempool();
+									util::logCall("NETWORK", "OnMessage(TxRecieved)", true);
 								}
 							}
 							else {
 								/* If the transaction Cant be verifies */
+								util::logCall("NETWORK", "OnMessage(TxRecieved)", false, "Addresses Mix Match!");
 								std::cout << "Addresses Mix Match!\n";
 							}
 						}
 						else {
 							/* If the transaction Cant be verifies */
+							util::logCall("NETWORK", "OnMessage(TxRecieved)", false, "Transaction Cannot Be Verified!");
 							std::cout << "Transaction Cannot Be Verified!\n";
 						}
 					}
 					else {
 						/* If the transaction is on blockchain */
+						util::logCall("NETWORK", "OnMessage(TxRecieved)", false, "Transaction Spent!");
 						std::cout << "Transaction Spent!\n";
 					}
 
 				}
 				else {
 					/* If the transaction inputs or outputs are invalid */
+					util::logCall("NETWORK", "OnMessage(TxRecieved)", false, "Invalid transaction inputs or outputs!");
 					std::cout << "Invalid transaction inputs or outputs!\n";
 				}
 
@@ -243,6 +256,7 @@ protected:
 				chain->initial(nb);
 				chain->setChnTmstmp(nb->getTimestamp());
 				verifyMempool();
+				util::logCall("NETWORK", "OnMessage(InitialBlock)", true);
 			}
 				break;
 			case CustomMsgTypes::BlkRecieved:
@@ -254,6 +268,7 @@ protected:
 					chain->GenerateBlock(nb->getData(), nb);
 					chain->setVersion(nb->getVersion());
 					verifyMempool();
+					util::logCall("NETWORK", "OnMessage(BlkRecieved)", true);
 				}
 			}
 			break;
@@ -273,6 +288,7 @@ protected:
 				if (!present) {
 					wallets.push_back(wi);
 				}
+				util::logCall("NETWORK", "OnMessage(WalletInfo)", true);
 			}
 			break;
 			case CustomMsgTypes::DelegateID:
@@ -291,6 +307,7 @@ protected:
 					consensus.addDelegateID(id);
 					broadcastDelegateID(id);
 				}
+				util::logCall("NETWORK", "OnMessage(DelegateID)", true);
 			}
 				break;
 			case CustomMsgTypes::Votes:
@@ -312,6 +329,7 @@ protected:
 						}
 					}
 				}
+				util::logCall("NETWORK", "OnMessage(Votes)", true);
 			}
 				break;
 		}

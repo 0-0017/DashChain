@@ -103,22 +103,27 @@ std::string Consensus::genDelegateID(){
     }while (delIDExist(delID));
 
     delegateID.push_back(delID);
+    util::logCall("CONSENSUS", "genDelegateID()", true);
     return delID;
 }
 
 std::vector<std::string>  Consensus::getDelegates() {
+    util::logCall("CONSENSUS", "getDelegates()", true);
     return delegates;
 }
 
 std::vector<std::string> Consensus::getDelegateIDs() {
+    util::logCall("CONSENSUS", "getDelegateIDs()", true);
     return delegateID;
 }
 
 void Consensus::addDelegateID(const std::string& delegate_id) {
+    util::logCall("CONSENSUS", "addDelegateID()", true);
     delegateID.push_back(delegate_id);
 }
 
 std::vector<std::tuple<std::string, std::string, float>> Consensus::getVotesQueue() {
+    util::logCall("CONSENSUS", "getVotesQueue()", true);
     return votesQueue;
 }
 
@@ -127,9 +132,11 @@ std::tuple<bool, std::string> Consensus::requestDelegate(const double balance) {
     if (balance >= minBalance) {
         const std::string id = genDelegateID();
         delegates.push_back(id);
+        util::logCall("CONSENSUS", "requestDelegate()", true);
         return {true, id};
     }
     else {
+        util::logCall("CONSENSUS", "requestDelegate()", false, "Already Confirmed Delegate || Balance Too Low");
         std::cout << "Peer Already Confirmed Delegate || Balance Too Low!\n";
         return {false, ""};
     }
@@ -139,58 +146,73 @@ void Consensus::updatedVotes(const std::vector<std::tuple<std::string, std::stri
     for (auto& vote : votes) {
         votesQueue.emplace_back(vote);
     }
+    util::logCall("CONSENSUS", "updatedVotes()", true);
 }
 
 void Consensus::setTimestamp(const unsigned long long ts) {
     timestamp = ts;
+    util::logCall("CONSENSUS", "setTimestamp()", true);
 }
 unsigned long long Consensus::getTimestamp() const {
+    util::logCall("CONSENSUS", "getTimestamp()", true);
     return timestamp;
 }
 
 void Consensus::setLastUpd(const unsigned long long lu) {
+    util::logCall("CONSENSUS", "setLastUpd()", true);
     lastUpd = lu;
 }
 unsigned long long Consensus::getLastUpd() const {
+    util::logCall("CONSENSUS", "getLastUpd()", true);
     return lastUpd;
 }
 
 unsigned long Consensus::getVotingPeriod() const {
+    util::logCall("CONSENSUS", "getVotingPeriod()", true);
     return votingPeriod;
 }
 void Consensus::setVotingPeriod(const unsigned long vp) {
+    util::logCall("CONSENSUS", "setVotingPeriod()", true);
     votingPeriod = vp;
 }
 
 unsigned long Consensus::getWindowPeriod() const {
+    util::logCall("CONSENSUS", "getWindowPeriod()", true);
     return windowPeriod;
 }
 
 void Consensus::setWindowPeriod(const unsigned long wp) {
+    util::logCall("CONSENSUS", "setWindowPeriod()", true);
     windowPeriod = wp;
 }
 
 unsigned long Consensus::getMaxDelegates() const {
+    util::logCall("CONSENSUS", "getMaxDelegates()", true);
     return maxDelegates;
 }
 
 void Consensus::setMaxDelegates(const unsigned long md) {
+    util::logCall("CONSENSUS", "setMaxDelegates()", true);
     maxDelegates = md;
 }
 
 float Consensus::getDecayFactor() const {
+    util::logCall("CONSENSUS", "getDecayFactor()", true);
     return decayFactor;
 }
 
 void Consensus::setDecayFactor(const float df) {
+    util::logCall("CONSENSUS", "setDecayFactor()", true);
     decayFactor = df;
 }
 
 float Consensus::getMinBalance() const {
+    util::logCall("CONSENSUS", "getMinBalance()", true);
     return minBalance;
 }
 
 void Consensus::setMinBalance(const float mb) {
+    util::logCall("CONSENSUS", "setMinBalance()", true);
     minBalance = mb;
 }
 
@@ -198,6 +220,7 @@ std::string Consensus::getCurrentDelegate() {
     std::string currentDelegate = delegates.front();
     delegates.erase(delegates.begin());
     delegates.shrink_to_fit();
+    util::logCall("CONSENSUS", "getCurrentDelegate()", true);
     return currentDelegate;
 }
 
@@ -279,6 +302,7 @@ void Consensus::updateDelegates() {
             delegates.reserve(delegates.size() + currentWindow.size());
             delegates.insert(delegates.end(), currentWindow.begin(), currentWindow.end());
         }
+        util::logCall("CONSENSUS", "updateDelegates()", true);
     }
 }
 
@@ -312,6 +336,7 @@ unsigned char* Consensus::serializeConsensus() {
 
     std::memcpy(Buffer + offset, &minBalance, sizeof(float));
 
+    util::logCall("CONSENSUS", "serializeConsensus()", true);
     return Buffer;
 }
 
@@ -355,6 +380,7 @@ unsigned short, unsigned short, float, float> Consensus::deserializeConsensus(un
     std::tuple<unsigned long long, unsigned long long, unsigned long, unsigned short, unsigned short, float,
     float>consensus(timestamp, lastUpd, votingPeriod, windowPeriod, maxDelegates, decayFactor, minBalance);
 
+    util::logCall("CONSENSUS", "deserializeConsensus()", true);
     return consensus;
 }
 
@@ -387,6 +413,7 @@ unsigned char* Consensus::serializeVector(const std::vector<std::tuple<std::stri
     std::memcpy(serializedData, &totalSize, sizeof(totalSize));  // Store total buffer size
     std::memcpy(serializedData + sizeof(totalSize), buffer.data(), buffer.size());
 
+    util::logCall("CONSENSUS", "serializeVector()", true);
     return serializedData;
 }
 
@@ -418,5 +445,6 @@ std::vector<std::tuple<std::string, std::string, float>> Consensus::deserializeV
         vec.emplace_back(str1, str2, value);
     }
 
+    util::logCall("CONSENSUS", "deserializeVector()", true);
     return vec;
 }

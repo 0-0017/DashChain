@@ -18,6 +18,7 @@ transactions::transactions(std::string sa, std::vector<std::string> ra, std::vec
     delegateID(std::move(delegatesID)),
     votesQueue(std::move(votes))
 {
+    util::logCall("TRANSACTIONS", "transactions()", true);
 }
 
 /* Copy */
@@ -38,17 +39,21 @@ transactions::transactions(const transactions& copy)
 
 
 transactions::~transactions() {
+    util::logCall("TRANSACTIONS", "~transactions()", true);
 };
 
 unsigned long long transactions::getTimeStamp() const {
+    util::logCall("TRANSACTIONS", "getTimeStamp()", true);
     return timestamp;
 }
 
 unsigned long long transactions::setTimeStamp(){
+    util::logCall("TRANSACTIONS", "setTimeStamp()", true);
     return ut.TimeStamp();
 }
 
 const std::string transactions::getTxid() const {
+    util::logCall("TRANSACTIONS", "getTxid()", true);
     return txid;
 }
 
@@ -129,64 +134,79 @@ std::string transactions::setTxid(){
 
     random += randomA;
     std::string tx_id = ("0X0017" + random + util::toString(util::TimeStamp()));
+    util::logCall("TRANSACTIONS", "setTxid()", true);
     return tx_id;
 }
 
 std::string transactions::getSendAddr() const {
+    util::logCall("TRANSACTIONS", "getSendAddr()", true);
     return sendAddr;
 }
 
 std::vector<std::string> transactions::getRecieveAddr() const {
+    util::logCall("TRANSACTIONS", "getRecieveAddr()", true);
     return recieveAddr;
 }
 
 std::vector<double> transactions::getAmmount() const {
+    util::logCall("TRANSACTIONS", "getAmmount()", true);
     return ammount;
 }
 
 double transactions::getFee() const {
+    util::logCall("TRANSACTIONS", "getFee()", true);
     return fee;
 }
 
 unsigned short transactions::getLockTime() const {
+    util::logCall("TRANSACTIONS", "getLockTime()", true);
     return locktime;
 }
 
 float transactions::getVersion() const {
+    util::logCall("TRANSACTIONS", "getVersion()", true);
     return version;
 }
 
 std::vector<std::string> transactions::getDelegates() const {
+    util::logCall("TRANSACTIONS", "getDelegates()", true);
     return delegates;
 }
 
 std::vector<std::string> transactions::getDelegatesID() const {
+    util::logCall("TRANSACTIONS", "getDelegatesID()", true);
     return delegateID;
 }
 
 std::vector<std::tuple<std::string, std::string, float>> transactions::getVotes() const {
+    util::logCall("TRANSACTIONS", "getVotes()", true);
     return votesQueue;
 }
 
 bool transactions::inputsValid() const {
     if (timestamp == 0 || locktime == 0 || version == 0 || txid.empty() || sendAddr.empty()) {
+        util::logCall("TRANSACTIONS", "inputsValid()", false, "Inputs Invalid");
         return false;
     }
 
+    util::logCall("TRANSACTIONS", "inputsValid()", true);
     return true; // Return only after checking all values
 }
 
 bool transactions::outputsValid() const {
     if (recieveAddr.empty()) {
+        util::logCall("TRANSACTIONS", "outputsValid()", false, "RECARRD EMPTY");
         return false;
     }
 
     for (const double i : ammount) {
         if (i == 0) {
+            util::logCall("TRANSACTIONS", "outputsValid()", false, "AMM EMPTY");
             return false;
         }
     }
 
+    util::logCall("TRANSACTIONS", "outputsValid()", true);
     return true; // Return only after checking all values
 }
 
@@ -198,6 +218,7 @@ double transactions::totalAmm() const {
         amm += ammount[i];
     }
 
+    util::logCall("TRANSACTIONS", "totalAmm()", true);
     return amm;
 }
 
@@ -239,6 +260,7 @@ void transactions::display() {
     }
 
     std::cout << "===================================\n";
+    util::logCall("TRANSACTIONS", "display()", true);
 }
 
 /* Serialize method */
@@ -433,6 +455,7 @@ unsigned char* transactions::serialize() const {
         offset += sizeof(flt);
     }
 
+    util::logCall("TRANSACTIONS", "serialize()", true);
     return buffer; // Return the serialized buffer
 }
 
@@ -602,5 +625,6 @@ transactions transactions::deserialize(const unsigned char* data) {
     delete[] vs;
     delete[] ts;
 
+    util::logCall("TRANSACTIONS", "deserialize()", true);
     return tx;
 }

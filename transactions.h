@@ -128,6 +128,7 @@ public:
 		tSize = tSize + sizeof(size_t) + sizeof(size_t) + sizeof(size_t);
 		tSize = tSize + sendSize + txidSize + ammSize + recAddSize + delSize + delIDSize + vQueSize;
 
+		util::logCall("TRANSACTIONS", "getSize()", true);
 		return tSize;
 	}
 

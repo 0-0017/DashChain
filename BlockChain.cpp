@@ -12,6 +12,7 @@ BlockChain::BlockChain()
 	slot = 0;
 	version = 1.0;
 	timestamp = util::TimeStamp();
+	util::logCall("BLOCKCHAIN", "BlockChain()", true);
 }
 
 BlockChain::~BlockChain() {
@@ -23,6 +24,7 @@ BlockChain::~BlockChain() {
 		temp = temp->next;
 		delete save;
 	}
+	util::logCall("BLOCKCHAIN", "~BlockChain()", true);
 }
 
 void BlockChain::initial(Block* initial) {
@@ -48,8 +50,10 @@ void BlockChain::initial(Block* initial) {
 			first = Genesis;
 			currBlock = Genesis;
 			Genesis->next = nullptr;
+			util::logCall("BLOCKCHAIN", "initial()", true);
 		}
 		else {
+			util::logCall("BLOCKCHAIN", "initial()", false, "Block could not be created");
 			std::cerr << "BlockChain::initial(): Block could not be created" << std::endl;
 		}
 	}
@@ -57,6 +61,7 @@ void BlockChain::initial(Block* initial) {
 		first = initial;
 		currBlock = initial;
 		initial->next = nullptr;
+		util::logCall("BLOCKCHAIN", "initial()", true);
 	}
 }
 void BlockChain::GenerateBlock(const std::vector<transactions>& d, Block* b) {
@@ -72,8 +77,10 @@ void BlockChain::GenerateBlock(const std::vector<transactions>& d, Block* b) {
 			currBlock->next = nullptr;
 			setHeight();
 			updateChnSlot();
+			util::logCall("BLOCKCHAIN", "GenerateBlock()", true);
 		}
 		else {
+			util::logCall("BLOCKCHAIN", "GenerateBlock()", false, "Block Cannot Be Verified");
 			std::cout << "Block Cannot Be Verified\n";
 		}
 	}
@@ -88,41 +95,49 @@ void BlockChain::GenerateBlock(const std::vector<transactions>& d, Block* b) {
 			setHeight();
 			updateChnSlot();
 		}
-
+		util::logCall("BLOCKCHAIN", "GenerateBlock()", true);
 	}
 }
 
 bool BlockChain::empty() {
 	if (first == nullptr) {
+		util::logCall("BLOCKCHAIN", "empty()", true);
 		return true;
 	}
 	else {
+		util::logCall("BLOCKCHAIN", "empty()", true);
 		return false;
 	}
 }
 
 float BlockChain::getVersion() {
+	util::logCall("BLOCKCHAIN", "getVersion()", true);
 	return version;
 }
 
 void BlockChain::setVersion(float vnum) {
+	util::logCall("BLOCKCHAIN", "setVersion()", true);
 	version = vnum;
 }
 
 
 unsigned long long BlockChain::getTimestamp() const {
+	util::logCall("BLOCKCHAIN", "getTimestamp()", true);
 	return timestamp;
 }
 
 void BlockChain::setChnTmstmp(unsigned long long ts) {
+	util::logCall("BLOCKCHAIN", "setChnTmstmp()", true);
 	timestamp = ts;
 }
 
 unsigned int BlockChain::getBlockHeight() {
+	util::logCall("BLOCKCHAIN", "getBlockHeight()", true);
 	return currBlock->getBlockHeight();
 }
 
 void BlockChain::setHeight() {
+	util::logCall("BLOCKCHAIN", "setHeight()", true);
 	height++;
 }
 
@@ -133,12 +148,14 @@ bool BlockChain::isNewTxid(const std::string txid) {
 		pbTxs = ptr->getTxs();
 		for (int i = 0; i < pbTxs.size(); i++) {
 			if (pbTxs[i].getTxid() == txid) {
+				util::logCall("BLOCKCHAIN", "isNewTxid()", true);
 				return false; // tx is in blockchain
 			}
 		}
 		ptr = ptr->next;
 	}
 	delete(ptr);
+	util::logCall("BLOCKCHAIN", "isNewTxid()", true);
 	return true;
 }
 
@@ -149,6 +166,7 @@ transactions BlockChain::getTx(const std::string txid) {
 		pbTxs = ptr->getTxs();
 		for (int i = 0; i < pbTxs.size(); i++) {
 			if (pbTxs[i].getTxid() == txid) {
+				util::logCall("BLOCKCHAIN", "getTx()", true);
 				return pbTxs[i]; // return tx
 			}
 		}
@@ -165,6 +183,7 @@ transactions BlockChain::getTx(const std::string txid) {
 	std::vector<std::string> delID;
 	std::vector<std::tuple<std::string, std::string, float>> votes;
 	transactions dummy("", tra, tamm, 0.0, 0.0, 0.0, del, delID, votes);
+	util::logCall("BLOCKCHAIN", "getTx()", true);
 	return dummy;
 }
 
@@ -173,38 +192,45 @@ bool BlockChain::verifyBlockchain() {
 	Block* ptr = first;
 	while (ptr->next != nullptr) {
 		if (ptr->getCurrHash() != ptr->next->getPrevHash()) {
+			util::logCall("BLOCKCHAIN", "verifyBlockchain()", false, "Hash Mix Match");
 			return false; // If any hash mismatch, blockchain is invalid
 		}
 		if (ptr != first && !verifyBlock(ptr)) {
+			util::logCall("BLOCKCHAIN", "verifyBlockchain()", false, "Verification Failed");
 			return false;
 		}
 		ptr = ptr->next;
 	}
 	delete(ptr);
+	util::logCall("BLOCKCHAIN", "verifyBlockchain()", true);
 	return true;
 }
 
 bool BlockChain::verifyBlock(Block* newBlock) {
 	/* Check Timestamp */
 	if (newBlock->getTimestamp() == 0) {
+		util::logCall("BLOCKCHAIN", "verifyBlock()", false, "Block rejected: Block Invalid");
 		std::cout << "Block rejected: Block Invalid" << std::endl;
 		return false;
 	}
 
 	/* Verify Version */
 	if (newBlock->getVersion() != getVersion()) {
+		util::logCall("BLOCKCHAIN", "verifyBlock()", false, "Block rejected: Version mismatch");
 		std::cout << "Block rejected: Version mismatch" << std::endl;
 		return false;
 	}
 
 	/* Verify the previous hash matches */
 	if (newBlock->getPrevHash() != currBlock->getCurrHash()) {
+		util::logCall("BLOCKCHAIN", "verifyBlock()", false, "Block rejected: Previous hash mismatch");
 		std::cout << "Block rejected: Previous hash mismatch" << std::endl;
 		return false;
 	}
 
 	/* Verify block height matches the current height + 1 */
 	if (newBlock->getBlockHeight() != (getBlockHeight() + 1)) {
+		util::logCall("BLOCKCHAIN", "verifyBlock()", false, "Block rejected: Invalid block height");
 		std::cout << "Block rejected: Invalid block height" << std::endl;
 		return false;
 	}
@@ -212,30 +238,37 @@ bool BlockChain::verifyBlock(Block* newBlock) {
 	/* verify transactions */
 	std::vector<uint8_t> tx = newBlock->getMerkleRoot(); //currBlock->MerkleRoot(newBlock->data)
 	if (tx != newBlock->getMerkleRoot()) {
+		util::logCall("BLOCKCHAIN", "verifyBlock()", false, "Block rejected: Invalid Merkle!");
 		std::cout << "Block rejected: Invalid Merkle!" << std::endl;
 		return false;
 	}
 
+	util::logCall("BLOCKCHAIN", "verifyBlock()", true);
 	return true; // Block is valid
 }
 
 Block* BlockChain::getCurrBlock() {
+	util::logCall("BLOCKCHAIN", "getCurrBlock()", true);
 	return currBlock;
 }
 
 Block* BlockChain::getFirstBlock() {
+	util::logCall("BLOCKCHAIN", "getFirstBlock()", true);
 	return first;
 }
 
 unsigned long long BlockChain::getChnTmstmp() {
+	util::logCall("BLOCKCHAIN", "getChnTmstmp()", true);
 	return timestamp;
 }
 
 unsigned long long BlockChain::getChnSlot() {
+	util::logCall("BLOCKCHAIN", "getChnSlot()", true);
 	return slot;
 }
 
 void BlockChain::updateChnSlot() {
+	util::logCall("BLOCKCHAIN", "updateChnSlot()", true);
 	slot++;
 }
 
@@ -251,6 +284,7 @@ std::vector<transactions> BlockChain::checkWallets(std::string wa) {
 			}
 		}
 	}
+	util::logCall("BLOCKCHAIN", "checkWallets()", true);
 	return txout;
 }
 
@@ -262,6 +296,7 @@ void BlockChain::getBlock(unsigned int height) {
 		}
 		ptr = ptr->next;
 	}
+	util::logCall("BLOCKCHAIN", "getBlock()", true);
 	delete(ptr);
 }
 
@@ -278,4 +313,5 @@ void BlockChain::display() {
 	std::cout << "Slot Number          : " << util::toString(getChnSlot()) << std::endl;
 	std::cout << "Version              : " << util::toString(getVersion()) << std::endl;
 	std::cout << "===================================" << std::endl;
+	util::logCall("BLOCKCHAIN", "display()", true);
 }

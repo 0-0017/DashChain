@@ -42,6 +42,7 @@ void Peer::serverOnStart(Peer& server) {
             vote(iv_Vector);
             consensus.updateDelegates();
             consensus.setVotingPeriod(3600);
+            util::logCall("NETWORK", "serverOnStart(Initial)", true);
 
             /* Server Threads */
             tMsg = std::thread(&Peer::msgLoop, this, std::ref(server));
@@ -62,6 +63,7 @@ void Peer::serverOnStart(Peer& server) {
             msg.header.id = CustomMsgTypes::ServerStart;
             msg << serializeStruct(serverID);
             SendToPeer(m_connections.front(), msg);
+            util::logCall("NETWORK", "serverOnStart(PEER)", true);
 
             /* Server Threads */
             tMsg = std::thread(&Peer::msgLoop, this, std::ref(server));
@@ -75,6 +77,7 @@ void Peer::serverOnStart(Peer& server) {
 }
 
 void Peer::msgLoop(Peer& server) {
+    util::logCall("NETWORK", "msgLoop()", true);
     while (true)
     {
         /* Lock mutex for the update operation */
@@ -84,6 +87,7 @@ void Peer::msgLoop(Peer& server) {
 }
 
 void Peer::blkLoop(Peer& server) {
+    util::logCall("NETWORK", "blkLoop()", true);
     while (true)
     {
         /* Lock mutex for the update operation */
@@ -100,6 +104,7 @@ void Peer::blkLoop(Peer& server) {
 }
 
 void Peer::cnsLoop(Peer& server) {
+    util::logCall("NETWORK", "cnsLoop()", true);
     while (true) {
         /* Lock mutex for the update operation */
         std::lock_guard<std::mutex> lock(mtxC);
@@ -112,11 +117,13 @@ void Peer::setNodeID(const servID& sid) {
     // Ensure the JSON object is valid if needed
     // You can also perform validation checks here
     nodeID.push_back(sid);
+    util::logCall("NETWORK", "setNodeID()", true);
 }
 
 /* Time of Server Creation */
 void Peer::setTimeCreated() {
     created = util::TimeStamp();
+    util::logCall("NETWORK", "setTimeCreated()", true);
 }
 
 /* Get public IP address of server */
@@ -149,6 +156,7 @@ void Peer::setServerID() {
         std::getline(response_stream, status_message);
 
         if (!response_stream || http_version.substr(0, 5) != "HTTP/" || status_code != 200) {
+            util::logCall("NETWORK", "setServerID()", false, "Error status");
             throw std::runtime_error("Bad response from server");
         }
 
@@ -165,14 +173,17 @@ void Peer::setServerID() {
             ip_data << &response_buf;
         }
         if (ec != asio::error::eof) {
+            util::logCall("NETWORK", "setServerID()", false, "Error Getting IP");
             throw asio::system_error(ec);
         }
 
         // Assign to class member
         serverID.host = ip_data.str();
         serverID.portNum = port;
+        util::logCall("NETWORK", "setServerID()", true);
     }
     catch (const std::exception& e) {
+        util::logCall("NETWORK", "setServerID()", false, "Error Getting IP");
         std::cerr << "Error getting public IP: " << e.what() << std::endl;
         serverID.host = "0.0.0.0"; // fallback or sentinel value
         serverID.portNum = port;
@@ -180,6 +191,7 @@ void Peer::setServerID() {
 }
 
 void Peer::updateSlot() {
+    util::logCall("NETWORK", "updateSlot()", true);
     chain->updateChnSlot();
 }
 
@@ -195,6 +207,7 @@ void Peer::verifyMempool() {
     }
     mempool = std::move(new_mempool);
     mempool.shrink_to_fit();
+    util::logCall("NETWORK", "verifyMempool()", true);
 }
 
 void Peer::blkRqMethod() {
@@ -224,6 +237,7 @@ void Peer::blkRqMethod() {
     updateCoins(reward); //************
     verifyMempool();
     broadcastBlock(chain->getCurrBlock());
+    util::logCall("NETWORK", "blkRqMethod()", true);
 }
 
 void Peer::updateWallets() {
@@ -236,17 +250,21 @@ void Peer::updateWallets() {
         }
     }
     std::cout << "Wallets Updated\n";
+    util::logCall("NETWORK", "updateWallets()", true);
 }
 
 double Peer::getBalance() const {
+    util::logCall("NETWORK", "getBalance()", true);
     return w1.getBalance();
 }
 
 std::string Peer::getWalletAddress() const {
+    util::logCall("NETWORK", "getWalletAddress()", true);
     return w1.getWalletAddr();
 }
 
 void Peer::listTx() {
+    util::logCall("NETWORK", "listTx()", true);
     w1.listTxs();
 }
 
@@ -257,19 +275,23 @@ bool Peer::sendTx(std::vector<std::string>& recipients, std::vector<double> amou
     utxout u1 = w1.outUTXO(X0017.getTxFee(), recipients, amounts, delegates, delegateID, votesQueue);
     broadcastTransaction(u1);
 
+    util::logCall("NETWORK", "sendTx()", true);
     return true;
 }
 
 void Peer::getKnownTx(std::string& txid) {
     chain->getTx(txid).display();
+    util::logCall("NETWORK", "getKnownTx()", true);
 }
 
 void Peer::currBlockInfo() {
     chain->display();
+    util::logCall("NETWORK", "currBlockInfo()", true);
 }
 
 void Peer::getBlock(unsigned int height) {
     chain->getBlock(height);
+    util::logCall("NETWORK", "getBlock()", true);
 }
 
 void Peer::updateCoins(transactions rew) {
@@ -282,21 +304,25 @@ void Peer::updateCoins(transactions rew) {
 
     X0017.setTotalSupply(totus);
     X0017.setCircSupply(totus);
+    util::logCall("NETWORK", "updateCoins()", true);
 }
 
 /* Vote For Delegates */
 void Peer::vote(std::vector<std::tuple<std::string, std::string, float>> votes) {
     consensus.updatedVotes(votes);
     broadcastVotes(votes);
+    util::logCall("NETWORK", "vote()", true);
 }
 
 std::string Peer::requestDelegate(){
     if (std::tuple<bool, std::string> ret = consensus.requestDelegate(w1.getBalance()); std::get<0>(ret) == true) {
         delegateID = std::get<1>(ret);
         broadcastDelegateID(delegateID);
+        util::logCall("NETWORK", "requestDelegate()", true);
         return std::get<1>(ret);
     }
     else {
+        util::logCall("NETWORK", "requestDelegate()", false, "Balance Too Low");
         std::cout << "Balance Too Low\n";
         return "";
     }
@@ -305,6 +331,7 @@ std::string Peer::requestDelegate(){
 // Initiates an outbound connection to the peer at the specified host and port.
 bool Peer::ConnectTo(const std::string& host, uint16_t port) {
     std::cout << "[NetworkManager] Connecting to " << host << ":" << port << "\n";
+    util::logCall("NETWORK", "ConnectTo()", true);
     return this->ConnectToPeer(host, port);
 }
 
@@ -317,6 +344,7 @@ void Peer::BroadcastChat(const std::string& text) {
     msg << text;
 
     // Broadcast the message using the base class function.
+    util::logCall("NETWORK", "BroadcastChat()", true);
     this->Broadcast(msg);
 }
 void Peer::broadcastNode(unsigned char* sid) {
@@ -325,6 +353,7 @@ void Peer::broadcastNode(unsigned char* sid) {
     msg << sid;
 
     // Broadcast the message using the base class function.
+    util::logCall("NETWORK", "broadcastNode()", true);
     this->Broadcast(msg);
 }
 
@@ -334,6 +363,7 @@ void Peer::broadcastBlock(const Block* block) {
     msg << block->serialize();
 
     // Broadcast the message using the base class function.
+    util::logCall("NETWORK", "broadcastBlock()", true);
     this->Broadcast(msg);
 }
 
@@ -343,6 +373,7 @@ void Peer::broadcastTransaction(const utxout& u_out) {
     msg << w1.serialize_utxout(u_out);
 
     // Broadcast the message using the base class function.
+    util::logCall("NETWORK", "broadcastTransaction()", true);
     this->Broadcast(msg);
 }
 
@@ -352,6 +383,7 @@ void Peer::broadcastDelegateID(const std::string& id) {
     msg << id;
 
     // Broadcast the message using the base class function.
+    util::logCall("NETWORK", "broadcastDelegateID()", true);
     this->Broadcast(msg);
 }
 
@@ -361,6 +393,7 @@ void Peer::broadcastVotes(std::vector<std::tuple<std::string, std::string, float
     msg << Consensus::serializeVector(votes);
 
     // Broadcast the message using the base class function.
+    util::logCall("NETWORK", "broadcastVotes()", true);
     this->Broadcast(msg);
 }
 
@@ -384,6 +417,7 @@ unsigned char* Peer::serializeStruct(const servID& sid) {
     /* Copy the host string data */
     std::memcpy(buffer + offset, sid.host.data(), hostSize);
 
+    util::logCall("NETWORK", "serializeStruct()", true);
     return buffer;
 }
 
@@ -404,6 +438,7 @@ servID Peer::deserializeStruct(const unsigned char* buffer) {
     sid.host.resize(hostSize);
     std::memcpy(&sid.host[0], buffer + offset, hostSize); // Use &sid.host[0] for string data
 
+    util::logCall("NETWORK", "deserializeStruct()", true);
     return sid;
 }
 
@@ -457,6 +492,7 @@ unsigned char* Peer::serializeWalletInfo(const walletInfo& info) {
         offset += pubKeySize;
     }
 
+    util::logCall("NETWORK", "serializeWalletInfo()", true);
     return buffer;
 }
 
@@ -505,5 +541,6 @@ walletInfo Peer::deserializeWalletInfo(const unsigned char* buffer) {
         info.pubKeyy = nullptr;
     }
 
+    util::logCall("NETWORK", "deserializeWalletInfo()", true);
     return info;
 }

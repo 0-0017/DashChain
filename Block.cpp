@@ -15,6 +15,7 @@ Block::Block(const std::vector<transactions>& d, std::vector<unsigned char> prev
     currHash(setCurrHash())
 {
     next = n;
+    util::logCall("BLOCK", "Block()", true);
 }
 
 Block::Block(const Block& copy)
@@ -28,6 +29,7 @@ Block::Block(const Block& copy)
 }
 
 float Block::getVersion() const {
+    util::logCall("BLOCK", "getVersion", true);
     return head.versionNum;
 }
 
@@ -42,6 +44,7 @@ std::vector<unsigned char> Block::MerkleRoot(const std::vector<transactions>& tx
             txHash.emplace_back(std::move(hash));
         }
         else {
+            util::logCall("BLOCK", "MerkleRoot()", false, "Failed to hash tx");
             std::cerr << "Failed to hash tx" << std::endl;
             return {};
         }
@@ -63,6 +66,7 @@ std::vector<unsigned char> Block::MerkleRoot(const std::vector<transactions>& tx
             if (std::vector<unsigned char> newHash; util::shaHash(combinedHashStr, newHash)) {
                 newLevel.emplace_back(std::move(newHash));
             } else {
+                util::logCall("BLOCK", "MerkleRoot()", false, "Failed to hash combined data");
                 std::cerr << "Failed to hash combined data" << std::endl;
                 return {};
             }
@@ -70,22 +74,27 @@ std::vector<unsigned char> Block::MerkleRoot(const std::vector<transactions>& tx
         txHash = newLevel;
     }
 
+    util::logCall("BLOCK", "MerkleRoot()", true);
     return txHash.front(); // Final Merkle Root
 }
 
 std::vector<unsigned char> Block::getMerkleRoot() const {
+    util::logCall("BLOCK", "getMerkleRoot()", true);
     return head.merkleRoot;
 }
 
 unsigned long long Block::setTimestamp(){
+    util::logCall("BLOCK", "setTimestamp()", true);
     return util::TimeStamp();
 }
 
 unsigned long long Block::getTimestamp() const {
+    util::logCall("BLOCK", "getTimestamp()", true);
     return head.timestamp;
 }
 
 unsigned int Block::getBlockHeight() const {
+    util::logCall("BLOCK", "getBlockHeight()", true);
     return blockHeight;
 }
 
@@ -150,28 +159,34 @@ std::vector<unsigned char> Block::setCurrHash() const{
     std::string msg(reinterpret_cast<char*>(h_data));
     std::vector<unsigned char> hash;
     if (util::shaHash(msg, hash)) {
+        util::logCall("BLOCK", "setCurrHash()", true);
         return hash;
     }
     else {
+        util::logCall("BLOCK", "setCurrHash()", false, "Failed to hash block");
         std::cerr << "Failed to hash block" << std::endl;
         return {};
     }
 }
 
 std::vector<unsigned char> Block::getCurrHash() const {
+    util::logCall("BLOCK", "getCurrHash()", true);
     return currHash;
 }
 
 
 std::vector<unsigned char> Block::getPrevHash() const {
+    util::logCall("BLOCK", "getPrevHash()", true);
     return head.prevHash;
 }
 
 std::vector<transactions> Block::getTxs() const {
+    util::logCall("BLOCK", "getTxs()", true);
     return data;
 }
 
 std::vector<transactions> Block::getData() const {
+    util::logCall("BLOCK", "getData()", true);
     return data;
 }
 
@@ -180,6 +195,7 @@ size_t Block::setSize() const{
     size_t size = 0;
     size += data.size() + head.merkleRoot.size() + sizeof(unsigned long long) + head.prevHash.size() + sizeof(float) + sizeof(head);
     size += sizeof(size_t) + sizeof(unsigned int);
+    util::logCall("BLOCK", "setSize()", true);
     return size;
 }
 
@@ -199,6 +215,7 @@ void Block::display() {
     std::cout << "Block Size      : " << util::toString(blockSize) << " bytes" << std::endl;
     std::cout << "Current Hash    : " << util::toString(currHash) << std::endl;
     std::cout << "===================================" << std::endl;
+    util::logCall("BLOCK", "display()", true);
 }
 
 /* Serialize method */
@@ -320,6 +337,7 @@ unsigned char* Block::serialize() const {
         delete[] stx[i];
     }
 
+    util::logCall("BLOCK", "serialize()", true);
     return buffer;
 }
 
@@ -412,14 +430,17 @@ Block* Block::deserialize(const unsigned char* buffer) const {
 
     if (newMerk == merkleRoot && newCurrHs == currHash) {
         if (newBlockSiz == blockSize) {
+            util::logCall("BLOCK", "deserialize()", true);
             return block;
         }
         else {
+            util::logCall("BLOCK", "deserialize()", false, "Block Size Does Not Match");
             std::cout << "Block Size Does Not Match\n";
             return nullptr;
         }
     }
     else {
+        util::logCall("BLOCK", "deserialize()", false, "Block Size Does Not Match");
         std::cout << "Block Size Does Not Match\n";
         return nullptr;
     }
