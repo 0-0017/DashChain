@@ -114,9 +114,7 @@ public:
 		/* Unsupported type */
 		else {
 			logCall("UTIL", "Unsupported type for toUnsignedChar()", true);
-			static_assert(std::is_same_v<T, std::string> || std::is_same_v<T, std::vector<uint8_t>>
-				|| std::is_same_v<T, std::vector<uint32_t>> || std::is_same_v<T, std::vector<nlohmann::json>>,
-				"Unsupported type for toUnsignedChar");
+			std::cerr << "Unsupported type for toUnsignedChar!\n";
 		}
 
 		logCall("UTIL", "toUnsignedChar()", true);
@@ -137,7 +135,7 @@ public:
 		else {
 			// You can add more specialized cases for other types if needed
 			logCall("UTIL", "toConstChar()", false, "Unsupported type for toConstChar");
-			static_assert(std::false_type::value, "Unsupported type for toConstChar");
+			std::cerr << "Unsupported type for toConstChar\n";
 		}
 	}
 
