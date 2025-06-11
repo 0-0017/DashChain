@@ -90,6 +90,7 @@ protected:
 	/* Called when a message arrives */
 	virtual void OnMessage(std::shared_ptr<olc::net::connection<CustomMsgTypes>> peer, olc::net::message<CustomMsgTypes>& msg) override
 	{
+		util::logCall("NETWORK", "OnMessage()", true);
 		switch (msg.header.id)
 		{
 			case CustomMsgTypes::ChatMessage:

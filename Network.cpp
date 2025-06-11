@@ -90,14 +90,16 @@ void Peer::blkLoop(Peer& server) {
     util::logCall("NETWORK", "blkLoop()", true);
     while (true)
     {
-        /* Lock mutex for the update operation */
-        std::lock_guard<std::mutex> lock(mtxB);
-        unsigned long long timestamp = util::TimeStamp();
+        if (!chain->empty()) {
+            /* Lock mutex for the update operation */
+            std::lock_guard<std::mutex> lock(mtxB);
+            unsigned long long timestamp = util::TimeStamp();
 
-        if ((timestamp - chain->getCurrBlock()->getTimestamp()) >= 15) {
-            currentDelegate = consensus.getCurrentDelegate();
-            if (currentDelegate == delegateID) {
-                blkRqMethod();
+            if ((timestamp - chain->getCurrBlock()->getTimestamp()) >= 15) {
+                currentDelegate = consensus.getCurrentDelegate();
+                if (currentDelegate == delegateID) {
+                    blkRqMethod();
+                }
             }
         }
     }
