@@ -29,7 +29,6 @@ Block::Block(const Block& copy)
 }
 
 float Block::getVersion() const {
-    util::logCall("BLOCK", "getVersion", true);
     return head.versionNum;
 }
 
@@ -79,22 +78,18 @@ std::vector<unsigned char> Block::MerkleRoot(const std::vector<transactions>& tx
 }
 
 std::vector<unsigned char> Block::getMerkleRoot() const {
-    util::logCall("BLOCK", "getMerkleRoot()", true);
     return head.merkleRoot;
 }
 
 unsigned long long Block::setTimestamp(){
-    util::logCall("BLOCK", "setTimestamp()", true);
     return util::TimeStamp();
 }
 
 unsigned long long Block::getTimestamp() const {
-    util::logCall("BLOCK", "getTimestamp()", true);
     return head.timestamp;
 }
 
 unsigned int Block::getBlockHeight() const {
-    util::logCall("BLOCK", "getBlockHeight()", true);
     return blockHeight;
 }
 
@@ -170,13 +165,11 @@ std::vector<unsigned char> Block::setCurrHash() const{
 }
 
 std::vector<unsigned char> Block::getCurrHash() const {
-    util::logCall("BLOCK", "getCurrHash()", true);
     return currHash;
 }
 
 
 std::vector<unsigned char> Block::getPrevHash() const {
-    util::logCall("BLOCK", "getPrevHash()", true);
     return head.prevHash;
 }
 
@@ -215,7 +208,6 @@ void Block::display() {
     std::cout << "Block Size      : " << util::toString(blockSize) << " bytes" << std::endl;
     std::cout << "Current Hash    : " << util::toString(currHash) << std::endl;
     std::cout << "===================================" << std::endl;
-    util::logCall("BLOCK", "display()", true);
 }
 
 /* Serialize method */

@@ -13,7 +13,6 @@ unsigned long long util::TimeStamp(){
     /* Convert duration to seconds */
     auto secondsSinceEpoch = std::chrono::duration_cast<std::chrono::seconds>(durationSinceEpoch).count();
 
-    logCall("UTIL", "TimeStamp()", true);
     return (unsigned long long)secondsSinceEpoch;
 }
 
@@ -31,12 +30,10 @@ bool util::shaHash(const std::string &message, std::vector<unsigned char> &hash)
         EVP_DigestUpdate(mdctx, message.data(), message.size()) &&
         EVP_DigestFinal_ex(mdctx, hash.data(), nullptr)) {
         EVP_MD_CTX_free(mdctx);
-        logCall("UTIL", "shaHash()", true);
         return true;
         }
 
     EVP_MD_CTX_free(mdctx);
-    logCall("UTIL", "shaHash()", false, "SHAHASH Failed");
     return false;
 }
 
@@ -49,12 +46,10 @@ bool util::ripemd(const std::vector<unsigned char> &input, std::vector<unsigned 
         EVP_DigestUpdate(mdctx, input.data(), input.size()) &&
         EVP_DigestFinal_ex(mdctx, hash.data(), nullptr)) {
         EVP_MD_CTX_free(mdctx);
-        logCall("UTIL", "ripemd()", true);
         return true;
         }
 
     EVP_MD_CTX_free(mdctx);
-    logCall("UTIL", "ripemd()", false, "RIPEMD Hash Failed");
     return false;
 }
 
@@ -73,7 +68,6 @@ std::string util::genRandNum(){
         result += std::to_string(dist(mt));
     }
 
-    logCall("UTIL", "genRandNum()", true);
     return result;
 }
 
@@ -121,7 +115,5 @@ std::string util::base58_encode(const unsigned char* bytes, size_t size) {
             result.push_back(base58_chars[c]);
         }
     }
-
-    logCall("UTIL", "base58_encode()", true);
     return result;
 }

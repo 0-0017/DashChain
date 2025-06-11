@@ -101,43 +101,35 @@ void BlockChain::GenerateBlock(const std::vector<transactions>& d, Block* b) {
 
 bool BlockChain::empty() {
 	if (first == nullptr) {
-		util::logCall("BLOCKCHAIN", "empty()", true);
 		return true;
 	}
 	else {
-		util::logCall("BLOCKCHAIN", "empty()", true);
 		return false;
 	}
 }
 
 float BlockChain::getVersion() {
-	util::logCall("BLOCKCHAIN", "getVersion()", true);
 	return version;
 }
 
 void BlockChain::setVersion(float vnum) {
-	util::logCall("BLOCKCHAIN", "setVersion()", true);
 	version = vnum;
 }
 
 
 unsigned long long BlockChain::getTimestamp() const {
-	util::logCall("BLOCKCHAIN", "getTimestamp()", true);
 	return timestamp;
 }
 
 void BlockChain::setChnTmstmp(unsigned long long ts) {
-	util::logCall("BLOCKCHAIN", "setChnTmstmp()", true);
 	timestamp = ts;
 }
 
 unsigned int BlockChain::getBlockHeight() {
-	util::logCall("BLOCKCHAIN", "getBlockHeight()", true);
 	return currBlock->getBlockHeight();
 }
 
 void BlockChain::setHeight() {
-	util::logCall("BLOCKCHAIN", "setHeight()", true);
 	height++;
 }
 
@@ -202,7 +194,6 @@ bool BlockChain::verifyBlockchain() {
 		ptr = ptr->next;
 	}
 	delete(ptr);
-	util::logCall("BLOCKCHAIN", "verifyBlockchain()", true);
 	return true;
 }
 
@@ -243,32 +234,26 @@ bool BlockChain::verifyBlock(Block* newBlock) {
 		return false;
 	}
 
-	util::logCall("BLOCKCHAIN", "verifyBlock()", true);
 	return true; // Block is valid
 }
 
 Block* BlockChain::getCurrBlock() {
-	util::logCall("BLOCKCHAIN", "getCurrBlock()", true);
 	return currBlock;
 }
 
 Block* BlockChain::getFirstBlock() {
-	util::logCall("BLOCKCHAIN", "getFirstBlock()", true);
 	return first;
 }
 
 unsigned long long BlockChain::getChnTmstmp() {
-	util::logCall("BLOCKCHAIN", "getChnTmstmp()", true);
 	return timestamp;
 }
 
 unsigned long long BlockChain::getChnSlot() {
-	util::logCall("BLOCKCHAIN", "getChnSlot()", true);
 	return slot;
 }
 
 void BlockChain::updateChnSlot() {
-	util::logCall("BLOCKCHAIN", "updateChnSlot()", true);
 	slot++;
 }
 
@@ -313,5 +298,4 @@ void BlockChain::display() {
 	std::cout << "Slot Number          : " << util::toString(getChnSlot()) << std::endl;
 	std::cout << "Version              : " << util::toString(getVersion()) << std::endl;
 	std::cout << "===================================" << std::endl;
-	util::logCall("BLOCKCHAIN", "display()", true);
 }
