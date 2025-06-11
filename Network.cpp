@@ -193,7 +193,6 @@ void Peer::setServerID() {
 }
 
 void Peer::updateSlot() {
-    util::logCall("NETWORK", "updateSlot()", true);
     chain->updateChnSlot();
 }
 
@@ -256,17 +255,14 @@ void Peer::updateWallets() {
 }
 
 double Peer::getBalance() const {
-    util::logCall("NETWORK", "getBalance()", true);
     return w1.getBalance();
 }
 
 std::string Peer::getWalletAddress() const {
-    util::logCall("NETWORK", "getWalletAddress()", true);
     return w1.getWalletAddr();
 }
 
 void Peer::listTx() {
-    util::logCall("NETWORK", "listTx()", true);
     w1.listTxs();
 }
 
@@ -283,17 +279,14 @@ bool Peer::sendTx(std::vector<std::string>& recipients, std::vector<double> amou
 
 void Peer::getKnownTx(std::string& txid) {
     chain->getTx(txid).display();
-    util::logCall("NETWORK", "getKnownTx()", true);
 }
 
 void Peer::currBlockInfo() {
     chain->display();
-    util::logCall("NETWORK", "currBlockInfo()", true);
 }
 
 void Peer::getBlock(unsigned int height) {
     chain->getBlock(height);
-    util::logCall("NETWORK", "getBlock()", true);
 }
 
 void Peer::updateCoins(transactions rew) {

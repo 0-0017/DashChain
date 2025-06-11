@@ -43,17 +43,14 @@ transactions::~transactions() {
 };
 
 unsigned long long transactions::getTimeStamp() const {
-    util::logCall("TRANSACTIONS", "getTimeStamp()", true);
     return timestamp;
 }
 
 unsigned long long transactions::setTimeStamp(){
-    util::logCall("TRANSACTIONS", "setTimeStamp()", true);
     return ut.TimeStamp();
 }
 
 const std::string transactions::getTxid() const {
-    util::logCall("TRANSACTIONS", "getTxid()", true);
     return txid;
 }
 
@@ -139,47 +136,38 @@ std::string transactions::setTxid(){
 }
 
 std::string transactions::getSendAddr() const {
-    util::logCall("TRANSACTIONS", "getSendAddr()", true);
     return sendAddr;
 }
 
 std::vector<std::string> transactions::getRecieveAddr() const {
-    util::logCall("TRANSACTIONS", "getRecieveAddr()", true);
     return recieveAddr;
 }
 
 std::vector<double> transactions::getAmmount() const {
-    util::logCall("TRANSACTIONS", "getAmmount()", true);
     return ammount;
 }
 
 double transactions::getFee() const {
-    util::logCall("TRANSACTIONS", "getFee()", true);
     return fee;
 }
 
 unsigned short transactions::getLockTime() const {
-    util::logCall("TRANSACTIONS", "getLockTime()", true);
     return locktime;
 }
 
 float transactions::getVersion() const {
-    util::logCall("TRANSACTIONS", "getVersion()", true);
     return version;
 }
 
 std::vector<std::string> transactions::getDelegates() const {
-    util::logCall("TRANSACTIONS", "getDelegates()", true);
     return delegates;
 }
 
 std::vector<std::string> transactions::getDelegatesID() const {
-    util::logCall("TRANSACTIONS", "getDelegatesID()", true);
     return delegateID;
 }
 
 std::vector<std::tuple<std::string, std::string, float>> transactions::getVotes() const {
-    util::logCall("TRANSACTIONS", "getVotes()", true);
     return votesQueue;
 }
 
@@ -260,7 +248,6 @@ void transactions::display() {
     }
 
     std::cout << "===================================\n";
-    util::logCall("TRANSACTIONS", "display()", true);
 }
 
 /* Serialize method */

@@ -347,37 +347,30 @@ void Wallet::setBalance() {
 }
 
 double Wallet::getBalance() const {
-    util::logCall("WALLET", "getBalance()", true);
     return balance;
 }
 
 std::string Wallet::getWalletAddr() const {
-    util::logCall("WALLET", "getWalletAddr()", true);
     return address;
 }
 
 EVP_PKEY_ptr Wallet::getPubKey() const {
-    util::logCall("WALLET", "getPubKey()", true);
     return pubKeyP;
 }
 
 unsigned short Wallet::getLockTime() const {
-    util::logCall("WALLET", "getLockTime()", true);
     return locktimeUTXO;
 }
 
 void Wallet::setLockTime(unsigned short lk) {
-    util::logCall("WALLET", "setLockTime()", true);
     locktimeUTXO = lk;
 }
 
 float Wallet::getVersion() const {
-    util::logCall("WALLET", "getVersion()", true);
     return versionUTXO;
 }
 
 void Wallet::setVersion(float vs) {
-    util::logCall("WALLET", "setVersion()", true);
     versionUTXO = vs;
 }
 
