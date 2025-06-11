@@ -108,12 +108,10 @@ std::string Consensus::genDelegateID(){
 }
 
 std::vector<std::string>  Consensus::getDelegates() {
-    util::logCall("CONSENSUS", "getDelegates()", true);
     return delegates;
 }
 
 std::vector<std::string> Consensus::getDelegateIDs() {
-    util::logCall("CONSENSUS", "getDelegateIDs()", true);
     return delegateID;
 }
 
@@ -123,7 +121,6 @@ void Consensus::addDelegateID(const std::string& delegate_id) {
 }
 
 std::vector<std::tuple<std::string, std::string, float>> Consensus::getVotesQueue() {
-    util::logCall("CONSENSUS", "getVotesQueue()", true);
     return votesQueue;
 }
 
@@ -151,68 +148,54 @@ void Consensus::updatedVotes(const std::vector<std::tuple<std::string, std::stri
 
 void Consensus::setTimestamp(const unsigned long long ts) {
     timestamp = ts;
-    util::logCall("CONSENSUS", "setTimestamp()", true);
 }
 unsigned long long Consensus::getTimestamp() const {
-    util::logCall("CONSENSUS", "getTimestamp()", true);
     return timestamp;
 }
 
 void Consensus::setLastUpd(const unsigned long long lu) {
-    util::logCall("CONSENSUS", "setLastUpd()", true);
     lastUpd = lu;
 }
 unsigned long long Consensus::getLastUpd() const {
-    util::logCall("CONSENSUS", "getLastUpd()", true);
     return lastUpd;
 }
 
 unsigned long Consensus::getVotingPeriod() const {
-    util::logCall("CONSENSUS", "getVotingPeriod()", true);
     return votingPeriod;
 }
 void Consensus::setVotingPeriod(const unsigned long vp) {
-    util::logCall("CONSENSUS", "setVotingPeriod()", true);
     votingPeriod = vp;
 }
 
 unsigned long Consensus::getWindowPeriod() const {
-    util::logCall("CONSENSUS", "getWindowPeriod()", true);
     return windowPeriod;
 }
 
 void Consensus::setWindowPeriod(const unsigned long wp) {
-    util::logCall("CONSENSUS", "setWindowPeriod()", true);
     windowPeriod = wp;
 }
 
 unsigned long Consensus::getMaxDelegates() const {
-    util::logCall("CONSENSUS", "getMaxDelegates()", true);
     return maxDelegates;
 }
 
 void Consensus::setMaxDelegates(const unsigned long md) {
-    util::logCall("CONSENSUS", "setMaxDelegates()", true);
     maxDelegates = md;
 }
 
 float Consensus::getDecayFactor() const {
-    util::logCall("CONSENSUS", "getDecayFactor()", true);
     return decayFactor;
 }
 
 void Consensus::setDecayFactor(const float df) {
-    util::logCall("CONSENSUS", "setDecayFactor()", true);
     decayFactor = df;
 }
 
 float Consensus::getMinBalance() const {
-    util::logCall("CONSENSUS", "getMinBalance()", true);
     return minBalance;
 }
 
 void Consensus::setMinBalance(const float mb) {
-    util::logCall("CONSENSUS", "setMinBalance()", true);
     minBalance = mb;
 }
 
@@ -302,7 +285,6 @@ void Consensus::updateDelegates() {
             delegates.reserve(delegates.size() + currentWindow.size());
             delegates.insert(delegates.end(), currentWindow.begin(), currentWindow.end());
         }
-        util::logCall("CONSENSUS", "updateDelegates()", true);
     }
 }
 

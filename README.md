@@ -41,10 +41,11 @@ To compile and run Project DASH (From Source):
    ```sh
    mkdir build && cd build
    cmake ..
+   make
 
 3. Run The Program
    ```sh
-   ./bin/DashChain
+   ./DashChain
 
 
 ## Key Components
