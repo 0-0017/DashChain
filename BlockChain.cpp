@@ -273,29 +273,39 @@ std::vector<transactions> BlockChain::checkWallets(std::string wa) {
 	return txout;
 }
 
-void BlockChain::getBlock(unsigned int height) {
-	Block* ptr = first;
-	while (ptr->next != nullptr) {
-		if (height == ptr->getBlockHeight()) {
-			ptr->display();
+void BlockChain::getBlock(unsigned int bheight) {
+	if (bheight <= height) {
+		Block* ptr = first;
+		while (ptr->next != nullptr) {
+			if (bheight == ptr->getBlockHeight()) {
+				ptr->display();
+			}
+			ptr = ptr->next;
 		}
-		ptr = ptr->next;
+		util::logCall("BLOCKCHAIN", "getBlock()", true);
+		delete(ptr);
 	}
-	util::logCall("BLOCKCHAIN", "getBlock()", true);
-	delete(ptr);
+	else {
+		std::cout << "Block height not yet reached!\n";
+	}
 }
 
 void BlockChain::display() {
-	std::cout << "===================================" << std::endl;
-	std::cout << "|        Block Information        |" << std::endl;
-	std::cout << "===================================" << std::endl;
-	std::cout << "Blockchain Timestamp : " << util::toString(getTimestamp()) << std::endl;
-	std::cout << "Block Timestamp      : " << util::toString(currBlock->getTimestamp()) << std::endl;
-	std::cout << "Current Hash         : " << util::toString(currBlock->getCurrHash()) << std::endl;
-	std::cout << "Previous Hash        : " << util::toString(currBlock->getPrevHash()) << std::endl;
-	std::cout << "Block Height         : " << util::toString(getBlockHeight()) << std::endl;
-	std::cout << "Merkle Root          : " << util::toString(currBlock->getMerkleRoot()) << std::endl;
-	std::cout << "Slot Number          : " << util::toString(getChnSlot()) << std::endl;
-	std::cout << "Version              : " << util::toString(getVersion()) << std::endl;
-	std::cout << "===================================" << std::endl;
+	if (empty()) {
+		std::cout << "Blockchain is empty" << std::endl;
+	}
+	else {
+		std::cout << "===================================" << std::endl;
+		std::cout << "|        Block Information        |" << std::endl;
+		std::cout << "===================================" << std::endl;
+		std::cout << "Blockchain Timestamp : " << util::toString(getTimestamp()) << std::endl;
+		std::cout << "Block Timestamp      : " << util::toString(currBlock->getTimestamp()) << std::endl;
+		std::cout << "Current Hash         : " << util::toString(currBlock->getCurrHash()) << std::endl;
+		std::cout << "Previous Hash        : " << util::toString(currBlock->getPrevHash()) << std::endl;
+		std::cout << "Block Height         : " << util::toString(getBlockHeight()) << std::endl;
+		std::cout << "Merkle Root          : " << util::toString(currBlock->getMerkleRoot()) << std::endl;
+		std::cout << "Slot Number          : " << util::toString(getChnSlot()) << std::endl;
+		std::cout << "Version              : " << util::toString(getVersion()) << std::endl;
+		std::cout << "===================================" << std::endl;
+	}
 }

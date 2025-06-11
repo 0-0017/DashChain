@@ -84,7 +84,7 @@ public:
 	std::vector<transactions> checkWallets(std::string wa);
 
 	/* Display block in Blockchain at any height */
-	void getBlock(unsigned int height);
+	void getBlock(unsigned int bheight);
 
 	/* Display Blockchain to stdout */
 	void display();
