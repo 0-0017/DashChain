@@ -57,7 +57,7 @@ void Peer::serverOnStart(Peer& server) {
         {
             /* Connect To Initial Node */
             chain = new BlockChain();
-            ConnectTo(nodeID[0].host, nodeID[0].portNum);
+            ConnectTo(nodeID[i].host, nodeID[i].portNum);
 
             olc::net::message<CustomMsgTypes> msg;
             msg.header.id = CustomMsgTypes::ServerStart;
