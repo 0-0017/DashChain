@@ -10,7 +10,7 @@ void Peer::serverOnStart(Peer& server) {
     sPeriod = 15;
     chain = nullptr;
     servID initialNode;
-    initialNode.host = "99.105.19.8";
+    initialNode.host = "34.44.200.9"; /* 99.105.19.8 */
     initialNode.portNum = 50507;
     setNodeID(initialNode);
     setTimeCreated();
@@ -394,23 +394,27 @@ void Peer::broadcastVotes(std::vector<std::tuple<std::string, std::string, float
 
 unsigned char* Peer::serializeStruct(const servID& sid) {
     /* Calculate the total size needed: size of portNum + size of host string + size of host size */
-    size_t outSize = sizeof(uint16_t) + sizeof(size_t) + sid.host.size();
+    size_t tSize = sizeof(size_t) + sizeof(size_t) + sizeof(uint16_t) + (sid.host.size() + 1);
 
     /* Allocate memory for the serialized data */
-    unsigned char* buffer = new unsigned char[outSize];
+    unsigned char* buffer = new unsigned char[tSize];
     size_t offset = 0;
 
-    /* Copy the port number */
-    std::memcpy(buffer + offset, &sid.portNum, sizeof(uint16_t));
-    offset += sizeof(uint16_t);
+    /* Copy the total size to buffer */
+    std::memcpy(buffer + offset, &tSize, sizeof(size_t));
+    offset += sizeof(size_t);
 
-    /* Serialize the size of the host string */
-    size_t hostSize = sid.host.size();
+    /* Copy the host size to buffer */
+    size_t hostSize = sid.host.size() + 1;
     std::memcpy(buffer + offset, &hostSize, sizeof(size_t));
     offset += sizeof(size_t);
 
-    /* Copy the host string data */
-    std::memcpy(buffer + offset, sid.host.data(), hostSize);
+    /* Copy the port number to buffer */
+    std::memcpy(buffer + offset, &sid.portNum, sizeof(uint16_t));
+    offset += sizeof(uint16_t);
+
+    /* Copy the host to buffer */
+    std::memcpy(buffer + offset, sid.host.c_str(), hostSize);
 
     util::logCall("NETWORK", "serializeStruct()", true);
     return buffer;
@@ -418,20 +422,27 @@ unsigned char* Peer::serializeStruct(const servID& sid) {
 
 servID Peer::deserializeStruct(const unsigned char* buffer) {
     servID sid;
+    size_t tSize = 0;
+    size_t hostSize = 0;
     size_t offset = 0;
+
+    /* Deserialize the total size number */
+    std::memcpy(&tSize, buffer + offset, sizeof(size_t));
+    offset += sizeof(size_t);
+
+    /* Deserialize the host size number */
+    std::memcpy(&hostSize, buffer + offset, sizeof(size_t));
+    offset += sizeof(size_t);
 
     /* Deserialize the port number */
     std::memcpy(&sid.portNum, buffer + offset, sizeof(uint16_t));
     offset += sizeof(uint16_t);
 
-    /* Deserialize the size of the host string */
-    size_t hostSize;
-    std::memcpy(&hostSize, buffer + offset, sizeof(size_t));
-    offset += sizeof(size_t);
-
-    /* Resize the host string and copy the data */
-    sid.host.resize(hostSize);
-    std::memcpy(&sid.host[0], buffer + offset, hostSize); // Use &sid.host[0] for string data
+    /* Deserialize the host */
+    unsigned char* host = new unsigned char[hostSize];
+    std::memcpy(host, buffer + offset, hostSize);
+    std::string sHost(reinterpret_cast<char*>(host));
+    sid.host = sHost;
 
     util::logCall("NETWORK", "deserializeStruct()", true);
     return sid;
