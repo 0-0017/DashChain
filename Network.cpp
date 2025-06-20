@@ -336,7 +336,14 @@ void Peer::BroadcastChat(const std::string& text) {
     msg.header.id = CustomMsgTypes::ChatMessage;
 
     // Use the overloaded operator<< to serialize the text into the message.
-    msg << SerializePOD(util::toUnsignedChar(text));
+    size_t offset = 0;
+    size_t datasize = text.size() * sizeof(char);
+    size_t tSize = sizeof(size_t) + sizeof(size_t) + datasize;
+    unsigned char* buffer = new unsigned char[tSize];
+    std::memcpy(buffer + offset, &tSize, sizeof(size_t)); offset += sizeof(size_t);
+    std::memcpy(buffer + offset, &datasize, sizeof(size_t)); offset += sizeof(size_t);
+    std::memcpy(buffer + offset, text.data(), datasize);
+    msg << SerializePOD(buffer);
 
     // Broadcast the message using the base class function.
     util::logCall("NETWORK", "BroadcastChat()", true);
@@ -375,7 +382,15 @@ void Peer::broadcastTransaction(const utxout& u_out) {
 void Peer::broadcastDelegateID(const std::string& id) {
     olc::net::message<CustomMsgTypes> msg;
     msg.header.id = CustomMsgTypes::DelegateID;
-    msg << SerializePOD(util::toUnsignedChar(id));
+
+    size_t offset = 0;
+    size_t datasize = id.size() * sizeof(char);
+    size_t tSize = sizeof(size_t) + sizeof(size_t) + datasize;
+    unsigned char* buffer = new unsigned char[tSize];
+    std::memcpy(buffer + offset, &tSize, sizeof(size_t)); offset += sizeof(size_t);
+    std::memcpy(buffer + offset, &datasize, sizeof(size_t)); offset += sizeof(size_t);
+    std::memcpy(buffer + offset, id.data(), datasize);
+    msg << SerializePOD(buffer);
 
     // Broadcast the message using the base class function.
     util::logCall("NETWORK", "broadcastDelegateID()", true);

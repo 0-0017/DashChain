@@ -31,11 +31,8 @@ enum class CustomMsgTypes : uint32_t
 	Votes,
 };
 
-enum class PODSizeType { POD1, POD2, POD3 };
-
 struct AnyPOD {
-	PODSizeType type;
-	std::array<unsigned char, 1024> data;
+	unsigned char data[1024];
 	size_t size;
 };
 
@@ -70,19 +67,7 @@ protected:
 
 		AnyPOD pod;
 		pod.size = pSize;
-
-		if (pSize <= 256) {
-			std::memcpy(pod.data.data(), data, 256);
-			pod.type = PODSizeType::POD1;
-		}
-		else if (pSize <= 512) {
-			std::memcpy(pod.data.data(), data, 512);
-			pod.type = PODSizeType::POD2;
-		}
-		else {
-			std::memcpy(pod.data.data(), data, 1024);
-			pod.type = PODSizeType::POD3;
-		}
+		std::memmove(pod.data, data, pSize);
 
 		return pod;
 	}
@@ -92,7 +77,7 @@ protected:
 		unsigned char* buffer = new unsigned char[pod.size];
 
 		// Copy data out of the serialized container
-		std::memcpy(buffer, pod.data.data(), pod.size);
+		std::memcpy(buffer, pod.data, pod.size);
 
 		// Caller is responsible for deleting the buffer
 		return buffer;
@@ -129,7 +114,10 @@ protected:
 			{
 				AnyPOD rcvMsg;
 				msg >> rcvMsg;
-				unsigned char* data = deserializePOD(rcvMsg);
+				size_t dDize = rcvMsg.size;
+				unsigned char* sdata = deserializePOD(rcvMsg);
+				unsigned char* data;
+				std::memcpy(data, sdata + (sizeof(size_t) * 2), dDize);
 				std::string chatText = util::toString(data);
 				std::cout << "[This Peer] Chat from peer " << (peer ? std::to_string(peer->GetID()) : "unknown")
 						  << ": " << chatText << "\n";
@@ -337,7 +325,11 @@ protected:
 			{
 				AnyPOD rcvMsg;
 				msg >> rcvMsg;
-				std::string id = util::toString(deserializePOD(rcvMsg));
+				size_t dDize = rcvMsg.size;
+				unsigned char* sdata = deserializePOD(rcvMsg);
+				unsigned char* data;
+				std::memcpy(data, sdata + (sizeof(size_t) * 2), dDize);
+				std::string id = util::toString(data);
 				std::vector<std::string> IDs = consensus.getDelegateIDs();
 				bool present = false;
 
