@@ -31,6 +31,14 @@ enum class CustomMsgTypes : uint32_t
 	Votes,
 };
 
+enum class PODSizeType { POD1, POD2, POD3 };
+
+struct AnyPOD {
+	PODSizeType type;
+	std::array<unsigned char, 1024> data;
+	size_t size;
+};
+
 struct servID { std::string host;  uint16_t portNum = 0; };
 struct walletInfo { uint32_t clientID = 0; std::string walladdr; EVP_PKEY_ptr pubKeyy; };
 
@@ -56,6 +64,40 @@ protected:
 	std::vector<walletInfo> wallets;
 	std::vector<transactions> mempool;
 
+	AnyPOD SerializePOD(unsigned char* data) {
+		size_t pSize = 0;
+		std::memcpy(&pSize, data, sizeof(pSize));
+
+		AnyPOD pod;
+		pod.size = pSize;
+
+		if (pSize <= 256) {
+			std::memcpy(pod.data.data(), data, 256);
+			pod.type = PODSizeType::POD1;
+		}
+		else if (pSize <= 512) {
+			std::memcpy(pod.data.data(), data, 512);
+			pod.type = PODSizeType::POD2;
+		}
+		else {
+			std::memcpy(pod.data.data(), data, 1024);
+			pod.type = PODSizeType::POD3;
+		}
+
+		return pod;
+	}
+
+	unsigned char* deserializePOD(const AnyPOD& pod) {
+		// Allocate just enough memory to hold the data
+		unsigned char* buffer = new unsigned char[pod.size];
+
+		// Copy data out of the serialized container
+		std::memcpy(buffer, pod.data.data(), pod.size);
+
+		// Caller is responsible for deleting the buffer
+		return buffer;
+	}
+
 	virtual bool OnPeerConnect(std::shared_ptr<olc::net::connection<CustomMsgTypes>> peer) override
 	{
 		std::cout << "[NetworkManager] New peer connected, ID: " << peer->GetID() << "\n";
@@ -77,16 +119,6 @@ protected:
 		}
 	}
 
-	// Helper function to extract a string from the message’s body.
-	// (This assumes you serialized a std::string with the overloaded << operator.)
-	static std::string ExtractString(olc::net::message<CustomMsgTypes>& msg) {
-		std::string txt;
-		// >> operator is defined to pull data from the message's body in LIFO order.
-		msg >> txt;
-		util::logCall("NETWORK", "ExtractString()", true);
-		return txt;
-	}
-
 	/* Called when a message arrives */
 	virtual void OnMessage(std::shared_ptr<olc::net::connection<CustomMsgTypes>> peer, olc::net::message<CustomMsgTypes>& msg) override
 	{
@@ -95,15 +127,20 @@ protected:
 		{
 			case CustomMsgTypes::ChatMessage:
 			{
-				std::string chatText = ExtractString(msg);
+				AnyPOD rcvMsg;
+				msg >> rcvMsg;
+				unsigned char* data = deserializePOD(rcvMsg);
+				std::string chatText = util::toString(data);
 				std::cout << "[This Peer] Chat from peer " << (peer ? std::to_string(peer->GetID()) : "unknown")
 						  << ": " << chatText << "\n";
 				util::logCall("NETWORK", "OnMessage(ChatMessage)", true);
 			}
 			case CustomMsgTypes::Consensus:
 			{
+				AnyPOD rcvMsg;
+				msg >> rcvMsg;
 				std::tuple<unsigned long long, unsigned long long, unsigned long, unsigned short, unsigned short,
-				float, float> cns = consensus.deserializeConsensus(msg.body.data());
+				float, float> cns = consensus.deserializeConsensus(deserializePOD(rcvMsg));
 				unsigned long long timestamp = std::get<0>(cns);
 				unsigned long long lastUPD = std::get<1>(cns);
 				unsigned long votingPeriod = std::get<2>(cns);
@@ -123,7 +160,9 @@ protected:
 				break;
 			case CustomMsgTypes::ServerStart:
 			{
-				servID newNode = deserializeStruct(msg.body.data());
+				AnyPOD rcvMsg;
+				msg >> rcvMsg;
+				servID newNode = deserializeStruct(deserializePOD(rcvMsg));
 				nodeID.push_back(newNode);
 
 				/* Send Information For New Node */
@@ -174,7 +213,9 @@ protected:
 			break;
 			case CustomMsgTypes::KnownNode:
 			{
-				servID newNode = deserializeStruct(msg.body.data());
+				AnyPOD rcvMsg;
+				msg >> rcvMsg;
+				servID newNode = deserializeStruct(deserializePOD(rcvMsg));
 				bool present = false;
 				for (auto& it : nodeID) {
 					if (newNode.portNum == it.portNum && newNode.host == it.host) {
@@ -192,10 +233,10 @@ protected:
 			case CustomMsgTypes::TxRecieved:
 			{
 				/* deserialize utx-out and verify transaction */
+				AnyPOD rcvMsg;
+				msg >> rcvMsg;
 				utxout uin;
-				unsigned char* body;
-				std::memcpy(&body, msg.body.data(), msg.body.size());
-				uin = w1.deserialize_utxout(body);
+				uin = w1.deserialize_utxout(deserializePOD(rcvMsg));
 				transactions tx = transactions::deserialize(util::toUnsignedChar(uin.utxo));
 
 
@@ -251,9 +292,9 @@ protected:
 			break;
 			case CustomMsgTypes::InitialBlock:
 			{
-				unsigned char* body;
-				std::memcpy(&body, msg.body.data(), msg.body.size());
-				Block* nb = chain->getCurrBlock()->deserialize(body);
+				AnyPOD rcvMsg;
+				msg >> rcvMsg;
+				Block* nb = chain->getCurrBlock()->deserialize(deserializePOD(rcvMsg));
 				chain->initial(nb);
 				chain->setChnTmstmp(nb->getTimestamp());
 				verifyMempool();
@@ -263,9 +304,9 @@ protected:
 			case CustomMsgTypes::BlkRecieved:
 			{
 				if (chain->verifyBlockchain()) {
-					unsigned char* body;
-					std::memcpy(&body, msg.body.data(), msg.body.size());
-					Block* nb = chain->getCurrBlock()->deserialize(body);
+					AnyPOD rcvMsg;
+					msg >> rcvMsg;
+					Block* nb = chain->getCurrBlock()->deserialize(deserializePOD(rcvMsg));
 					chain->GenerateBlock(nb->getData(), nb);
 					chain->setVersion(nb->getVersion());
 					verifyMempool();
@@ -275,10 +316,10 @@ protected:
 			break;
 			case CustomMsgTypes::WalletInfo:
 			{
+				AnyPOD rcvMsg;
+				msg >> rcvMsg;
 				walletInfo wi;
-				unsigned char* body;
-				std::memcpy(&body, msg.body.data(), msg.body.size());
-				wi = deserializeWalletInfo(body);
+				wi = deserializeWalletInfo(deserializePOD(rcvMsg));
 				bool present = false;
 				for (auto& wal: wallets) {
 					if (wal.walladdr == wi.walladdr) {
@@ -294,7 +335,9 @@ protected:
 			break;
 			case CustomMsgTypes::DelegateID:
 			{
-				std::string id = util::toString(msg.body.data());
+				AnyPOD rcvMsg;
+				msg >> rcvMsg;
+				std::string id = util::toString(deserializePOD(rcvMsg));
 				std::vector<std::string> IDs = consensus.getDelegateIDs();
 				bool present = false;
 
@@ -313,7 +356,9 @@ protected:
 				break;
 			case CustomMsgTypes::Votes:
 			{
-				std::vector<std::tuple<std::string, std::string, float>> votes = Consensus::deserializeVector(msg.body.data());
+				AnyPOD rcvMsg;
+				msg >> rcvMsg;
+				std::vector<std::tuple<std::string, std::string, float>> votes = Consensus::deserializeVector(deserializePOD(rcvMsg));
 
 				/* Compare for Duplicates */
 				bool present = false;
