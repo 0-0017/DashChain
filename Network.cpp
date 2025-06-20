@@ -393,27 +393,21 @@ void Peer::broadcastVotes(std::vector<std::tuple<std::string, std::string, float
 }
 
 unsigned char* Peer::serializeStruct(const servID& sid) {
-    /* Calculate the total size needed: size of portNum + size of host string + size of host size */
-    size_t tSize = sizeof(size_t) + sizeof(size_t) + sizeof(uint16_t) + (sid.host.size() + 1);
+    size_t hostSize = sid.host.size() + 1;  // include null terminator
+    size_t outSize = sizeof(size_t) + sizeof(uint16_t) + hostSize;
 
-    /* Allocate memory for the serialized data */
-    unsigned char* buffer = new unsigned char[tSize];
+    unsigned char* buffer = new unsigned char[outSize];
     size_t offset = 0;
 
-    /* Copy the total size to buffer */
-    std::memcpy(buffer + offset, &tSize, sizeof(size_t));
-    offset += sizeof(size_t);
-
-    /* Copy the host size to buffer */
-    size_t hostSize = sid.host.size() + 1;
+    // Copy hostSize
     std::memcpy(buffer + offset, &hostSize, sizeof(size_t));
     offset += sizeof(size_t);
 
-    /* Copy the port number to buffer */
+    // Copy port number
     std::memcpy(buffer + offset, &sid.portNum, sizeof(uint16_t));
     offset += sizeof(uint16_t);
 
-    /* Copy the host to buffer */
+    // Copy host string
     std::memcpy(buffer + offset, sid.host.c_str(), hostSize);
 
     util::logCall("NETWORK", "serializeStruct()", true);
@@ -422,27 +416,16 @@ unsigned char* Peer::serializeStruct(const servID& sid) {
 
 servID Peer::deserializeStruct(const unsigned char* buffer) {
     servID sid;
-    size_t tSize = 0;
     size_t hostSize = 0;
     size_t offset = 0;
 
-    /* Deserialize the total size number */
-    std::memcpy(&tSize, buffer + offset, sizeof(size_t));
-    offset += sizeof(size_t);
-
-    /* Deserialize the host size number */
     std::memcpy(&hostSize, buffer + offset, sizeof(size_t));
     offset += sizeof(size_t);
 
-    /* Deserialize the port number */
     std::memcpy(&sid.portNum, buffer + offset, sizeof(uint16_t));
     offset += sizeof(uint16_t);
 
-    /* Deserialize the host */
-    unsigned char* host = new unsigned char[hostSize];
-    std::memcpy(host, buffer + offset, hostSize);
-    std::string sHost(reinterpret_cast<char*>(host));
-    sid.host = sHost;
+    sid.host = std::string(reinterpret_cast<const char*>(buffer + offset), hostSize - 1);  // exclude null terminator
 
     util::logCall("NETWORK", "deserializeStruct()", true);
     return sid;
