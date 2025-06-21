@@ -85,22 +85,19 @@ namespace olc
 			template<typename DataType>
 			friend message<T>& operator << (message<T>& msg, const DataType& data)
 			{
-				// Check that the type of the data being pushed is trivially copyable
-				static_assert(std::is_standard_layout<DataType>::value, "Data is too complex to be pushed into vector");
+				/* Collect Size of Data */
+				size_t size = 0;
+				std::memcpy(&size, data, sizeof(size_t));
 
-				// Cache current size of vector, as this will be the point we insert the data
-				size_t i = msg.body.size();
+				/* Insert Data into msg*/
+				msg.body.insert(msg.body.end(),
+								reinterpret_cast<uint8_t*>(&size),
+								reinterpret_cast<uint8_t*>(&size) + sizeof(size));
 
-				// Resize the vector by the size of the data being pushed
-				msg.body.resize(msg.body.size() + sizeof(DataType));
+				// Insert the actual data
+				msg.body.insert(msg.body.end(), data, data + size);
 
-				// Physically copy the data into the newly allocated vector space
-				std::memcpy(msg.body.data() + i, &data, sizeof(DataType));
-
-				// Recalculate the message size
-				msg.header.size = msg.size();
-
-				// Return the target message so it can be "chained"
+				msg.header.size = size;
 				return msg;
 			}
 
@@ -108,22 +105,30 @@ namespace olc
 			template<typename DataType>
 			friend message<T>& operator >> (message<T>& msg, DataType& data)
 			{
-				// Check that the type of the data being pushed is trivially copyable
-				static_assert(std::is_standard_layout<DataType>::value, "Data is too complex to be pulled from vector");
+				size_t offset = msg.body.size();
 
-				// Cache the location towards the end of the vector where the pulled data starts
-				size_t i = msg.body.size() - sizeof(DataType);
+				// Read the size
+				if (offset < sizeof(size_t)) {
+					throw std::runtime_error("Corrupted message: not enough bytes for size");
+				}
 
-				// Physically copy the data from the vector into the user variable
-				std::memcpy(&data, msg.body.data() + i, sizeof(DataType));
+				offset -= sizeof(size_t);
+				size_t dataSize = 0;
+				std::memcpy(&dataSize, msg.body.data() + offset, sizeof(size_t));
+				msg.body.resize(offset);
 
-				// Shrink the vector to remove read bytes, and reset end position
-				msg.body.resize(i);
+				// Read the actual data
+				if (msg.body.size() < dataSize) {
+					throw std::runtime_error("Corrupted message: not enough bytes for buffer");
+				}
 
-				// Recalculate the message size
+				offset -= dataSize;
+				auto buffer = std::make_unique<unsigned char[]>(dataSize);
+				std::memcpy(buffer.get(), msg.body.data() + offset, dataSize);
+
+				msg.body.resize(offset);
 				msg.header.size = msg.size();
 
-				// Return the target message so it can be "chained"
 				return msg;
 			}
 		};

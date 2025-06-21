@@ -61,7 +61,7 @@ void Peer::serverOnStart(Peer& server) {
 
             olc::net::message<CustomMsgTypes> msg;
             msg.header.id = CustomMsgTypes::ServerStart;
-            msg << SerializePOD(serializeStruct(serverID));
+            msg << serializeStruct(serverID);
             SendToPeer(m_connections.front(), msg);
             util::logCall("NETWORK", "serverOnStart(PEER)", true);
 
@@ -343,7 +343,7 @@ void Peer::BroadcastChat(const std::string& text) {
     std::memcpy(buffer + offset, &tSize, sizeof(size_t)); offset += sizeof(size_t);
     std::memcpy(buffer + offset, &datasize, sizeof(size_t)); offset += sizeof(size_t);
     std::memcpy(buffer + offset, text.data(), datasize);
-    msg << SerializePOD(buffer);
+    msg << buffer;
 
     // Broadcast the message using the base class function.
     util::logCall("NETWORK", "BroadcastChat()", true);
@@ -352,7 +352,7 @@ void Peer::BroadcastChat(const std::string& text) {
 void Peer::broadcastNode(unsigned char* sid) {
     olc::net::message<CustomMsgTypes> msg;
     msg.header.id = CustomMsgTypes::KnownNode;
-    msg << SerializePOD(sid);
+    msg << sid;
 
     // Broadcast the message using the base class function.
     util::logCall("NETWORK", "broadcastNode()", true);
@@ -362,7 +362,7 @@ void Peer::broadcastNode(unsigned char* sid) {
 void Peer::broadcastBlock(const Block* block) {
     olc::net::message<CustomMsgTypes> msg;
     msg.header.id = CustomMsgTypes::BlkRecieved;
-    msg << SerializePOD(block->serialize());
+    msg << block->serialize();
 
     // Broadcast the message using the base class function.
     util::logCall("NETWORK", "broadcastBlock()", true);
@@ -372,7 +372,7 @@ void Peer::broadcastBlock(const Block* block) {
 void Peer::broadcastTransaction(const utxout& u_out) {
     olc::net::message<CustomMsgTypes> msg;
     msg.header.id = CustomMsgTypes::TxRecieved;
-    msg << SerializePOD(w1.serialize_utxout(u_out));
+    msg << w1.serialize_utxout(u_out);
 
     // Broadcast the message using the base class function.
     util::logCall("NETWORK", "broadcastTransaction()", true);
@@ -390,7 +390,7 @@ void Peer::broadcastDelegateID(const std::string& id) {
     std::memcpy(buffer + offset, &tSize, sizeof(size_t)); offset += sizeof(size_t);
     std::memcpy(buffer + offset, &datasize, sizeof(size_t)); offset += sizeof(size_t);
     std::memcpy(buffer + offset, id.data(), datasize);
-    msg << SerializePOD(buffer);
+    msg << buffer;
 
     // Broadcast the message using the base class function.
     util::logCall("NETWORK", "broadcastDelegateID()", true);
@@ -400,7 +400,7 @@ void Peer::broadcastDelegateID(const std::string& id) {
 void Peer::broadcastVotes(std::vector<std::tuple<std::string, std::string, float>> votes) {
     olc::net::message<CustomMsgTypes> msg;
     msg.header.id = CustomMsgTypes::Votes;
-    msg << SerializePOD(Consensus::serializeVector(votes));
+    msg << Consensus::serializeVector(votes);
 
     // Broadcast the message using the base class function.
     util::logCall("NETWORK", "broadcastVotes()", true);
