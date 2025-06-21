@@ -106,8 +106,9 @@ namespace olc
 			friend message<T>& operator >> (message<T>& msg, DataType& data)
 			{
 				/* Collect Size of Data */
+				unsigned char* temp = msg.body.data();
 				size_t out_size= 0;
-				std::memcpy(&out_size, data, sizeof(size_t));
+				std::memcpy(&out_size, temp, sizeof(size_t));
 
 				if (msg.body.size() < out_size) throw std::runtime_error("Corrupted message: not enough bytes for buffer");
 				data = new unsigned char [out_size];
