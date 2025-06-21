@@ -105,30 +105,15 @@ namespace olc
 			template<typename DataType>
 			friend message<T>& operator >> (message<T>& msg, DataType& data)
 			{
-				size_t offset = msg.body.size();
+				/* Collect Size of Data */
+				size_t out_size= 0;
+				std::memcpy(&out_size, data, sizeof(size_t));
 
-				// Read the size
-				if (offset < sizeof(size_t)) {
-					throw std::runtime_error("Corrupted message: not enough bytes for size");
-				}
-
-				offset -= sizeof(size_t);
-				size_t dataSize = 0;
-				std::memcpy(&dataSize, msg.body.data() + offset, sizeof(size_t));
-				msg.body.resize(offset);
-
-				// Read the actual data
-				if (msg.body.size() < dataSize) {
-					throw std::runtime_error("Corrupted message: not enough bytes for buffer");
-				}
-
-				offset -= dataSize;
-				auto buffer = std::make_unique<unsigned char[]>(dataSize);
-				std::memcpy(buffer.get(), msg.body.data() + offset, dataSize);
-
-				msg.body.resize(offset);
+				if (msg.body.size() < out_size) throw std::runtime_error("Corrupted message: not enough bytes for buffer");
+				data = new unsigned char [out_size];
+				std::memcpy(data, msg.body.data(), out_size);
+				msg.body.erase(msg.body.begin(), msg.body.begin() + out_size);
 				msg.header.size = msg.size();
-
 				return msg;
 			}
 		};
