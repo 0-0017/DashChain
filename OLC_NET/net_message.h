@@ -82,11 +82,10 @@ namespace olc
 			// Plain Old Data (POD). TLDR: Serialise & Deserialize into/from a vector
 
 			// Pushes any POD-like data into the message buffer
-			template<typename DataType>
-			friend message<T>& operator << (message<T>& msg, const DataType& data)
+			friend message<T>& operator << (message<T>& msg, const unsigned char* data)
 			{
 				size_t size = 0;
-				std::memcpy(&size, &data, sizeof(size_t));
+				std::memcpy(&size, data, sizeof(size_t));
 
 				size_t sz = msg.body.size() + size;
 				if (msg.body.capacity() < sz) {
@@ -98,21 +97,21 @@ namespace olc
 
 				size_t i = msg.body.size();
 				msg.body.resize(sz);
-				std::memcpy(msg.body.data() + i, &data, size);
+				std::memcpy(msg.body.data() + i, data, size);
 				msg.header.size = msg.size();
 				return msg;
 			}
 
 			// Pulls any POD-like data form the message buffer
-			template<typename DataType>
-			friend message<T>& operator >> (message<T>& msg, DataType& data)
+			friend message<T>& operator >> (message<T>& msg, unsigned char* data)
 			{
 				unsigned char* temp = msg.body.data();
 				size_t size = 0;
 				std::memcpy(&size, temp, sizeof(size_t));
+				data = new unsigned char[size];
 
 				size_t data_offset = msg.body.size() - size;
-				std::memcpy(&data, msg.body.data() + data_offset, size);
+				std::memcpy(data, msg.body.data() + data_offset, size);
 				msg.body.resize(data_offset);
 				msg.header.size = msg.size();
 				return msg;

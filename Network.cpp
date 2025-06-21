@@ -435,7 +435,7 @@ unsigned char* Peer::serializeStruct(const servID& sid) {
 
 servID Peer::deserializeStruct(const unsigned char* buffer) {
     servID sid;
-    size_t tSize;
+    size_t tSize = 0;
     size_t hostSize = 0;
     size_t offset = 0;
 
