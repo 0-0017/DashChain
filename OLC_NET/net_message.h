@@ -85,19 +85,21 @@ namespace olc
 			template<typename DataType>
 			friend message<T>& operator << (message<T>& msg, const DataType& data)
 			{
-				/* Collect Size of Data */
 				size_t size = 0;
-				std::memcpy(&size, data, sizeof(size_t));
+				std::memcpy(&size, &data, sizeof(size_t));
 
-				/* Insert Data into msg*/
-				msg.body.insert(msg.body.end(),
-								reinterpret_cast<uint8_t*>(&size),
-								reinterpret_cast<uint8_t*>(&size) + sizeof(size));
+				size_t sz = msg.body.size() + size;
+				if (msg.body.capacity() < sz) {
+					msg.body.reserve(sz);
+				}
+				else {
+					throw std::runtime_error("Corrupted message: not enough bytes for buffer");
+				}
 
-				// Insert the actual data
-				msg.body.insert(msg.body.end(), data, data + size);
-
-				msg.header.size = size;
+				size_t i = msg.body.size();
+				msg.body.resize(sz);
+				std::memcpy(msg.body.data() + i, &data, size);
+				msg.header.size = msg.size();
 				return msg;
 			}
 
@@ -105,15 +107,13 @@ namespace olc
 			template<typename DataType>
 			friend message<T>& operator >> (message<T>& msg, DataType& data)
 			{
-				/* Collect Size of Data */
 				unsigned char* temp = msg.body.data();
-				size_t out_size= 0;
-				std::memcpy(&out_size, temp, sizeof(size_t));
+				size_t size = 0;
+				std::memcpy(&size, temp, sizeof(size_t));
 
-				if (msg.body.size() < out_size) throw std::runtime_error("Corrupted message: not enough bytes for buffer");
-				data = new unsigned char [out_size];
-				std::memcpy(data, msg.body.data(), out_size);
-				msg.body.erase(msg.body.begin(), msg.body.begin() + out_size);
+				size_t data_offset = msg.body.size() - size;
+				std::memcpy(&data, msg.body.data() + data_offset, size);
+				msg.body.resize(data_offset);
 				msg.header.size = msg.size();
 				return msg;
 			}
