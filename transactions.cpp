@@ -552,6 +552,7 @@ transactions transactions::deserialize(const unsigned char* data) {
 
     /* Deserialize txid */
     std::string temStid;
+    temStid.resize(txidSize);
     std::memcpy(temStid.data(), data + offset, txidSize);
     offset += txidSize;
 
