@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.25) # 3.31
 project(DashChain)
 
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer -g")
 
 # Find OpenSSL
 find_package(OpenSSL REQUIRED)

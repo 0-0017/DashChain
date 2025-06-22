@@ -193,7 +193,6 @@ bool BlockChain::verifyBlockchain() {
 		}
 		ptr = ptr->next;
 	}
-	delete(ptr);
 	return true;
 }
 
