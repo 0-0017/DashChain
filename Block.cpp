@@ -212,122 +212,74 @@ void Block::display() {
 
 /* Serialize method */
 unsigned char* Block::serialize() const {
-    // Initial header: blockHeight (unsigned int), versionNum (float),
-    // timestamp (unsigned long-long), blockSize (uint32_t)
-    size_t tSize = sizeof(unsigned int) + sizeof(float)
-        + sizeof(unsigned long long) + sizeof(size_t);
 
-    // Compute sizes for hash data:
-    size_t phNum = head.prevHash.size();
-    size_t chNum = currHash.size();
-    size_t mrNum = head.merkleRoot.size();
-    size_t phSize = phNum * sizeof(unsigned char);
-    size_t chSize = chNum * sizeof(unsigned char);
-    size_t mrSize = mrNum * sizeof(unsigned char);
+    /* Collect Total Sizes*/
+    size_t tSize = 0; // total size
+    /* Predetermined Sizes:  tSize, timestamp, version, blk height & blk size */
+    tSize += sizeof(size_t) + sizeof(unsigned long long) + sizeof(float) + sizeof(unsigned int) + sizeof(size_t);
 
-    // Calculate serialized transactions
+    size_t phSize = head.prevHash.size(); // previous hash size
+    size_t mrSize = head.merkleRoot.size(); // merkle root size
+    size_t chSize = currHash.size(); // current hash size
+
+    /* collect total size of data vector & total vector */
     size_t dSize = 0;
-    size_t dNum = 0;
-    std::vector<unsigned char*> stx;      // Serialized transactions
-    std::vector<size_t> txSizes;            // Their sizes
-
-    unsigned char* tdata = nullptr;
-    for (const auto& tx : data) {
-        tdata = tx.serialize();
-        stx.push_back(tdata);
-
-        // The first sizeof(size_t) bytes contain the serialized size
-        size_t serSize = 0;
-        std::memcpy(&serSize, tdata, sizeof(serSize));
-        txSizes.push_back(serSize);
-        dSize += serSize;
-        dNum++;
-        // tdata remains allocated
+    size_t doffset = 0;
+    std::vector<unsigned char> tData;
+    for (auto& tx: data) {
+        unsigned char* temp = tx.serialize();
+        size_t tempSize = 0;
+        std::memcpy(&tempSize, temp, sizeof(size_t));
+        dSize += tempSize;
+        tData.resize(tData.size() + tempSize);
+        std::memcpy(tData.data() + doffset, temp, tempSize);
+        doffset += tempSize;
     }
 
-    // Prepare txSizes field: size_t for tSizedNum + array for txSizes
-    size_t txSizesNum = txSizes.size();
-    size_t txSizedSize = txSizesNum * sizeof(size_t);
-
-    // Add size for txSizes metadata and transaction data
-    tSize = tSize + sizeof(size_t)      // For tSizedNum field
-        + sizeof(size_t)      // For tSize field? (as originally intended)
-        + txSizedSize + dSize;
-
-    // Add size for 4 size_t fields (phNum, chNum, mrNum, dNum)
-    tSize = tSize + 4 * sizeof(size_t);
-
-    // Add size for 4 size_t fields (phSize, chSize, mrSize, dSize field)
-    tSize = tSize + 4 * sizeof(size_t);
-
-    // *** Add the sizes of the hash vectors ***
-    tSize = tSize + phSize + chSize + mrSize;
-
-    // Allocate memory for the entire buffer
+    /* Calculate Total Size & create buffer */
+    tSize += sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(size_t);
+    tSize += phSize + mrSize + chSize + dSize;
     unsigned char* buffer = new unsigned char[tSize];
     size_t offset = 0;
 
-    // Serialize fields in the proper order:
-    std::memcpy(buffer + offset, &tSize, sizeof(tSize));
-    offset += sizeof(tSize);
+    /* Serialize Block */
+    std::memcpy(buffer + offset, &tSize, sizeof(size_t)); //tSize
+    offset += sizeof(size_t);
 
-    std::memcpy(buffer + offset, &txSizesNum, sizeof(txSizesNum));
-    offset += sizeof(txSizesNum);
+    std::memcpy(buffer + offset, &phSize, sizeof(size_t)); //phSize
+    offset += sizeof(size_t);
 
-    std::memcpy(buffer + offset, txSizes.data(), txSizedSize);
-    offset += txSizedSize;
+    std::memcpy(buffer + offset, &mrSize, sizeof(size_t)); //mrSize
+    offset += sizeof(size_t);
 
-    std::memcpy(buffer + offset, &phNum, sizeof(phNum));
-    offset += sizeof(phNum);
+    std::memcpy(buffer + offset, &chSize, sizeof(size_t)); //chSize
+    offset += sizeof(size_t);
 
-    std::memcpy(buffer + offset, &chNum, sizeof(chNum));
-    offset += sizeof(chNum);
+    std::memcpy(buffer + offset, &dSize, sizeof(size_t)); //dSize
+    offset += sizeof(size_t);
 
-    std::memcpy(buffer + offset, &mrNum, sizeof(mrNum));
-    offset += sizeof(mrNum);
+    std::memcpy(buffer + offset, &head.timestamp, sizeof(unsigned long long)); //timestamp
+    offset += sizeof(unsigned long long);
 
-    std::memcpy(buffer + offset, &dNum, sizeof(dNum));
-    offset += sizeof(dNum);
+    std::memcpy(buffer + offset, &head.versionNum, sizeof(float)); //version
+    offset += sizeof(float);
 
-    std::memcpy(buffer + offset, &phSize, sizeof(phSize));
-    offset += sizeof(phSize);
+    std::memcpy(buffer + offset, &blockHeight, sizeof(unsigned int)); //BlockHeight
+    offset += sizeof(unsigned int);
 
-    std::memcpy(buffer + offset, &chSize, sizeof(chSize));
-    offset += sizeof(chSize);
+    std::memcpy(buffer + offset, &blockSize, sizeof(size_t)); //blockSize
+    offset += sizeof(size_t);
 
-    std::memcpy(buffer + offset, &mrSize, sizeof(mrSize));
-    offset += sizeof(mrSize);
-
-    std::memcpy(buffer + offset, &dSize, sizeof(dSize));
-    offset += sizeof(dSize);
-
-    std::memcpy(buffer + offset, &blockHeight, sizeof(blockHeight));
-    offset += sizeof(blockHeight);
-
-    std::memcpy(buffer + offset, &head.versionNum, sizeof(head.versionNum));
-    offset += sizeof(head.versionNum);
-
-    std::memcpy(buffer + offset, &head.timestamp, sizeof(head.timestamp));
-    offset += sizeof(head.timestamp);
-
-    std::memcpy(buffer + offset, &blockSize, sizeof(blockSize));
-    offset += sizeof(blockSize);
-
-    std::memcpy(buffer + offset, head.prevHash.data(), phSize);
+    std::memcpy(buffer + offset, head.prevHash.data(), phSize); //prevHash
     offset += phSize;
 
-    std::memcpy(buffer + offset, currHash.data(), chSize);
-    offset += chSize;
-
-    std::memcpy(buffer + offset, head.merkleRoot.data(), mrSize);
+    std::memcpy(buffer + offset, head.merkleRoot.data(), mrSize); //merkleRoot
     offset += mrSize;
 
-    /* Serialize each transaction�s data */
-    for (size_t i = 0; i < stx.size(); ++i) {
-        std::memcpy(buffer + offset, stx[i], txSizes[i]);
-        offset += txSizes[i];
-        delete[] stx[i];
-    }
+    std::memcpy(buffer + offset, currHash.data(), chSize); //currHash
+    offset += chSize;
+
+    std::memcpy(buffer + offset, tData.data(), dSize); //data
 
     util::logCall("BLOCK", "serialize()", true);
     return buffer;
@@ -339,81 +291,85 @@ unsigned char* Block::serialize() const {
 Block* Block::deserialize(const unsigned char* buffer) const {
     size_t offset = 0;
 
-    // Read total size (tSize)
+    /* Deserialize total Size */
     size_t tSize = 0;
-    std::memcpy(&tSize, buffer + offset, sizeof(tSize));
-    offset += sizeof(tSize);
+    std::memcpy(&tSize, buffer + offset, sizeof(size_t));
+    offset += sizeof(size_t);
 
-    // Read number of transaction sizes (txSizesNum)
-    size_t txSizesNum = 0;
-    std::memcpy(&txSizesNum, buffer + offset, sizeof(txSizesNum));
-    offset += sizeof(txSizesNum);
+    /* Deserialize phSize */
+    size_t phSize = 0;
+    std::memcpy(&phSize, buffer + offset, sizeof(size_t));
+    offset += sizeof(size_t);
 
-    // Read transaction sizes
-    std::vector<size_t> txSizes(txSizesNum);
-    std::memcpy(txSizes.data(), buffer + offset, txSizesNum * sizeof(size_t));
-    offset += txSizesNum * sizeof(size_t);
+    /* Deserialize mrSize */
+    size_t mrSize = 0;
+    std::memcpy(&mrSize, buffer + offset, sizeof(size_t));
+    offset += sizeof(size_t);
 
-    // Read number of elements for each hash and data vector
-    size_t phNum = 0, chNum = 0, mrNum = 0, dNum = 0;
-    std::memcpy(&phNum, buffer + offset, sizeof(phNum));
-    offset += sizeof(phNum);
-    std::memcpy(&chNum, buffer + offset, sizeof(chNum));
-    offset += sizeof(chNum);
-    std::memcpy(&mrNum, buffer + offset, sizeof(mrNum));
-    offset += sizeof(mrNum);
-    std::memcpy(&dNum, buffer + offset, sizeof(dNum));
-    offset += sizeof(dNum);
+    /* Deserialize chSize */
+    size_t chSize = 0;
+    std::memcpy(&chSize, buffer + offset, sizeof(size_t));
+    offset += sizeof(size_t);
 
-    // Read total sizes for each hash and data vector
-    size_t phSize = 0, chSize = 0, mrSize = 0, dSize = 0;
-    std::memcpy(&phSize, buffer + offset, sizeof(phSize));
-    offset += sizeof(phSize);
-    std::memcpy(&chSize, buffer + offset, sizeof(chSize));
-    offset += sizeof(chSize);
-    std::memcpy(&mrSize, buffer + offset, sizeof(mrSize));
-    offset += sizeof(mrSize);
-    std::memcpy(&dSize, buffer + offset, sizeof(dSize));
-    offset += sizeof(dSize);
+    /* Deserialize dSize */
+    size_t dSize = 0;
+    std::memcpy(&dSize, buffer + offset, sizeof(size_t));
+    offset += sizeof(size_t);
 
-    // Read block height, version number, timestamp, and block size
-    unsigned int blockHeight = 0;
-    float versionNum = 0.0f;
+    /* Deserialize timestamp */
     unsigned long long timestamp = 0;
+    std::memcpy(&timestamp, buffer + offset, sizeof(unsigned long long));
+    offset += sizeof(unsigned long long);
+
+    /* Deserialize version */
+    float versionNum = 0;
+    std::memcpy(&versionNum, buffer + offset, sizeof(float));
+    offset += sizeof(float);
+
+    /* Deserialize block Heigt */
+    unsigned int blockHeight = 0;
+    std::memcpy(&blockHeight, buffer + offset, sizeof(unsigned int));
+    offset += sizeof(unsigned int);
+
+    /* Deserialize block size */
     size_t blockSize = 0;
+    std::memcpy(&blockSize, buffer + offset, sizeof(size_t));
+    offset += sizeof(size_t);
 
-    std::memcpy(&blockHeight, buffer + offset, sizeof(blockHeight));
-    offset += sizeof(blockHeight);
-    std::memcpy(&versionNum, buffer + offset, sizeof(versionNum));
-    offset += sizeof(versionNum);
-    std::memcpy(&timestamp, buffer + offset, sizeof(timestamp));
-    offset += sizeof(timestamp);
-    std::memcpy(&blockSize, buffer + offset, sizeof(blockSize));
-    offset += sizeof(blockSize);
-
-    // Read prevHash, currHash, merkleRoot
+    /* Deserialize previous hash itself */
     std::vector<unsigned char> prevHash(phSize);
     std::memcpy(prevHash.data(), buffer + offset, phSize);
     offset += phSize;
 
+    /* Deserialize merkle root itself */
+    std::vector<unsigned char> merkleRoot(mrSize);
+    std::memcpy(merkleRoot.data(), buffer + offset, mrSize);\
+    offset += mrSize;
+
+    /* Deserialize merkle root itself */
     std::vector<unsigned char> currHash(chSize);
     std::memcpy(currHash.data(), buffer + offset, chSize);
     offset += chSize;
 
-    std::vector<unsigned char> merkleRoot(mrSize);
-    std::memcpy(merkleRoot.data(), buffer + offset, mrSize);
-    offset += mrSize;
+    /* Deserialize Data */
+    size_t doff = 0;
+    std::vector<transactions> data;
+    unsigned char* temp_data = new unsigned char[dSize];
+    std::memcpy(temp_data, buffer + offset, dSize);
 
-    // Read transactions (data)
-    std::vector<transactions> tempdata;
-    for (size_t i = 0; i < dNum; ++i) {
-        transactions t = t.deserialize(buffer + offset);
-        tempdata.push_back(t);
-        offset += txSizes[i];
+    while (doff < dSize) {
+        size_t si = 0;
+        std::memcpy(&si, temp_data + doff, sizeof(size_t));
+        unsigned char* t_data = new unsigned char[si];
+        std::memcpy(t_data, temp_data + doff, si);
+        data.emplace_back(transactions::deserialize(t_data));
+        t_data = nullptr;
+        doff += si;
     }
 
+
     // Create and populate Block
-    Block* block = new Block(tempdata, std::move(prevHash), versionNum, blockHeight, timestamp);
+    Block* block = new Block(data, std::move(prevHash), versionNum, blockHeight, timestamp);
 
     /* Current Hash & Merkle Root Equality Check */
     size_t newBlockSiz = block->getSize();

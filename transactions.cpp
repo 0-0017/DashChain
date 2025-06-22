@@ -398,7 +398,6 @@ unsigned char* transactions::serialize() const {
     std::memcpy(buffer + offset, &txid, txidSize);
     offset += txidSize;
 
-
     /* Serialize recieveAddr (variable) */
     unsigned char* tbuff = new unsigned char[recAddSize];
     size_t toff = 0;
@@ -553,7 +552,7 @@ transactions transactions::deserialize(const unsigned char* data) {
 
     /* Deserialize txid */
     std::string temStid;
-    std::memcpy(&temStid, data + offset, txidSize);
+    std::memcpy(temStid.data(), data + offset, txidSize);
     offset += txidSize;
 
     /* Deserialize recieveAddr */
@@ -565,7 +564,7 @@ transactions transactions::deserialize(const unsigned char* data) {
         offset += len;
     }
 
-    /* Deserialize recieveAddr */
+    /* Deserialize delegates */
     std::vector<std::string> delegates;
     delegates.resize(delAmm);
     for (auto& d : delegates) {
@@ -574,7 +573,7 @@ transactions transactions::deserialize(const unsigned char* data) {
         offset += len;
     }
 
-    /* Deserialize recieveAddr */
+    /* Deserialize delegateID */
     std::vector<std::string> delegateID;
     delegateID.resize(delAmm);
     for (auto& id : delegateID) {
