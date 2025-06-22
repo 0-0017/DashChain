@@ -395,7 +395,7 @@ unsigned char* transactions::serialize() const {
     offset += ammSize;
 
     /* Serialize txid (variable) */
-    std::memcpy(buffer + offset, &txid, txidSize);
+    std::memcpy(buffer + offset, txid.data(), txidSize);
     offset += txidSize;
 
     /* Serialize recieveAddr (variable) */
