@@ -133,25 +133,35 @@ protected:
 				/* Send Information For New Node */
 				auto* curr_blk = chain->getFirstBlock();
 				int i = 0;
-				while (curr_blk->next != nullptr) {
-					if (i == 0) {
-						auto* block_ser = curr_blk->serialize();
-						curr_blk = curr_blk->next;
-						olc::net::message<CustomMsgTypes> newBlk;
-						newBlk.header.id = CustomMsgTypes::InitialBlock;
-						newBlk << block_ser;
-						SendToPeer(peer, newBlk);
-						i++;
-					}
-					else {
-						auto* block_ser = curr_blk->serialize();
-						curr_blk = curr_blk->next;
-						olc::net::message<CustomMsgTypes> newBlk;
-						newBlk.header.id = CustomMsgTypes::BlkRecieved;
-						newBlk << block_ser;
-						SendToPeer(peer, newBlk);
-						i++;
-					}
+				if (curr_blk->next == nullptr) {
+					auto* block_ser = curr_blk->serialize();
+					curr_blk = curr_blk->next;
+					olc::net::message<CustomMsgTypes> newBlk;
+					newBlk.header.id = CustomMsgTypes::InitialBlock;
+					newBlk << block_ser;
+					SendToPeer(peer, newBlk);
+				}
+				else {
+					do {
+						if (i == 0) {
+							auto* block_ser = curr_blk->serialize();
+							curr_blk = curr_blk->next;
+							olc::net::message<CustomMsgTypes> newBlk;
+							newBlk.header.id = CustomMsgTypes::InitialBlock;
+							newBlk << block_ser;
+							SendToPeer(peer, newBlk);
+							i++;
+						}
+						else {
+							auto* block_ser = curr_blk->serialize();
+							curr_blk = curr_blk->next;
+							olc::net::message<CustomMsgTypes> newBlk;
+							newBlk.header.id = CustomMsgTypes::BlkRecieved;
+							newBlk << block_ser;
+							SendToPeer(peer, newBlk);
+							i++;
+						}
+					} while (curr_blk->next != nullptr);
 				}
 
 				/* Send Node List */
@@ -171,7 +181,7 @@ protected:
 				/* Broadcast updated Node List */
 				olc::net::message<CustomMsgTypes> node;
 				node.header.id = CustomMsgTypes::KnownNode;
-				node << msg.body.data();
+				node << rec;
 				this->Broadcast(node);
 				util::logCall("NETWORK", "OnMessage(ServerStart)", true);
 			}
