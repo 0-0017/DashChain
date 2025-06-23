@@ -382,9 +382,10 @@ unsigned char* Wallet::serialize_utxout(const utxout& obj) const {
     /* Calculate size and serialze public key */
     unsigned char *buf = nullptr;
     const int len = i2d_PUBKEY(obj.pubkey.get(), &buf);
+    size_t utSize = obj.utxo.size() + 1;
 
 
-    tSize += sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(int) + obj.utxo.size() + obj.utxoSignedHash.size() + len;
+    tSize += sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(int) + utSize + obj.utxoSignedHash.size() + len; // len == public key size
 
     unsigned char* buffer = new unsigned char[tSize];
     size_t offset = 0;
@@ -396,8 +397,7 @@ unsigned char* Wallet::serialize_utxout(const utxout& obj) const {
     offset += sizeof(tSize);
 
     /* Serialize txSize itself */
-    size_t utxoSize = obj.utxo.size();
-    std::memcpy(buffer + offset, &utxoSize, sizeof(size_t));
+    std::memcpy(buffer + offset, &utSize, sizeof(size_t));
     offset += sizeof(size_t);
 
     /* Serialize shSize itself */
@@ -410,7 +410,7 @@ unsigned char* Wallet::serialize_utxout(const utxout& obj) const {
     offset += sizeof(int);
 
     /* Serialize utxo itself */
-    std::memcpy(buffer + offset, obj.utxo.data(), obj.utxo.size());
+    std::memcpy(buffer + offset, obj.utxo.c_str(), utSize);
     offset += obj.utxo.size();
 
     /* Serialize signed hash itself */
@@ -446,7 +446,7 @@ utxout Wallet::deserialize_utxout(const unsigned char* buffer) const {
     offset += sizeof(int);
 
     /* Deserialize utxo */
-    obj.utxo.assign(reinterpret_cast<const char*>(buffer + offset), obj.txSize);
+    obj.utxo.assign(reinterpret_cast<const char*>(buffer + offset), obj.txSize - 1);
     offset += obj.txSize;
 
     /* Deserialize utxoSignedHash */

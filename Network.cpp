@@ -462,10 +462,9 @@ unsigned char* Peer::serializeWalletInfo(const walletInfo& info) {
     size_t tSize = 0;
 
     // Size of clientID (uint32_t), walladdr length (size_t), walladdr content, and public key length */
-    size_t clientSize = sizeof(size_t);
-    size_t addrSize = info.walladdr.size() * sizeof(char);
+    size_t addrSize = info.walladdr.size() + 1;
     size_t pubKeySize = (info.pubKeyy != nullptr) ? i2d_PUBKEY(info.pubKeyy.get(), nullptr) : 0;
-    tSize += sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + clientSize + addrSize + pubKeySize;
+    tSize += sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(uint32_t) + addrSize + pubKeySize;
 
     /* Allocate buffer for serialization */
     unsigned char* buffer = new unsigned char[tSize];
@@ -477,10 +476,6 @@ unsigned char* Peer::serializeWalletInfo(const walletInfo& info) {
     std::memcpy(buffer + offset, &tSize, sizeof(tSize));
     offset += sizeof(tSize);
 
-    /* Serialize cID Size itself */
-    std::memcpy(buffer + offset, &clientSize, sizeof(size_t));
-    offset += sizeof(size_t);
-
     /* Serialize addrSize Size itself */
     std::memcpy(buffer + offset, &addrSize, sizeof(size_t));
     offset += sizeof(size_t);
@@ -490,11 +485,11 @@ unsigned char* Peer::serializeWalletInfo(const walletInfo& info) {
     offset += sizeof(size_t);
 
     /* Serialize clientID itself */
-    std::memcpy(buffer + offset, &info.clientID, clientSize);
-    offset += clientSize;
+    std::memcpy(buffer + offset, &info.clientID, sizeof(uint32_t));
+    offset += sizeof(uint32_t);
 
     /* Serialize WallAddress itself */
-    std::memcpy(buffer + offset, &info.walladdr, addrSize);
+    std::memcpy(buffer + offset, info.walladdr.c_str(), addrSize);
     offset += addrSize;
 
     /* Serialize pubKeyy (EVP_PKEY*) */
@@ -518,11 +513,6 @@ walletInfo Peer::deserializeWalletInfo(const unsigned char* buffer) {
     std::memcpy(&tSize, buffer + offset, sizeof(size_t));
     offset += sizeof(size_t);
 
-    /* Deserialize clientSize */
-    size_t clientSize;
-    std::memcpy(&clientSize, buffer + offset, sizeof(size_t));
-    offset += sizeof(size_t);
-
     /* Deserialize addrSize */
     size_t addrSize;
     std::memcpy(&addrSize, buffer + offset, sizeof(size_t));
@@ -534,12 +524,12 @@ walletInfo Peer::deserializeWalletInfo(const unsigned char* buffer) {
     offset += sizeof(size_t);
 
     /* Deserialize clientID */
-    std::memcpy(&info.clientID, buffer + offset, clientSize);
-    offset += clientSize;
+    std::memcpy(&info.clientID, buffer + offset, sizeof(uint32_t));
+    offset += sizeof(uint32_t);
 
     /* Deserialize WallAddress */
-    info.walladdr.resize(addrSize / sizeof(char));
-    std::memcpy(&info.walladdr[0], buffer + offset, addrSize);
+    info.walladdr.resize(addrSize);
+    info.walladdr.assign(reinterpret_cast<const char*>(buffer + offset), addrSize - 1);
     offset += addrSize;
 
     /* Deserialize pubKeyy (EVP_PKEY*) */

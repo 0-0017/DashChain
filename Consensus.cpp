@@ -201,7 +201,6 @@ void Consensus::setMinBalance(const float mb) {
 
 std::string Consensus::getCurrentDelegate() {
     if (delegates.empty()) {
-        std::cout << "No Delegate for current peer\n";
         return "err";
     }
     std::string currentDelegate = delegates.front();

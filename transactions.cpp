@@ -274,10 +274,10 @@ unsigned char* transactions::serialize() const {
     size_t numAmm = 0, recAddAmm = 0, delAmm = 0, delIDAmm = 0, vQueAmm = 0;
     size_t sendSize = 0, txidSize = 0, ammSize = 0, recAddSize = 0, delSize = 0, delIDSize = 0, vQueSize = 0;
 
-    sendSize = sendAddr.size() * sizeof(char); //Calculate size of sendAddr String
+    sendSize = sendAddr.size() + 1; // For Null terminator
 
     /* Calculate txid Size */
-    txidSize = txid.size() * sizeof(char);
+    txidSize = txid.size() + 1; //For Null terminator
 
     numAmm = ammount.size();
     ammSize = ammount.size() * sizeof(double); // Calculate size of amount vector
@@ -352,11 +352,9 @@ unsigned char* transactions::serialize() const {
     std::memcpy(buffer + offset, &ammSize, sizeof(ammSize));
     offset += sizeof(ammSize);
 
-
     /* Serialize recAddSize itself */
     std::memcpy(buffer + offset, &recAddSize, sizeof(recAddSize));
     offset += sizeof(recAddSize);
-
 
     /* Serialize delSize itself */
     std::memcpy(buffer + offset, &delSize, sizeof(delSize));
@@ -387,7 +385,7 @@ unsigned char* transactions::serialize() const {
     offset += sizeof(timestamp);
 
     /* Serialize sendAddr (variable) */
-    std::memcpy(buffer + offset, sendAddr.data(), sendSize);
+    std::memcpy(buffer + offset, sendAddr.c_str(), sendSize);
     offset += sendSize;
 
     /* Serialize ammount (variable) */
@@ -395,7 +393,7 @@ unsigned char* transactions::serialize() const {
     offset += ammSize;
 
     /* Serialize txid (variable) */
-    std::memcpy(buffer + offset, txid.data(), txidSize);
+    std::memcpy(buffer + offset, txid.c_str(), txidSize);
     offset += txidSize;
 
     /* Serialize recieveAddr (variable) */
@@ -541,7 +539,7 @@ transactions transactions::deserialize(const unsigned char* data) {
     /* Deserialize sendAddr */
     std::string sa;
     sa.resize(sendSize);
-    std::memcpy(sa.data(), data + offset, sendSize);
+    sa.assign(reinterpret_cast<const char*>(data + offset), sendSize - 1);
     offset += sendSize;
 
     /* Deserialize ammount */
@@ -553,7 +551,7 @@ transactions transactions::deserialize(const unsigned char* data) {
     /* Deserialize txid */
     std::string temStid;
     temStid.resize(txidSize);
-    std::memcpy(temStid.data(), data + offset, txidSize);
+    temStid.assign(reinterpret_cast<const char*>(data + offset), txidSize - 1);
     offset += txidSize;
 
     /* Deserialize recieveAddr */
