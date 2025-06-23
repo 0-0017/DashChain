@@ -12,9 +12,12 @@ public:
     Consensus();
 
     std::vector<std::string> getDelegates();
+    void setDelegates(const std::vector<std::string> &dels);
     std::vector<std::string> getDelegateIDs();
+    void setDelegateIDs(const std::vector<std::string> &delIDs);
     void addDelegateID(const std::string& delegate_id);
     std::vector<std::tuple<std::string, std::string, float>> getVotesQueue();
+    void setVotesQueue(const std::vector<std::tuple<std::string, std::string, float>> &votes_queue);
     std::tuple<bool, std::string> requestDelegate(double balance);
     std::string genDelegateID();
     std::string getCurrentDelegate();

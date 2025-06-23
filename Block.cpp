@@ -201,6 +201,7 @@ void Block::display() {
     std::cout << "|         Block Details           |" << std::endl;
     std::cout << "===================================" << std::endl;
     std::cout << "Timestamp       : " << util::toString(head.timestamp) << std::endl;
+    std::cout << "Data Size       : " << util::toString(data.size()) << std::endl;
     std::cout << "Previous Hash   : " << util::toString(head.prevHash) << std::endl;
     std::cout << "Version         : " << util::toString(head.versionNum) << std::endl;
     std::cout << "Merkle Root     : " << util::toString(head.merkleRoot) << std::endl;

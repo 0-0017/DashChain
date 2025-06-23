@@ -29,6 +29,7 @@ enum class CustomMsgTypes : uint32_t
 	WalletInfo,
 	DelegateID,
 	Votes,
+	Chain,
 };
 
 struct servID { std::string host;  uint16_t portNum = 0; };
@@ -129,6 +130,12 @@ protected:
 				msg >> rec;
 				servID newNode = deserializeStruct(rec);
 				nodeID.push_back(newNode);
+
+				/* Send Current Chain State */
+				olc::net::message<CustomMsgTypes> chn;
+				chn.header.id = CustomMsgTypes::Chain;
+				chn << chain->serializeInfo();
+				SendToPeer(peer, chn);
 
 				/* Send Information For New Node */
 				auto* curr_blk = chain->getFirstBlock();
@@ -276,6 +283,7 @@ protected:
 				chain->initial(nb);
 				chain->setChnTmstmp(nb->getTimestamp());
 				verifyMempool();
+				confirm();
 				util::logCall("NETWORK", "OnMessage(InitialBlock)", true);
 			}
 				break;
@@ -289,6 +297,7 @@ protected:
 					chain->GenerateBlock(nb->getData(), nb);
 					chain->setVersion(nb->getVersion());
 					verifyMempool();
+					confirm();
 					util::logCall("NETWORK", "OnMessage(BlkRecieved)", true);
 				}
 			}
@@ -365,6 +374,13 @@ protected:
 				util::logCall("NETWORK", "OnMessage(Votes)", true);
 			}
 				break;
+			case CustomMsgTypes::Chain:
+			{
+				std::cout << "Chain Message\n";
+				unsigned char* rec;
+				msg >> rec;
+				chain->deserializeInfo(rec);
+			}
 		}
 	}
 private:
@@ -427,10 +443,11 @@ public:
 	/*Alert Delegate to Generate block*/
 	void voteDelegate(const std::vector<std::tuple<std::string, std::string, float>>&);
 
+	/* Request to be a delegate */
 	std::string requestDelegate();
 
-	/* Update Wallets */
-	void updateWallets();
+	/* confirm latest Block in accordance with confirmation period */
+	void confirm();
 
 	/* Get Wallets Balance */
 	double getBalance() const;

@@ -10,6 +10,7 @@ BlockChain::BlockChain()
 	currBlock = nullptr;
 	height = 0;
 	slot = 0;
+	conf = 7;
 	version = 1.0;
 	timestamp = util::TimeStamp();
 	util::logCall("BLOCKCHAIN", "BlockChain()", true);
@@ -256,6 +257,14 @@ void BlockChain::updateChnSlot() {
 	slot++;
 }
 
+unsigned short BlockChain::getConf() {
+	return conf;
+}
+
+void BlockChain::setConf(unsigned short confirm) {
+	conf = confirm;
+}
+
 std::vector<transactions> BlockChain::checkWallets(std::string wa) {
 	/* Only Check Current block for transactions */
 	std::vector<transactions> pbTxs = currBlock->getData();
@@ -289,6 +298,25 @@ void BlockChain::getBlock(unsigned int bheight) {
 	}
 }
 
+Block* BlockChain::confirmation() {
+	unsigned int bh = currBlock->getBlockHeight();
+	unsigned short confirm = getConf();
+	if (bh < conf) {
+		return nullptr;
+	}
+	else {
+		unsigned int ret = ((conf - bh) - 1);
+		Block* ptr = first;
+		while (ptr->next != nullptr) {
+			if (ret == ptr->getBlockHeight()) {
+				return ptr;
+			}
+			ptr = ptr->next;
+		}
+	}
+	return nullptr;
+}
+
 void BlockChain::display() {
 	if (empty()) {
 		std::cout << "Blockchain is empty" << std::endl;
@@ -299,6 +327,7 @@ void BlockChain::display() {
 		std::cout << "===================================" << std::endl;
 		std::cout << "Blockchain Timestamp : " << util::toString(getTimestamp()) << std::endl;
 		std::cout << "Block Timestamp      : " << util::toString(currBlock->getTimestamp()) << std::endl;
+		std::cout << "Data Size		       : " << util::toString(currBlock->getData().size()) << std::endl;
 		std::cout << "Current Hash         : " << util::toString(currBlock->getCurrHash()) << std::endl;
 		std::cout << "Previous Hash        : " << util::toString(currBlock->getPrevHash()) << std::endl;
 		std::cout << "Block Height         : " << util::toString(getBlockHeight()) << std::endl;
@@ -307,4 +336,53 @@ void BlockChain::display() {
 		std::cout << "Version              : " << util::toString(getVersion()) << std::endl;
 		std::cout << "===================================" << std::endl;
 	}
+}
+
+unsigned char* BlockChain::serializeInfo() {
+	size_t tSize = 0;
+
+	/* tSize, timestamp, conf & version */
+	tSize += sizeof(size_t) + sizeof(unsigned long long) + sizeof(unsigned short) + sizeof(float);
+
+	/* Serialize Buffer */
+	unsigned char* buffer = new unsigned char[tSize];
+	size_t offset = 0;
+
+	std::memcpy(buffer + offset, &tSize, sizeof(size_t)); //tSize
+	offset += sizeof(size_t);
+
+	std::memcpy(buffer + offset, &timestamp, sizeof(unsigned long long)); //timestamp
+	offset += sizeof(unsigned long long);
+
+	std::memcpy(buffer + offset, &conf, sizeof(unsigned short)); //conf
+	offset += sizeof(unsigned short);
+
+	std::memcpy(buffer + offset, &version, sizeof(float)); //version
+
+	return buffer;
+}
+
+
+void BlockChain::deserializeInfo(const unsigned char* info) {
+	size_t tSize = 0;
+	size_t offset = 0;
+
+	std::memcpy(&tSize, info + offset, sizeof(size_t));
+	offset += sizeof(size_t);
+
+	unsigned long long timestamp;
+	std::memcpy(&timestamp, info + offset, sizeof(unsigned long long));
+	offset += sizeof(unsigned long long);
+
+	unsigned short conf;
+	std::memcpy(&conf, info + offset, sizeof(unsigned short));
+	offset += sizeof(unsigned short);
+
+	float version;
+	std::memcpy(&version, info + offset, sizeof(float));
+
+	/* Set Blockchain State */
+	setChnTmstmp(timestamp);
+	setConf(conf);
+	setVersion(version);
 }

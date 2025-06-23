@@ -68,11 +68,17 @@ public:
 	/* Getter for timestamp */
 	void setChnTmstmp(unsigned long long ts);
 
-	/* Getter for Slot */
+	/* Setter for Slot */
 	unsigned long long getChnSlot();
 
 	/* Getter for version */
 	float getVersion();
+
+	/* Getter for confirmation period */
+	unsigned short getConf();
+
+	/* Setter for confirmation period */
+	void setConf(unsigned short confirm);
 
 	/* Setter for version */
 	void setVersion(float vnum);
@@ -80,14 +86,23 @@ public:
 	/* Update Method for Slot */
 	void updateChnSlot();
 
-	/* check Method for if wallets in new block */
+	/* Check Method for if wallets in new block */
 	std::vector<transactions> checkWallets(std::string wa);
 
 	/* Display block in Blockchain at any height */
 	void getBlock(unsigned int bheight);
 
+	/* Returns latest confirmed block! */
+	Block* confirmation();
+
 	/* Display Blockchain to stdout */
 	void display();
+
+	/* Serialize Current Blockchain State */
+	unsigned char* serializeInfo();
+
+	/* Deserialize Current Blockchain State */
+	void deserializeInfo(const unsigned char* info);
 
 
 private:
@@ -95,6 +110,7 @@ private:
 	Block* currBlock;
 	unsigned long long timestamp;
 	unsigned long long slot;
+	unsigned short conf;
 	static util utility;
 	unsigned int height;
 	float version;

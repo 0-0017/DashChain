@@ -237,21 +237,9 @@ void Peer::blkRqMethod() {
     chain->GenerateBlock(txs);
     updateCoins(reward); //************
     verifyMempool();
+    confirm();
     broadcastBlock(chain->getCurrBlock());
     util::logCall("NETWORK", "blkRqMethod()", true);
-}
-
-void Peer::updateWallets() {
-    /* check wallets of clients & my wallet */
-    std::vector<transactions> tx;
-    tx = chain->checkWallets(w1.getWalletAddr());
-    for (int k = 0; k < tx.size(); k++) {
-        if (!tx[k].getRecieveAddr().empty()) {
-            w1.inUTXO(tx[k]);
-        }
-    }
-    std::cout << "Wallets Updated\n";
-    util::logCall("NETWORK", "updateWallets()", true);
 }
 
 double Peer::getBalance() const {
@@ -300,6 +288,65 @@ void Peer::updateCoins(transactions rew) {
     X0017.setTotalSupply(totus);
     X0017.setCircSupply(totus);
     util::logCall("NETWORK", "updateCoins()", true);
+}
+
+void Peer::confirm() {
+    /* Get latest Confirmed Block */
+    Block* confirmed = chain->confirmation();
+
+    if (!confirmed->getTxs().empty()) {
+        std::vector<transactions> txs;
+        txs.reserve(confirmed->getTxs().size());
+        txs = confirmed->getTxs();
+
+        for (auto& tx : txs) {
+            const size_t recSize = tx.getRecieveAddr().size();
+            std::vector<std::string> rec;
+            rec.resize(recSize);
+
+            if (recSize > 0) {
+                /* Update Wallet */
+                if (w1.getWalletAddr() == rec[0]) {
+                    w1.inUTXO(tx);
+                    rec.clear();
+                    std::cout << "Wallets Updated\n";
+                }
+            }
+
+            /* Update Consensus */
+            size_t delSize = tx.getDelegates().size();
+            size_t delIDSize = tx.getDelegatesID().size();
+            size_t votesSize = tx.getVotes().size();
+            std::vector<std::string> delegates;
+            std::vector<std::string> delegateID;
+            std::vector<std::tuple<std::string, std::string, float>> votesQueue;
+
+            if (delSize > 0) {
+                delegates.resize(delSize);
+                delegates = tx.getDelegates();
+                consensus.setDelegates(delegates);
+                delegates.clear();
+                delegates.shrink_to_fit();
+            }
+
+            if (delIDSize > 0) {
+                delegateID.resize(delIDSize);
+                delegateID = tx.getDelegatesID();
+                consensus.setDelegates(delegateID);
+                delegateID.clear();
+                delegateID.shrink_to_fit();
+            }
+
+            if (votesSize > 0) {
+                votesQueue.resize(votesSize);
+                votesQueue = tx.getVotes();
+                consensus.setVotesQueue(votesQueue);
+                votesQueue.clear();
+                votesQueue.shrink_to_fit();
+            }
+            std::cout << "Consensus Updated\n";
+        }
+    }
 }
 
 /* Vote For Delegates */
