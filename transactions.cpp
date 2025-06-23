@@ -574,7 +574,7 @@ transactions transactions::deserialize(const unsigned char* data) {
 
     /* Deserialize delegateID */
     std::vector<std::string> delegateID;
-    delegateID.resize(delAmm);
+    delegateID.resize(delIDAmm);
     for (auto& id : delegateID) {
         size_t len = std::strlen(reinterpret_cast<const char*>(data + offset)) + 1;
         id.assign(reinterpret_cast<const char*>(data + offset), len - 1);
