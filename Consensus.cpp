@@ -201,7 +201,8 @@ void Consensus::setMinBalance(const float mb) {
 
 std::string Consensus::getCurrentDelegate() {
     if (delegates.empty()) {
-        return "err";
+        std::string error = "error";
+        return error;
     }
     std::string currentDelegate = delegates.front();
     delegates.erase(delegates.begin());
