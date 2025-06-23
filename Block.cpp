@@ -234,6 +234,7 @@ unsigned char* Block::serialize() const {
         tData.resize(tData.size() + tempSize);
         std::memcpy(tData.data() + doffset, temp, tempSize);
         doffset += tempSize;
+        temp = nullptr;
     }
 
     /* Calculate Total Size & create buffer */
