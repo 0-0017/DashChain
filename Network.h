@@ -15,6 +15,7 @@
 #include "Wallet.h"
 #include "Coin.h"
 #include "Consensus.h"
+#include "Trainer.h"
 
 // Message Types
 enum class CustomMsgTypes : uint32_t
@@ -458,6 +459,12 @@ public:
 
 	/* Vote For Delegates */
 	void vote(std::vector<std::tuple<std::string, std::string, float>> votes);
+
+	/* Get current Block */
+	auto loadData();
+
+	/* Train Data and return output */
+	void train();
 
 	/* Get List of UTXOs In Wallet */
 	void listTx();
