@@ -93,7 +93,7 @@ namespace olc
 			}
 
 			// Pulls any POD-like data form the message buffer
-			friend message<T>& operator >> (message<T>& msg, std::unique_ptr<unsigned char[]> data)
+			friend message<T>& operator >> (message<T>& msg, std::unique_ptr<unsigned char[]>& data)
 			{
 				size_t size = 0;
 				std::memcpy(&size, msg.body.data(), sizeof(size_t));

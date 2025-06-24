@@ -64,7 +64,7 @@ public:
 	double totalAmm() const;
 
 	std::unique_ptr<unsigned char[]> serialize() const;
-	static transactions deserialize(std::unique_ptr<unsigned char[]> data);
+	static transactions deserialize(const std::unique_ptr<unsigned char[]>& data);
 
 	/* Get size for serialization */
 	size_t getSize() const {

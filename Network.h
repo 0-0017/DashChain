@@ -88,7 +88,7 @@ protected:
 			{
 				std::cout << "Chat Message\n";
 				std::unique_ptr<unsigned char[]> rec;
-				msg >> std::move(rec);
+				msg >> rec;
 				size_t offset = 0;
 				size_t dataSize = 0;
 				std::memcpy(&dataSize, rec.get() + sizeof(size_t), sizeof(size_t)); offset = (sizeof(size_t) * 2);
@@ -103,9 +103,9 @@ protected:
 			{
 				std::cout << "Consnsus Message\n";
 				std::unique_ptr<unsigned char[]> rec;
-				msg >> std::move(rec);
+				msg >> rec;
 				std::tuple<unsigned long long, unsigned long long, unsigned long, unsigned short, unsigned short,
-				float, float> cns = consensus.deserializeConsensus(std::move(rec));
+				float, float> cns = consensus.deserializeConsensus(rec);
 				unsigned long long timestamp = std::get<0>(cns);
 				unsigned long long lastUPD = std::get<1>(cns);
 				unsigned long votingPeriod = std::get<2>(cns);
@@ -127,7 +127,7 @@ protected:
 			{
 				std::cout << "ServerStart Message\n";
 				std::unique_ptr<unsigned char[]> rec;
-				msg >> std::move(rec);
+				msg >> rec;
 				servID newNode = deserializeStruct(std::move(rec));
 				nodeID.push_back(newNode);
 
@@ -197,8 +197,8 @@ protected:
 			{
 				std::cout << "KnownNode Message\n";
 				std::unique_ptr<unsigned char[]> rec;
-				msg >> std::move(rec);
-				servID newNode = deserializeStruct(std::move(rec));
+				msg >> rec;
+				servID newNode = deserializeStruct(rec);
 				bool present = false;
 				for (auto& it : nodeID) {
 					if (newNode.portNum == it.portNum && newNode.host == it.host) {
@@ -218,7 +218,7 @@ protected:
 				std::cout << "TxRecieved Message\n";
 				/* deserialize utx-out and verify transaction */
 				std::unique_ptr<unsigned char[]> rec;
-				msg >> std::move(rec);
+				msg >> rec;
 				utxout uin;
 				uin = w1.deserialize_utxout(std::move(rec));
 				transactions tx = transactions::deserialize(util::toUnsignedChar(uin.utxo));
@@ -278,8 +278,8 @@ protected:
 			{
 				std::cout << "InitialBlock Message\n";
 				std::unique_ptr<unsigned char[]> rec;
-				msg >> std::move(rec);
-				Block* nb = chain->getCurrBlock()->deserialize(std::move(rec));
+				msg >> rec;
+				Block* nb = chain->getCurrBlock()->deserialize(rec);
 				chain->initial(nb);
 				chain->setChnTmstmp(nb->getTimestamp());
 				verifyMempool();
@@ -292,8 +292,8 @@ protected:
 				std::cout << "BlkRecieved Message\n";
 				if (chain->verifyBlockchain()) {
 					std::unique_ptr<unsigned char[]> rec;
-					msg >> std::move(rec);
-					Block* nb = chain->getCurrBlock()->deserialize(std::move(rec));
+					msg >> rec;
+					Block* nb = chain->getCurrBlock()->deserialize(rec);
 					chain->GenerateBlock(nb->getData(), nb);
 					chain->setVersion(nb->getVersion());
 					verifyMempool();
@@ -306,9 +306,9 @@ protected:
 			{
 				std::cout << "WalletInfo Message\n";
 				std::unique_ptr<unsigned char[]> rec;
-				msg >> std::move(rec);
+				msg >> rec;
 				walletInfo wi;
-				wi = deserializeWalletInfo(std::move(rec));
+				wi = deserializeWalletInfo(rec);
 				bool present = false;
 				for (auto& wal: wallets) {
 					if (wal.walladdr == wi.walladdr) {
@@ -326,7 +326,7 @@ protected:
 			{
 				std::cout << "DelegateID Message\n";
 				std::unique_ptr<unsigned char[]> rec;
-				msg >> std::move(rec);
+				msg >> rec;
 				size_t offset = 0;
 				size_t dataSize = 0;
 				std::memcpy(&dataSize, rec.get() + sizeof(size_t), sizeof(size_t)); offset = (sizeof(size_t) * 2);
@@ -353,8 +353,8 @@ protected:
 			{
 				std::cout << "Votes Message\n";
 				std::unique_ptr<unsigned char[]> rec;
-				msg >> std::move(rec);
-				std::vector<std::tuple<std::string, std::string, float>> votes = Consensus::deserializeVector(std::move(rec));
+				msg >> rec;
+				std::vector<std::tuple<std::string, std::string, float>> votes = Consensus::deserializeVector(rec);
 
 				/* Compare for Duplicates */
 				bool present = false;
@@ -378,8 +378,8 @@ protected:
 			{
 				std::cout << "Chain Message\n";
 				std::unique_ptr<unsigned char[]> rec;
-				msg >> std::move(rec);
-				chain->deserializeInfo(std::move(rec));
+				msg >> rec;
+				chain->deserializeInfo(rec);
 				util::logCall("NETWORK", "OnMessage(Chain)", true);
 			}
 		}
@@ -491,10 +491,10 @@ public:
 
 	/* struct de-serialization methods */
 	std::unique_ptr<unsigned char[]> serializeStruct(const servID& sid);
-	servID deserializeStruct(std::unique_ptr<unsigned char[]> buffer);
+	servID deserializeStruct(const std::unique_ptr<unsigned char[]>& buffer);
 
 	std::unique_ptr<unsigned char[]> serializeWalletInfo(const walletInfo& info);
-	walletInfo deserializeWalletInfo(std::unique_ptr<unsigned char[]> buffer);
+	walletInfo deserializeWalletInfo(const std::unique_ptr<unsigned char[]>& buffer);
 
 
 };

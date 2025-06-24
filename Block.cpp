@@ -290,7 +290,7 @@ std::unique_ptr<unsigned char[]> Block::serialize() const {
 /* Deserialize method
 * Current Has And Merkle Root Checks for Integrity
 */
-Block* Block::deserialize(const std::unique_ptr<unsigned char[]> buffer) const {
+Block* Block::deserialize(const std::unique_ptr<unsigned char[]>& buffer) const {
     size_t offset = 0;
 
     /* Deserialize total Size */

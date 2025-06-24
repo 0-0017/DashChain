@@ -360,7 +360,7 @@ std::unique_ptr<unsigned char[]> BlockChain::serializeInfo() {
 }
 
 
-void BlockChain::deserializeInfo(const std::unique_ptr<unsigned char[]> info) {
+void BlockChain::deserializeInfo(const std::unique_ptr<unsigned char[]>& info) {
 	size_t tSize = 0;
 	size_t offset = 0;
 

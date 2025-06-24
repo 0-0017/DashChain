@@ -444,7 +444,7 @@ std::unique_ptr<unsigned char[]> transactions::serialize() const {
 }
 
 /* Deserialize method */
-transactions transactions::deserialize(const std::unique_ptr<unsigned char[]> data) {
+transactions transactions::deserialize(const std::unique_ptr<unsigned char[]>& data) {
     size_t offset = 0;
 
     /* Deserialize tSize */

@@ -424,7 +424,7 @@ std::unique_ptr<unsigned char[]> Wallet::serialize_utxout(const utxout& obj) con
     return buffer;
 }
 
-utxout Wallet::deserialize_utxout(const std::unique_ptr<unsigned char[]> buffer) const {
+utxout Wallet::deserialize_utxout(const std::unique_ptr<unsigned char[]>& buffer) const {
     utxout obj;
     size_t offset = 0;
 

@@ -59,7 +59,7 @@ public:
 
 	/* De-serialize utxo and its data */
 	std::unique_ptr<unsigned char[]> serialize_utxout(const utxout& obj) const ;
-	utxout deserialize_utxout(std::unique_ptr<unsigned char[]> buffer) const ;
+	utxout deserialize_utxout(const std::unique_ptr<unsigned char[]>& buffer) const ;
 
 private:
 	/* Wallet address Function, Creates wallet address for newly created wallets */

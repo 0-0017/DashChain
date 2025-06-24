@@ -102,7 +102,7 @@ public:
 	std::unique_ptr<unsigned char[]> serializeInfo();
 
 	/* Deserialize Current Blockchain State */
-	void deserializeInfo(std::unique_ptr<unsigned char[]> info);
+	void deserializeInfo(const std::unique_ptr<unsigned char[]>& info);
 
 
 private:

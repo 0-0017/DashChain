@@ -83,7 +83,7 @@ public:
 
 	/* Serialize method */
 	std::unique_ptr<unsigned char[]> serialize() const;
-	Block* deserialize(std::unique_ptr<unsigned char[]> buffer) const;
+	Block* deserialize(const std::unique_ptr<unsigned char[]>& buffer) const;
 
 	/* Getters and Setters for Hashes */
 	std::vector<unsigned char> setCurrHash() const;

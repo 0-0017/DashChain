@@ -480,7 +480,7 @@ std::unique_ptr<unsigned char[]> Peer::serializeStruct(const servID& sid) {
     return buffer;
 }
 
-servID Peer::deserializeStruct(const std::unique_ptr<unsigned char[]> buffer) {
+servID Peer::deserializeStruct(const std::unique_ptr<unsigned char[]>& buffer) {
     servID sid;
     size_t tSize = 0;
     size_t hostSize = 0;
@@ -551,7 +551,7 @@ std::unique_ptr<unsigned char[]> Peer::serializeWalletInfo(const walletInfo& inf
 }
 
 /* Deserialize Wallet info */
-walletInfo Peer::deserializeWalletInfo(const std::unique_ptr<unsigned char[]> buffer) {
+walletInfo Peer::deserializeWalletInfo(const std::unique_ptr<unsigned char[]>& buffer) {
     walletInfo info;
     size_t offset = 0;
 

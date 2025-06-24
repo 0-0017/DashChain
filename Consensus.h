@@ -40,9 +40,9 @@ public:
     void setMinBalance(float mb);
     std::unique_ptr<unsigned char[]> serializeConsensus();
     std::tuple<unsigned long long, unsigned long long, unsigned long,
-    unsigned short, unsigned short, float, float> deserializeConsensus(std::unique_ptr<unsigned char[]> data);
+    unsigned short, unsigned short, float, float> deserializeConsensus(const std::unique_ptr<unsigned char[]>& data);
     static std::unique_ptr<unsigned char[]> serializeVector(const std::vector<std::tuple<std::string, std::string, float>>& vec);
-    static std::vector<std::tuple<std::string, std::string, float>> deserializeVector(std::unique_ptr<unsigned char[]> data);
+    static std::vector<std::tuple<std::string, std::string, float>> deserializeVector(const std::unique_ptr<unsigned char[]>& data);
 
 private:
     /*

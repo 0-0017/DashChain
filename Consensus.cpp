@@ -339,7 +339,7 @@ std::unique_ptr<unsigned char[]> Consensus::serializeConsensus() {
 }
 
 std::tuple<unsigned long long, unsigned long long, unsigned long,
-unsigned short, unsigned short, float, float> Consensus::deserializeConsensus(const std::unique_ptr<unsigned char[]> data) {
+unsigned short, unsigned short, float, float> Consensus::deserializeConsensus(const std::unique_ptr<unsigned char[]>& data) {
 
     /* Variables */
     unsigned long long timestamp;
@@ -415,7 +415,7 @@ std::unique_ptr<unsigned char[]> Consensus::serializeVector(const std::vector<st
     return serializedData;
 }
 
-std::vector<std::tuple<std::string, std::string, float>> Consensus::deserializeVector(const std::unique_ptr<unsigned char[]> data) {
+std::vector<std::tuple<std::string, std::string, float>> Consensus::deserializeVector(const std::unique_ptr<unsigned char[]>& data) {
     size_t offset = sizeof(size_t);  // Start after total size
     size_t numTuples;
     std::memcpy(&numTuples, data.get() + offset, sizeof(numTuples));
