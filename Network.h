@@ -45,6 +45,7 @@ protected:
 	static util u;
 	uint16_t port;
 	servID serverID;
+	Trainer trainer;
 	Consensus consensus;
 	std::string delegateID;
 	std::string currentDelegate;
@@ -56,6 +57,7 @@ protected:
 	unsigned long long created; // Time Server Was Created
 	std::vector<servID> nodeID; // List of Servers Structs
 	std::vector<walletInfo> wallets;
+	std::vector<double> predictions;
 	std::vector<transactions> mempool;
 
 	virtual bool OnPeerConnect(std::shared_ptr<olc::net::connection<CustomMsgTypes>> peer) override
