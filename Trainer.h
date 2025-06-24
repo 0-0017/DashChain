@@ -3,14 +3,14 @@
 
 #include <Python.h>
 #include <variant>
-#include "Network.h"
+#include "util.h"
 
 
 class Trainer {
 public:
     using VariantType = std::variant<unsigned int, double, size_t>;
     Trainer();
-    std::vector<double> trainData(auto data);
+    std::vector<double> trainData(std::tuple<double, double, double, unsigned long, unsigned int, unsigned long> data);
 
 private:
     unsigned int lastBlock;

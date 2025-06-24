@@ -10,7 +10,7 @@ Trainer::Trainer() {
     txVolume = 0;
 }
 
-std::vector<double> Trainer::trainData(auto data){
+std::vector<double> Trainer::trainData(std::tuple<double, double, double, unsigned long, unsigned int, unsigned long> data){
     /* Initialize Python */
     Py_Initialize();
 

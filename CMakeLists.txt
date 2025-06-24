@@ -11,11 +11,13 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-point
 
 # Find OpenSSL
 find_package(OpenSSL REQUIRED)
+find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
 
-include_directories(${CMAKE_SOURCE_DIR}/OLC_NET)
+# Add include directories
+include_directories(${Python3_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/OLC_NET)
 
 file(GLOB SOURCES "*.cpp")
 add_executable(DashChain main.cpp ${SOURCES})
 
 # Link OpenSSL and libcurl to your project
-target_link_libraries(DashChain OpenSSL::Crypto)
+target_link_libraries(DashChain OpenSSL::Crypto ${Python3_LIBRARIES})

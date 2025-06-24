@@ -27,6 +27,8 @@ Ensure you have the necessary dependencies installed before proceeding:
 - **Nlohmann/json** Header Only Library Required for json data transfer and future smart contract implementations.
 - **C++ Compiler** Ensure you have a compiler that supports C++17 or later.
 - **CMake** For managing builds across different environments.
+- **Python 3.7+** For reinforcement logic and dynamic policy integration
+- **pip** For Python package manager
 
 ## Build Instructions
 
@@ -36,17 +38,24 @@ To compile and run Project DASH (From Source):
    ```sh
    git clone https://github.com/0-0017/DashChain
    cd DashChain
+   
+2. Set Up the Python Environment
+   ```sh
+   ./setup.sh
 
-2. Build the program using cmake:
+3. Build the program using cmake:
    ```sh
    mkdir build && cd build
    cmake ..
    make
 
-3. Run The Program
+4. Run The Program
    ```sh
    ./DashChain
 
+5. Optional: Activate Python venv
+   ```sh
+   source venv/bin/activate  # (Linux/macOS)
 
 ## Key Components
 
@@ -150,6 +159,18 @@ Each block within the blockchain is structured with a distinct head and body.
     - `TimeStamp()`: Generates a timestamp for blockchain entries.
     - `shaHash(const std::string& data)`: Performs SHA hashing.
     - `toString(const T& value)`: Converts various data types to strings.
+
+#### 9. **AI Class (`AI.h`)**
+- **Purpose**: Bridges C++ and Python to enable intelligent decision-making using reinforcement learning agents.
+
+- **Key Methods**:
+  - `trainData(auto data)`: Interfaces with Python to send environment state and retrieve AI-generated actions as a `std::vector<double>`.
+  - `serializeState()`: Converts C++ environment data into Python-compatible format (typically a dictionary).
+  - `extractAction(PyObject* result)`: Parses Python list output and maps values in order to the C++ vector structure.
+  - `loadPolicyModel()`: Initializes or loads a trained Python policy model for inference execution.
+  - `shutdownPython()`: Finalizes and cleans up the embedded Python interpreter session.
+
+> This class serves as the intelligent core for reinforcement learning-based governance, enabling dynamic policy behavior informed by environmental feedback.
 
 ### Blockchain Initialization
 
