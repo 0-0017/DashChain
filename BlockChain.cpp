@@ -147,7 +147,7 @@ bool BlockChain::isNewTxid(const std::string txid) {
 		}
 		ptr = ptr->next;
 	}
-	delete(ptr);
+	ptr = nullptr;
 	util::logCall("BLOCKCHAIN", "isNewTxid()", true);
 	return true;
 }
@@ -165,7 +165,7 @@ transactions BlockChain::getTx(const std::string txid) {
 		}
 		ptr = ptr->next;
 	}
-	delete(ptr);
+	ptr = nullptr;
 
 	/* Return Dummy Tx */
 	std::vector<transactions> txs;
@@ -188,12 +188,9 @@ bool BlockChain::verifyBlockchain() {
 			util::logCall("BLOCKCHAIN", "verifyBlockchain()", false, "Hash Mix Match");
 			return false; // If any hash mismatch, blockchain is invalid
 		}
-		if (ptr != first && !verifyBlock(ptr)) {
-			util::logCall("BLOCKCHAIN", "verifyBlockchain()", false, "Verification Failed");
-			return false;
-		}
 		ptr = ptr->next;
 	}
+	ptr = nullptr;
 	return true;
 }
 
@@ -291,7 +288,7 @@ void BlockChain::getBlock(unsigned int bheight) {
 			ptr = ptr->next;
 		}
 		util::logCall("BLOCKCHAIN", "getBlock()", true);
-		delete(ptr);
+		ptr = nullptr;
 	}
 	else {
 		std::cout << "Block height not yet reached!\n";
@@ -305,7 +302,7 @@ Block* BlockChain::confirmation() {
 		return nullptr;
 	}
 	else {
-		unsigned int ret = ((conf - bh) - 1);
+		unsigned int ret = (bh - conf);
 		Block* ptr = first;
 		while (ptr->next != nullptr) {
 			if (ret == ptr->getBlockHeight()) {

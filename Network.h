@@ -380,6 +380,7 @@ protected:
 				unsigned char* rec;
 				msg >> rec;
 				chain->deserializeInfo(rec);
+				util::logCall("NETWORK", "OnMessage(Chain)", true);
 			}
 		}
 	}
