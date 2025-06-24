@@ -39,7 +39,7 @@ To compile and run Project DASH (From Source):
    git clone https://github.com/0-0017/DashChain
    cd DashChain
    
-2. Set Up the Python Environment
+2. Set Up the Python Environment (NOTE: "chmod +x setup.sh" may be required)
    ```sh
    ./setup.sh
 
