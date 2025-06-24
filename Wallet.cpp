@@ -163,6 +163,7 @@ std::string Wallet::genAddress() const {
             /* Base 58 Encode */
             const std::string output = util::base58_encode(ripe.data(), ripe.size());
             std::string addr = "Ox17" + output;
+            OPENSSL_free(temp);
 
             /* Return Address */
             std::cout << "Wallet Address: " << addr << std::endl;
