@@ -304,6 +304,7 @@ void Peer::confirm() {
                 const size_t recSize = tx.getRecieveAddr().size();
                 std::vector<std::string> rec;
                 rec.resize(recSize);
+                rec = tx.getRecieveAddr();
 
                 if (recSize > 0) {
                     /* Update Wallet */
