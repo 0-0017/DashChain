@@ -1,8 +1,10 @@
 #!/bin/bash
 
-echo "DashChain Python 3.11 Environment Setup"
+echo "Starting DashChain environment setup..."
 
-# Detect Linux distro
+# ---------------------
+# 1. Detect Linux Distro
+# ---------------------
 distro="unknown"
 if [ -f /etc/os-release ]; then
     . /etc/os-release
@@ -10,55 +12,87 @@ if [ -f /etc/os-release ]; then
 fi
 echo "Detected distro: $distro"
 
-# Install Python 3.11 + dev headers
-install_python_311() {
+# ---------------------
+# 2. Install Dependencies
+# ---------------------
+install_dependencies() {
+    echo "Installing required packages..."
     case "$distro" in
         debian|ubuntu)
             sudo apt-get update
-            sudo apt-get install -y python3.11 python3.11-dev cmake g++ openssl libssl-dev
+            sudo apt-get install -y \
+                build-essential \
+                cmake \
+                g++ \
+                libssl-dev \
+                libasio-dev \
+                nlohmann-json3-dev \
+                python3.11 \
+                python3.11-dev \
+                python3.11-venv
             ;;
         arch)
-            sudo pacman -Sy --noconfirm python python-pip cmake gcc openssl
+            sudo pacman -Sy --noconfirm \
+                base-devel \
+                cmake \
+                gcc \
+                openssl \
+                asio \
+                nlohmann-json \
+                python \
+                python-pip \
+                python-virtualenv
             ;;
         fedora|rhel|centos)
-            sudo dnf install -y python3.11 python3.11-devel cmake gcc-c++ openssl-devel
+            sudo dnf install -y \
+                gcc-c++ \
+                make \
+                cmake \
+                openssl-devel \
+                asio-devel \
+                json-devel \
+                python3.11 \
+                python3.11-devel \
+                python3.11-virtualenv
             ;;
         *)
-            echo "Unsupported distro. Please install Python 3.11 and dependencies manually."
+            echo "Unsupported distro. Please install dependencies manually."
             ;;
     esac
 }
 
-# Check for python3.11
-if ! command -v python3.11 &> /dev/null; then
-    echo "Python 3.11 not found. Installing..."
-    install_python_311
-else
-    echo "Python 3.11 is installed."
-fi
+install_dependencies
 
-# Patch CMakeLists.txt with 3.11 values
-echo "Updating CMakeLists.txt to use Python 3.11..."
+# ---------------------
+# 3. Patch CMakeLists.txt
+# ---------------------
+echo "Updating CMakeLists.txt with Python 3.11 paths..."
 sed -i 's|set(Python3_FIND_VERSION .*|set(Python3_FIND_VERSION 3.11)|' CMakeLists.txt
 sed -i 's|set(Python3_EXECUTABLE .*|set(Python3_EXECUTABLE "/usr/bin/python3.11")|' CMakeLists.txt
 sed -i 's|set(Python3_INCLUDE_DIR .*|set(Python3_INCLUDE_DIR "/usr/include/python3.11")|' CMakeLists.txt
 sed -i 's|set(Python3_LIBRARY .*|set(Python3_LIBRARY "/usr/lib/x86_64-linux-gnu/libpython3.11.so")|' CMakeLists.txt
 
-# Create virtual environment
+# ---------------------
+# 4. Set up Python venv
+# ---------------------
 if [ ! -d "venv" ]; then
-    echo "Creating virtual environment..."
+    echo "Creating Python virtual environment..."
     python3.11 -m venv venv
 fi
 
+echo "Activating virtual environment and installing Python dependencies..."
 source venv/bin/activate
 pip install --upgrade pip
 pip install -r python/requirements.txt
 
-# Build project
+# ---------------------
+# 5. Build the C++ Project
+# ---------------------
 echo "Building DashChain..."
 mkdir -p build && cd build
 cmake .. -DPython3_EXECUTABLE=/usr/bin/python3.11
 make
 
-echo "Setup complete. Run with: ./DashChain"
+echo "Setup complete. Run the program with: ./DashChain"
+
 
