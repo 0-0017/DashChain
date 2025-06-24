@@ -82,23 +82,23 @@ namespace olc
 			// Plain Old Data (POD). TLDR: Serialise & Deserialize into/from a vector
 
 			// Pushes any POD-like data into the message buffer
-			friend message<T>& operator << (message<T>& msg, const unsigned char* data)
+			friend message<T>& operator << (message<T>& msg, const std::unique_ptr<unsigned char[]>& data)
 			{
 				size_t size = 0;
-				std::memcpy(&size, data, sizeof(size_t));
+				std::memcpy(&size, data.get(), sizeof(size_t));
 
-				msg.body.assign(data, data + size);
+				msg.body.assign(data.get(), data.get() + size);
 				msg.header.size = msg.size();
 				return msg;
 			}
 
 			// Pulls any POD-like data form the message buffer
-			friend message<T>& operator >> (message<T>& msg, unsigned char*& data)
+			friend message<T>& operator >> (message<T>& msg, std::unique_ptr<unsigned char[]> data)
 			{
 				size_t size = 0;
 				std::memcpy(&size, msg.body.data(), sizeof(size_t));
-				data = new unsigned char[size];
-				std::memcpy(data, msg.body.data(), size);
+				data = std::make_unique<unsigned char[]>(size);
+				std::memcpy(data.get(), msg.body.data(), size);
 				return msg;
 			}
 		};

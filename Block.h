@@ -82,8 +82,8 @@ public:
 	std::vector<unsigned char> MerkleRoot(const std::vector<transactions>& tx) const;
 
 	/* Serialize method */
-	unsigned char* serialize() const;
-	Block* deserialize(const unsigned char* buffer) const;
+	std::unique_ptr<unsigned char[]> serialize() const;
+	Block* deserialize(std::unique_ptr<unsigned char[]> buffer) const;
 
 	/* Getters and Setters for Hashes */
 	std::vector<unsigned char> setCurrHash() const;

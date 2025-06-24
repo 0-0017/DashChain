@@ -84,17 +84,17 @@ public:
 	}
 
 	template <typename T>
-	static unsigned char* toUnsignedChar(const T& value) {
-		unsigned char* result = nullptr;
+	static std::unique_ptr<unsigned char[]> toUnsignedChar(const T& value) {
+		std::unique_ptr<unsigned char[]> result = nullptr;
 
 		/* Case 1: Handle std::string */
 		if constexpr (std::is_same_v<T, std::string>) {
-			result = new unsigned char[value.length()];
-			std::memcpy(result, value.c_str(), value.length());
+			result.reset(new unsigned char[value.length()]);
+			std::memcpy(result.get(), value.c_str(), value.length());
 		}
 		/* Case 2: Handle std::vector<uint8_t> */
 		else if constexpr (std::is_same_v <T, std::vector<uint8_t>> || std::is_same_v <T, std::vector<unsigned char>>) {
-			result = new unsigned char[value.size()];
+			result.reset(new unsigned char[value.size()]);
 			std::memcpy(result, value.data(), value.size());
 		}
 		/* Case 3: Handle std::vector<nlohmann::json> */
@@ -103,13 +103,13 @@ public:
 			for (const auto& elem : value) {
 				jsonStr += elem.dump(); // Convert JSON to string and concatenate
 			}
-			result = new unsigned char[jsonStr.length()];
-			std::memcpy(result, jsonStr.c_str(), jsonStr.length()); // Copy to unsigned char*
+			result.reset(new unsigned char[jsonStr.length()]);
+			std::memcpy(result.get(), jsonStr.c_str(), jsonStr.length()); // Copy to unsigned char*
 		}
 		/* Case 4: Handle unsigned long-long */
 		else if constexpr (std::is_same_v<T, unsigned long long>) {
-			result = new unsigned char[sizeof(unsigned long long)];
-			std::memcpy(result, &value, sizeof(unsigned long long));
+			result.reset(new unsigned char[sizeof(unsigned long long)]);
+			std::memcpy(result.get(), &value, sizeof(unsigned long long));
 		}
 		/* Unsupported type */
 		else {

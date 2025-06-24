@@ -304,42 +304,42 @@ void Consensus::updateDelegates() {
     }
 }
 
-unsigned char* Consensus::serializeConsensus() {
+std::unique_ptr<unsigned char[]> Consensus::serializeConsensus() {
     size_t tSize = sizeof(size_t) + sizeof(unsigned long long) + sizeof(unsigned long long) + sizeof(unsigned long);
     tSize += sizeof(unsigned short) + sizeof(unsigned short) + sizeof(float) + sizeof(float);
 
-    unsigned char* Buffer = new unsigned char[tSize];
+    std::unique_ptr<unsigned char[]> Buffer(new unsigned char[tSize]);
 
     size_t offset = 0;
-    std::memcpy(Buffer, &tSize, sizeof(size_t));
+    std::memcpy(Buffer.get() + offset, &tSize, sizeof(size_t));
     offset += sizeof(size_t);
 
-    std::memcpy(Buffer + offset, &timestamp, sizeof(unsigned long long));
+    std::memcpy(Buffer.get() + offset, &timestamp, sizeof(unsigned long long));
     offset += sizeof(unsigned long long);
 
-    std::memcpy(Buffer + offset, &lastUpd, sizeof(unsigned long long));
+    std::memcpy(Buffer.get() + offset, &lastUpd, sizeof(unsigned long long));
     offset += sizeof(unsigned long long);
 
-    std::memcpy(Buffer + offset, &votingPeriod, sizeof(unsigned long));
+    std::memcpy(Buffer.get() + offset, &votingPeriod, sizeof(unsigned long));
     offset += sizeof(unsigned long);
 
-    std::memcpy(Buffer + offset, &windowPeriod, sizeof(unsigned short));
+    std::memcpy(Buffer.get() + offset, &windowPeriod, sizeof(unsigned short));
     offset += sizeof(unsigned short);
 
-    std::memcpy(Buffer + offset, &maxDelegates, sizeof(unsigned short));
+    std::memcpy(Buffer.get() + offset, &maxDelegates, sizeof(unsigned short));
     offset += sizeof(unsigned short);
 
-    std::memcpy(Buffer + offset, &decayFactor, sizeof(float));
+    std::memcpy(Buffer.get() + offset, &decayFactor, sizeof(float));
     offset += sizeof(float);
 
-    std::memcpy(Buffer + offset, &minBalance, sizeof(float));
+    std::memcpy(Buffer.get() + offset, &minBalance, sizeof(float));
 
     util::logCall("CONSENSUS", "serializeConsensus()", true);
     return Buffer;
 }
 
 std::tuple<unsigned long long, unsigned long long, unsigned long,
-unsigned short, unsigned short, float, float> Consensus::deserializeConsensus(unsigned char* data) {
+unsigned short, unsigned short, float, float> Consensus::deserializeConsensus(const std::unique_ptr<unsigned char[]> data) {
 
     /* Variables */
     unsigned long long timestamp;
@@ -352,28 +352,28 @@ unsigned short, unsigned short, float, float> Consensus::deserializeConsensus(un
     size_t tSize;
 
     size_t offset = 0;
-    std::memcpy(&tSize, data, sizeof(size_t));
+    std::memcpy(&tSize, data.get(), sizeof(size_t));
     offset += sizeof(size_t);
 
-    std::memcpy(&timestamp, data + offset, sizeof(unsigned long long));
+    std::memcpy(&timestamp, data.get() + offset, sizeof(unsigned long long));
     offset += sizeof(unsigned long long);
 
-    std::memcpy(&lastUpd, data + offset, sizeof(unsigned long long));
+    std::memcpy(&lastUpd, data.get() + offset, sizeof(unsigned long long));
     offset += sizeof(unsigned long long);
 
-    std::memcpy(&votingPeriod, data + offset, sizeof(unsigned long));
+    std::memcpy(&votingPeriod, data.get() + offset, sizeof(unsigned long));
     offset += sizeof(unsigned long);
 
-    std::memcpy(&windowPeriod, data + offset, sizeof(unsigned short));
+    std::memcpy(&windowPeriod, data.get() + offset, sizeof(unsigned short));
     offset += sizeof(unsigned short);
 
-    std::memcpy(&maxDelegates, data + offset, sizeof(unsigned short));
+    std::memcpy(&maxDelegates, data.get() + offset, sizeof(unsigned short));
     offset += sizeof(unsigned short);
 
-    std::memcpy(&decayFactor, data + offset, sizeof(float));
+    std::memcpy(&decayFactor, data.get() + offset, sizeof(float));
     offset += sizeof(float);
 
-    std::memcpy(&minBalance, data + offset, sizeof(float));
+    std::memcpy(&minBalance, data.get() + offset, sizeof(float));
 
     std::tuple<unsigned long long, unsigned long long, unsigned long, unsigned short, unsigned short, float,
     float>consensus(timestamp, lastUpd, votingPeriod, windowPeriod, maxDelegates, decayFactor, minBalance);
@@ -382,7 +382,7 @@ unsigned short, unsigned short, float, float> Consensus::deserializeConsensus(un
     return consensus;
 }
 
-unsigned char* Consensus::serializeVector(const std::vector<std::tuple<std::string, std::string, float>>& vec) {
+std::unique_ptr<unsigned char[]> Consensus::serializeVector(const std::vector<std::tuple<std::string, std::string, float>>& vec) {
     std::vector<unsigned char> buffer;
     size_t totalSize = sizeof(size_t);  // Reserve space for total buffer size
 
@@ -407,27 +407,27 @@ unsigned char* Consensus::serializeVector(const std::vector<std::tuple<std::stri
     }
 
     // Allocate heap memory for serialization
-    unsigned char* serializedData = new unsigned char[totalSize];
-    std::memcpy(serializedData, &totalSize, sizeof(totalSize));  // Store total buffer size
-    std::memcpy(serializedData + sizeof(totalSize), buffer.data(), buffer.size());
+    std::unique_ptr<unsigned char[]> serializedData(new unsigned char[totalSize]);
+    std::memcpy(serializedData.get(), &totalSize, sizeof(totalSize));  // Store total buffer size
+    std::memcpy(serializedData.get() + sizeof(totalSize), buffer.data(), buffer.size());
 
     util::logCall("CONSENSUS", "serializeVector()", true);
     return serializedData;
 }
 
-std::vector<std::tuple<std::string, std::string, float>> Consensus::deserializeVector(const unsigned char* data) {
+std::vector<std::tuple<std::string, std::string, float>> Consensus::deserializeVector(const std::unique_ptr<unsigned char[]> data) {
     size_t offset = sizeof(size_t);  // Start after total size
     size_t numTuples;
-    std::memcpy(&numTuples, data + offset, sizeof(numTuples));
+    std::memcpy(&numTuples, data.get() + offset, sizeof(numTuples));
     offset += sizeof(numTuples);
 
     std::vector<std::tuple<std::string, std::string, float>> vec;
 
     auto extractString = [&](std::string& str) {
         uint32_t length;
-        std::memcpy(&length, data + offset, sizeof(length));
+        std::memcpy(&length, data.get() + offset, sizeof(length));
         offset += sizeof(length);
-        str.assign(reinterpret_cast<const char*>(data + offset), length);
+        str.assign(reinterpret_cast<const char*>(data.get() + offset), length);
         offset += length;
     };
 
@@ -437,7 +437,7 @@ std::vector<std::tuple<std::string, std::string, float>> Consensus::deserializeV
         extractString(str2);
 
         float value;
-        std::memcpy(&value, data + offset, sizeof(value));
+        std::memcpy(&value, data.get() + offset, sizeof(value));
         offset += sizeof(value);
 
         vec.emplace_back(str1, str2, value);

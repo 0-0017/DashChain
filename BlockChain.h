@@ -45,10 +45,10 @@ public:
 	double verifyBalance(std::string wa);
 
 	/* Verifies the tx-id is not already present in the chain */
-	bool isNewTxid(const std::string txid);
+	bool isNewTxid(std::string txid);
 
 	/* Gets transaction if present in the chain */
-	transactions getTx(const std::string txid);
+	transactions getTx(std::string txid);
 
 	/* Verifies the integrity of all blocks in the chain */
 	bool verifyBlockchain();
@@ -99,10 +99,10 @@ public:
 	void display();
 
 	/* Serialize Current Blockchain State */
-	unsigned char* serializeInfo();
+	std::unique_ptr<unsigned char[]> serializeInfo();
 
 	/* Deserialize Current Blockchain State */
-	void deserializeInfo(const unsigned char* info);
+	void deserializeInfo(std::unique_ptr<unsigned char[]> info);
 
 
 private:

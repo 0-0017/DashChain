@@ -63,8 +63,8 @@ public:
 	bool outputsValid() const;
 	double totalAmm() const;
 
-	unsigned char* serialize() const;
-	static transactions deserialize(const unsigned char* data);
+	std::unique_ptr<unsigned char[]> serialize() const;
+	static transactions deserialize(std::unique_ptr<unsigned char[]> data);
 
 	/* Get size for serialization */
 	size_t getSize() const {

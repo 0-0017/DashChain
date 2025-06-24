@@ -335,48 +335,48 @@ void BlockChain::display() {
 	}
 }
 
-unsigned char* BlockChain::serializeInfo() {
+std::unique_ptr<unsigned char[]> BlockChain::serializeInfo() {
 	size_t tSize = 0;
 
 	/* tSize, timestamp, conf & version */
 	tSize += sizeof(size_t) + sizeof(unsigned long long) + sizeof(unsigned short) + sizeof(float);
 
 	/* Serialize Buffer */
-	unsigned char* buffer = new unsigned char[tSize];
+	std::unique_ptr<unsigned char[]> buffer(new unsigned char[tSize]);
 	size_t offset = 0;
 
-	std::memcpy(buffer + offset, &tSize, sizeof(size_t)); //tSize
+	std::memcpy(buffer.get() + offset, &tSize, sizeof(size_t)); //tSize
 	offset += sizeof(size_t);
 
-	std::memcpy(buffer + offset, &timestamp, sizeof(unsigned long long)); //timestamp
+	std::memcpy(buffer.get() + offset, &timestamp, sizeof(unsigned long long)); //timestamp
 	offset += sizeof(unsigned long long);
 
-	std::memcpy(buffer + offset, &conf, sizeof(unsigned short)); //conf
+	std::memcpy(buffer.get() + offset, &conf, sizeof(unsigned short)); //conf
 	offset += sizeof(unsigned short);
 
-	std::memcpy(buffer + offset, &version, sizeof(float)); //version
+	std::memcpy(buffer.get() + offset, &version, sizeof(float)); //version
 
 	return buffer;
 }
 
 
-void BlockChain::deserializeInfo(const unsigned char* info) {
+void BlockChain::deserializeInfo(const std::unique_ptr<unsigned char[]> info) {
 	size_t tSize = 0;
 	size_t offset = 0;
 
-	std::memcpy(&tSize, info + offset, sizeof(size_t));
+	std::memcpy(&tSize, info.get() + offset, sizeof(size_t));
 	offset += sizeof(size_t);
 
 	unsigned long long timestamp;
-	std::memcpy(&timestamp, info + offset, sizeof(unsigned long long));
+	std::memcpy(&timestamp, info.get() + offset, sizeof(unsigned long long));
 	offset += sizeof(unsigned long long);
 
 	unsigned short conf;
-	std::memcpy(&conf, info + offset, sizeof(unsigned short));
+	std::memcpy(&conf, info.get() + offset, sizeof(unsigned short));
 	offset += sizeof(unsigned short);
 
 	float version;
-	std::memcpy(&version, info + offset, sizeof(float));
+	std::memcpy(&version, info.get() + offset, sizeof(float));
 
 	/* Set Blockchain State */
 	setChnTmstmp(timestamp);

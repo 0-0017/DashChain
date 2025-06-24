@@ -251,7 +251,7 @@ void transactions::display() {
 }
 
 /* Serialize method */
-unsigned char* transactions::serialize() const {
+std::unique_ptr<unsigned char[]> transactions::serialize() const {
     /*
         There Will be 6 uint32_t, 3 short & 1 size_t Variables at the start of every Buffer
         This Will Account For The Size Of:
@@ -313,129 +313,129 @@ unsigned char* transactions::serialize() const {
     tSize = tSize + sendSize + txidSize + ammSize + recAddSize + delSize + delIDSize + vQueSize;
 
     /* Allocate memory for buffer */
-    unsigned char* buffer = new unsigned char[tSize];
+    std::unique_ptr<unsigned char[]> buffer(new unsigned char[tSize]);
     size_t offset = 0;
 
     /* Serialize tSize itself */
-    std::memcpy(buffer + offset, &tSize, sizeof(tSize));
+    std::memcpy(buffer.get() + offset, &tSize, sizeof(tSize));
     offset += sizeof(tSize);
 
     /* Serialize numAmm itself */
-    std::memcpy(buffer + offset, &numAmm, sizeof(numAmm));
+    std::memcpy(buffer.get() + offset, &numAmm, sizeof(numAmm));
     offset += sizeof(numAmm);
 
     /* Serialize recAddAmm itself */
-    std::memcpy(buffer + offset, &recAddAmm, sizeof(recAddAmm));
+    std::memcpy(buffer.get() + offset, &recAddAmm, sizeof(recAddAmm));
     offset += sizeof(recAddAmm);
 
     /* Serialize delAmm itself */
-    std::memcpy(buffer + offset, &delAmm, sizeof(delAmm));
+    std::memcpy(buffer.get() + offset, &delAmm, sizeof(delAmm));
     offset += sizeof(delAmm);
 
     /* Serialize delIDAmm itself */
-    std::memcpy(buffer + offset, &delIDAmm, sizeof(delIDAmm));
+    std::memcpy(buffer.get() + offset, &delIDAmm, sizeof(delIDAmm));
     offset += sizeof(delIDAmm);
 
     /* Serialize vQueAmm itself */
-    std::memcpy(buffer + offset, &vQueAmm, sizeof(vQueAmm));
+    std::memcpy(buffer.get() + offset, &vQueAmm, sizeof(vQueAmm));
     offset += sizeof(vQueAmm);
 
     /* Serialize sendSize itself */
-    std::memcpy(buffer + offset, &sendSize, sizeof(sendSize));
+    std::memcpy(buffer.get() + offset, &sendSize, sizeof(sendSize));
     offset += sizeof(sendSize);
 
     /* Serialize txidSize itself */
-    std::memcpy(buffer + offset, &txidSize, sizeof(txidSize));
+    std::memcpy(buffer.get() + offset, &txidSize, sizeof(txidSize));
     offset += sizeof(txidSize);
 
     /* Serialize ammSize itself */
-    std::memcpy(buffer + offset, &ammSize, sizeof(ammSize));
+    std::memcpy(buffer.get() + offset, &ammSize, sizeof(ammSize));
     offset += sizeof(ammSize);
 
     /* Serialize recAddSize itself */
-    std::memcpy(buffer + offset, &recAddSize, sizeof(recAddSize));
+    std::memcpy(buffer.get() + offset, &recAddSize, sizeof(recAddSize));
     offset += sizeof(recAddSize);
 
     /* Serialize delSize itself */
-    std::memcpy(buffer + offset, &delSize, sizeof(delSize));
+    std::memcpy(buffer.get() + offset, &delSize, sizeof(delSize));
     offset += sizeof(delSize);
 
     /* Serialize delIDSize itself */
-    std::memcpy(buffer + offset, &delIDSize, sizeof(delIDSize));
+    std::memcpy(buffer.get() + offset, &delIDSize, sizeof(delIDSize));
     offset += sizeof(delIDSize);
 
     /* Serialize vQueSize itself */
-    std::memcpy(buffer + offset, &vQueSize, sizeof(vQueSize));
+    std::memcpy(buffer.get() + offset, &vQueSize, sizeof(vQueSize));
     offset += sizeof(vQueSize);
 
     /* Serialize lock-time (2 bytes) */
-    std::memcpy(buffer + offset, &locktime, sizeof(locktime));
+    std::memcpy(buffer.get() + offset, &locktime, sizeof(locktime));
     offset += sizeof(locktime);
 
     /* Serialize version (4 bytes) */
-    std::memcpy(buffer + offset, &version, sizeof(version));
+    std::memcpy(buffer.get() + offset, &version, sizeof(version));
     offset += sizeof(version);
 
     /* Serialize fee (8 bytes) */
-    std::memcpy(buffer + offset, &fee, sizeof(fee));
+    std::memcpy(buffer.get() + offset, &fee, sizeof(fee));
     offset += sizeof(fee);
 
     /* Serialize timestamp (8 bytes) */
-    std::memcpy(buffer + offset, &timestamp, sizeof(timestamp));
+    std::memcpy(buffer.get() + offset, &timestamp, sizeof(timestamp));
     offset += sizeof(timestamp);
 
     /* Serialize sendAddr (variable) */
-    std::memcpy(buffer + offset, sendAddr.c_str(), sendSize);
+    std::memcpy(buffer.get() + offset, sendAddr.c_str(), sendSize);
     offset += sendSize;
 
     /* Serialize ammount (variable) */
-    std::memcpy(buffer + offset, ammount.data(), ammSize);
+    std::memcpy(buffer.get() + offset, ammount.data(), ammSize);
     offset += ammSize;
 
     /* Serialize txid (variable) */
-    std::memcpy(buffer + offset, txid.c_str(), txidSize);
+    std::memcpy(buffer.get() + offset, txid.c_str(), txidSize);
     offset += txidSize;
 
     /* Serialize recieveAddr (variable) */
-    unsigned char* tbuff = new unsigned char[recAddSize];
+    std::unique_ptr<unsigned char[]> tbuff(new unsigned char[recAddSize]);
     size_t toff = 0;
     for (const auto& str : recieveAddr) {
-        std::memcpy(tbuff + toff, str.c_str(), str.size() + 1); // +1 to copy null terminator
+        std::memcpy(tbuff.get() + toff, str.c_str(), str.size() + 1); // +1 to copy null terminator
         toff += str.size() + 1;  // Update offset for the next string
     }
-    std::memcpy(buffer + offset, tbuff, toff);
+    std::memcpy(buffer.get() + offset, tbuff.get(), toff);
     offset += toff;
 
     /* Serialize delegates (variable) */
-    unsigned char* tbuff1 = new unsigned char[delSize];
+    std::unique_ptr<unsigned char[]> tbuff1(new unsigned char[delSize]);
     size_t toff1 = 0;
     for (const auto& s : delegates) {
-        std::memcpy(tbuff1 + toff1, s.c_str(), s.size() + 1);
+        std::memcpy(tbuff1.get() + toff1, s.c_str(), s.size() + 1);
         toff1 += s.size() + 1;
     }
-    std::memcpy(buffer + offset, tbuff1, toff1);
+    std::memcpy(buffer.get() + offset, tbuff1.get(), toff1);
     offset += toff1;
 
     /* Serialize delegateID (variable) */
-    unsigned char* tbuff2 = new unsigned char[delIDSize];
+    std::unique_ptr<unsigned char[]> tbuff2(new unsigned char[delIDSize]);
     size_t toff2 = 0;
     for (const auto& s : delegateID) {
-        std::memcpy(tbuff2 + toff2, s.c_str(), s.size() + 1);
+        std::memcpy(tbuff2.get() + toff2, s.c_str(), s.size() + 1);
         toff2 += s.size() + 1;
     }
-    std::memcpy(buffer + offset, tbuff2, toff2);
+    std::memcpy(buffer.get() + offset, tbuff2.get(), toff2);
     offset += toff2;
 
     /* Serialize votesQueue (variable) */
     for (const auto& tup : votesQueue) {
         const std::string& s1 = std::get<0>(tup);
-        std::memcpy(buffer + offset, s1.c_str(), s1.size() + 1);
+        std::memcpy(buffer.get() + offset, s1.c_str(), s1.size() + 1);
         offset += s1.size() + 1;
         const std::string& s2 = std::get<1>(tup);
-        std::memcpy(buffer + offset, s2.c_str(), s2.size() + 1);
+        std::memcpy(buffer.get() + offset, s2.c_str(), s2.size() + 1);
         offset += s2.size() + 1;
         float flt = std::get<2>(tup);
-        std::memcpy(buffer + offset, &flt, sizeof(flt));
+        std::memcpy(buffer.get() + offset, &flt, sizeof(flt));
         offset += sizeof(flt);
     }
 
@@ -444,122 +444,122 @@ unsigned char* transactions::serialize() const {
 }
 
 /* Deserialize method */
-transactions transactions::deserialize(const unsigned char* data) {
+transactions transactions::deserialize(const std::unique_ptr<unsigned char[]> data) {
     size_t offset = 0;
 
     /* Deserialize tSize */
     size_t tSize;
-    std::memcpy(&tSize, data + offset, sizeof(tSize));
+    std::memcpy(&tSize, data.get() + offset, sizeof(tSize));
     offset += sizeof(tSize);
 
     /* Deserialize numAmm */
     size_t numAmm;
-    std::memcpy(&numAmm, data + offset, sizeof(numAmm));
+    std::memcpy(&numAmm, data.get() + offset, sizeof(numAmm));
     offset += sizeof(numAmm);
 
     /* Deserialize recAddAmm */
     size_t recAddAmm;
-    std::memcpy(&recAddAmm, data + offset, sizeof(recAddAmm));
+    std::memcpy(&recAddAmm, data.get() + offset, sizeof(recAddAmm));
     offset += sizeof(recAddAmm);
 
     /* Deserialize delAmm */
     size_t delAmm;
-    std::memcpy(&delAmm, data + offset, sizeof(delAmm));
+    std::memcpy(&delAmm, data.get() + offset, sizeof(delAmm));
     offset += sizeof(delAmm);
 
     /* Deserialize delIDAmm */
     size_t delIDAmm;
-    std::memcpy(&delIDAmm, data + offset, sizeof(delIDAmm));
+    std::memcpy(&delIDAmm, data.get() + offset, sizeof(delIDAmm));
     offset += sizeof(delIDAmm);
 
     /* Deserialize vQueAmm */
     size_t vQueAmm;
-    std::memcpy(&vQueAmm, data + offset, sizeof(vQueAmm));
+    std::memcpy(&vQueAmm, data.get() + offset, sizeof(vQueAmm));
     offset += sizeof(vQueAmm);
 
     /* Deserialize sendSize */
     size_t sendSize;
-    std::memcpy(&sendSize, data + offset, sizeof(sendSize));
+    std::memcpy(&sendSize, data.get() + offset, sizeof(sendSize));
     offset += sizeof(sendSize);
 
     /* Deserialize txidSize */
     size_t txidSize;
-    std::memcpy(&txidSize, data + offset, sizeof(txidSize));
+    std::memcpy(&txidSize, data.get() + offset, sizeof(txidSize));
     offset += sizeof(txidSize);
 
     /* Deserialize ammSize */
     size_t ammSize;
-    std::memcpy(&ammSize, data + offset, sizeof(ammSize));
+    std::memcpy(&ammSize, data.get() + offset, sizeof(ammSize));
     offset += sizeof(ammSize);
 
     /* Deserialize recAddSize */
     size_t recAddSize;
-    std::memcpy(&recAddSize, data + offset, sizeof(recAddSize));
+    std::memcpy(&recAddSize, data.get() + offset, sizeof(recAddSize));
     offset += sizeof(recAddSize);
 
     /* Deserialize delSize */
     size_t delSize;
-    std::memcpy(&delSize, data + offset, sizeof(delSize));
+    std::memcpy(&delSize, data.get() + offset, sizeof(delSize));
     offset += sizeof(delSize);
 
     /* Deserialize delIDSize */
     size_t delIDSize;
-    std::memcpy(&delIDSize, data + offset, sizeof(delIDSize));
+    std::memcpy(&delIDSize, data.get() + offset, sizeof(delIDSize));
     offset += sizeof(delIDSize);
 
     /* Deserialize vQueSize */
     size_t vQueSize;
-    std::memcpy(&vQueSize, data + offset, sizeof(vQueSize));
+    std::memcpy(&vQueSize, data.get() + offset, sizeof(vQueSize));
     offset += sizeof(vQueSize);
 
     /* Deserialize locktime */
     unsigned short* lk = new unsigned short[1];
     size_t lk_size = sizeof(unsigned short);
-    std::memcpy(lk, data + offset, lk_size);
+    std::memcpy(lk, data.get() + offset, lk_size);
     offset += lk_size;
 
     /* Deserialize version */
     float* vs = new float[1];
     size_t vsSize = sizeof(float);
-    std::memcpy(vs, data + offset, vsSize);
+    std::memcpy(vs, data.get() + offset, vsSize);
     offset += vsSize;
 
     /* Deserialize fee */
     double* fe = new double[1];
     size_t feSize = sizeof(double);
-    std::memcpy(fe, data + offset, feSize);
+    std::memcpy(fe, data.get() + offset, feSize);
     offset += feSize;
 
     /* Deserialize timestamp */
     unsigned long long* ts = new unsigned long long[1];
     size_t tsSize = sizeof(unsigned long long);
-    std::memcpy(ts, data + offset, tsSize);
+    std::memcpy(ts, data.get() + offset, tsSize);
     offset += tsSize;
 
     /* Deserialize sendAddr */
     std::string sa;
     sa.resize(sendSize);
-    sa.assign(reinterpret_cast<const char*>(data + offset), sendSize - 1);
+    sa.assign(reinterpret_cast<const char*>(data.get() + offset), sendSize - 1);
     offset += sendSize;
 
     /* Deserialize ammount */
     std::vector<double> am;
     am.resize(numAmm);
-    std::memcpy(am.data(), data + offset, ammSize);
+    std::memcpy(am.data(), data.get() + offset, ammSize);
     offset += ammSize;
 
     /* Deserialize txid */
     std::string temStid;
     temStid.resize(txidSize);
-    temStid.assign(reinterpret_cast<const char*>(data + offset), txidSize - 1);
+    temStid.assign(reinterpret_cast<const char*>(data.get() + offset), txidSize - 1);
     offset += txidSize;
 
     /* Deserialize recieveAddr */
     std::vector<std::string> tempra;
     tempra.resize(recAddAmm);
     for (auto& addr : tempra) {
-        size_t len = std::strlen(reinterpret_cast<const char*>(data + offset)) + 1;
-        addr.assign(reinterpret_cast<const char*>(data + offset), len - 1);
+        size_t len = std::strlen(reinterpret_cast<const char*>(data.get() + offset)) + 1;
+        addr.assign(reinterpret_cast<const char*>(data.get() + offset), len - 1);
         offset += len;
     }
 
@@ -567,8 +567,8 @@ transactions transactions::deserialize(const unsigned char* data) {
     std::vector<std::string> delegates;
     delegates.resize(delAmm);
     for (auto& d : delegates) {
-        size_t len = std::strlen(reinterpret_cast<const char*>(data + offset)) + 1;
-        d.assign(reinterpret_cast<const char*>(data + offset), len - 1);
+        size_t len = std::strlen(reinterpret_cast<const char*>(data.get() + offset)) + 1;
+        d.assign(reinterpret_cast<const char*>(data.get() + offset), len - 1);
         offset += len;
     }
 
@@ -576,8 +576,8 @@ transactions transactions::deserialize(const unsigned char* data) {
     std::vector<std::string> delegateID;
     delegateID.resize(delIDAmm);
     for (auto& id : delegateID) {
-        size_t len = std::strlen(reinterpret_cast<const char*>(data + offset)) + 1;
-        id.assign(reinterpret_cast<const char*>(data + offset), len - 1);
+        size_t len = std::strlen(reinterpret_cast<const char*>(data.get() + offset)) + 1;
+        id.assign(reinterpret_cast<const char*>(data.get() + offset), len - 1);
         offset += len;
     }
 
@@ -585,18 +585,18 @@ transactions transactions::deserialize(const unsigned char* data) {
     std::vector<std::tuple<std::string, std::string, float>> votesQueue;
     votesQueue.resize(vQueAmm);
     for (size_t i = 0; i < vQueAmm; ++i) {
-        const char* strPtr1 = reinterpret_cast<const char*>(data + offset);
+        const char* strPtr1 = reinterpret_cast<const char*>(data.get() + offset);
         size_t len1 = std::strlen(strPtr1) + 1;
         std::string voteStr1(strPtr1, len1 - 1);
         offset += len1;
 
-        const char* strPtr2 = reinterpret_cast<const char*>(data + offset);
+        const char* strPtr2 = reinterpret_cast<const char*>(data.get() + offset);
         size_t len2 = std::strlen(strPtr2) + 1;
         std::string voteStr2(strPtr2, len2 - 1);
         offset += len2;
 
         float voteFloat;
-        std::memcpy(&voteFloat, data + offset, sizeof(float));
+        std::memcpy(&voteFloat, data.get() + offset, sizeof(float));
         offset += sizeof(float);
 
         votesQueue[i] = std::make_tuple(voteStr1, voteStr2, voteFloat);

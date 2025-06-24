@@ -38,11 +38,11 @@ public:
     void setDecayFactor(float df);
     float getMinBalance() const;
     void setMinBalance(float mb);
-    unsigned char* serializeConsensus();
+    std::unique_ptr<unsigned char[]> serializeConsensus();
     std::tuple<unsigned long long, unsigned long long, unsigned long,
-    unsigned short, unsigned short, float, float> deserializeConsensus(unsigned char* data);
-    static unsigned char* serializeVector(const std::vector<std::tuple<std::string, std::string, float>>& vec);
-    static std::vector<std::tuple<std::string, std::string, float>> deserializeVector(const unsigned char* data);
+    unsigned short, unsigned short, float, float> deserializeConsensus(std::unique_ptr<unsigned char[]> data);
+    static std::unique_ptr<unsigned char[]> serializeVector(const std::vector<std::tuple<std::string, std::string, float>>& vec);
+    static std::vector<std::tuple<std::string, std::string, float>> deserializeVector(std::unique_ptr<unsigned char[]> data);
 
 private:
     /*

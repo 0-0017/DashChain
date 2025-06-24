@@ -118,7 +118,7 @@ void Peer::cnsLoop(Peer& server) {
 void Peer::setNodeID(const servID& sid) {
     // Ensure the JSON object is valid if needed
     // You can also perform validation checks here
-    nodeID.push_back(sid);
+    nodeID.emplace_back(sid);
     util::logCall("NETWORK", "setNodeID()", true);
 }
 
@@ -328,7 +328,6 @@ void Peer::confirm() {
                     delegates = tx.getDelegates();
                     consensus.setDelegates(delegates);
                     delegates.clear();
-                    delegates.shrink_to_fit();
                 }
 
                 if (delIDSize > 0) {
@@ -336,7 +335,6 @@ void Peer::confirm() {
                     delegateID = tx.getDelegatesID();
                     consensus.setDelegates(delegateID);
                     delegateID.clear();
-                    delegateID.shrink_to_fit();
                 }
 
                 if (votesSize > 0) {
@@ -344,7 +342,6 @@ void Peer::confirm() {
                     votesQueue = tx.getVotes();
                     consensus.setVotesQueue(votesQueue);
                     votesQueue.clear();
-                    votesQueue.shrink_to_fit();
                 }
                 std::cout << "Consensus Updated\n";
             }
@@ -389,17 +386,17 @@ void Peer::BroadcastChat(const std::string& text) {
     size_t offset = 0;
     size_t datasize = text.size() * sizeof(char);
     size_t tSize = sizeof(size_t) + sizeof(size_t) + datasize;
-    unsigned char* buffer = new unsigned char[tSize];
-    std::memcpy(buffer + offset, &tSize, sizeof(size_t)); offset += sizeof(size_t);
-    std::memcpy(buffer + offset, &datasize, sizeof(size_t)); offset += sizeof(size_t);
-    std::memcpy(buffer + offset, text.data(), datasize);
+    std::unique_ptr<unsigned char[]> buffer(new unsigned char[tSize]);
+    std::memcpy(buffer.get() + offset, &tSize, sizeof(size_t)); offset += sizeof(size_t);
+    std::memcpy(buffer.get() + offset, &datasize, sizeof(size_t)); offset += sizeof(size_t);
+    std::memcpy(buffer.get() + offset, text.data(), datasize);
     msg << buffer;
 
     // Broadcast the message using the base class function.
     util::logCall("NETWORK", "BroadcastChat()", true);
     this->Broadcast(msg);
 }
-void Peer::broadcastNode(unsigned char* sid) {
+void Peer::broadcastNode(std::unique_ptr<unsigned char[]> sid) {
     olc::net::message<CustomMsgTypes> msg;
     msg.header.id = CustomMsgTypes::KnownNode;
     msg << sid;
@@ -436,10 +433,10 @@ void Peer::broadcastDelegateID(const std::string& id) {
     size_t offset = 0;
     size_t datasize = id.size() * sizeof(char);
     size_t tSize = sizeof(size_t) + sizeof(size_t) + datasize;
-    unsigned char* buffer = new unsigned char[tSize];
-    std::memcpy(buffer + offset, &tSize, sizeof(size_t)); offset += sizeof(size_t);
-    std::memcpy(buffer + offset, &datasize, sizeof(size_t)); offset += sizeof(size_t);
-    std::memcpy(buffer + offset, id.data(), datasize);
+    std::unique_ptr<unsigned char[]> buffer(new unsigned char[tSize]);
+    std::memcpy(buffer.get() + offset, &tSize, sizeof(size_t)); offset += sizeof(size_t);
+    std::memcpy(buffer.get() + offset, &datasize, sizeof(size_t)); offset += sizeof(size_t);
+    std::memcpy(buffer.get() + offset, id.data(), datasize);
     msg << buffer;
 
     // Broadcast the message using the base class function.
@@ -457,48 +454,48 @@ void Peer::broadcastVotes(std::vector<std::tuple<std::string, std::string, float
     this->Broadcast(msg);
 }
 
-unsigned char* Peer::serializeStruct(const servID& sid) {
+std::unique_ptr<unsigned char[]> Peer::serializeStruct(const servID& sid) {
     size_t hostSize = sid.host.size() + 1;  // include null terminator
     size_t outSize = sizeof(size_t) + sizeof(size_t) + sizeof(uint16_t) + hostSize;
 
-    unsigned char* buffer = new unsigned char[outSize];
+    std::unique_ptr<unsigned char[]> buffer(new unsigned char[outSize]);
     size_t offset = 0;
 
     // Copy hostSize
-    std::memcpy(buffer + offset, &outSize, sizeof(size_t));
+    std::memcpy(buffer.get() + offset, &outSize, sizeof(size_t));
     offset += sizeof(size_t);
 
     // Copy hostSize
-    std::memcpy(buffer + offset, &hostSize, sizeof(size_t));
+    std::memcpy(buffer.get() + offset, &hostSize, sizeof(size_t));
     offset += sizeof(size_t);
 
     // Copy port number
-    std::memcpy(buffer + offset, &sid.portNum, sizeof(uint16_t));
+    std::memcpy(buffer.get() + offset, &sid.portNum, sizeof(uint16_t));
     offset += sizeof(uint16_t);
 
     // Copy host string
-    std::memcpy(buffer + offset, sid.host.c_str(), hostSize);
+    std::memcpy(buffer.get() + offset, sid.host.c_str(), hostSize);
 
     util::logCall("NETWORK", "serializeStruct()", true);
     return buffer;
 }
 
-servID Peer::deserializeStruct(const unsigned char* buffer) {
+servID Peer::deserializeStruct(const std::unique_ptr<unsigned char[]> buffer) {
     servID sid;
     size_t tSize = 0;
     size_t hostSize = 0;
     size_t offset = 0;
 
-    std::memcpy(&tSize, buffer + offset, sizeof(size_t));
+    std::memcpy(&tSize, buffer.get() + offset, sizeof(size_t));
     offset += sizeof(size_t);
 
-    std::memcpy(&hostSize, buffer + offset, sizeof(size_t));
+    std::memcpy(&hostSize, buffer.get() + offset, sizeof(size_t));
     offset += sizeof(size_t);
 
-    std::memcpy(&sid.portNum, buffer + offset, sizeof(uint16_t));
+    std::memcpy(&sid.portNum, buffer.get() + offset, sizeof(uint16_t));
     offset += sizeof(uint16_t);
 
-    sid.host = std::string(reinterpret_cast<const char*>(buffer + offset), hostSize - 1);  // exclude null terminator
+    sid.host = std::string(reinterpret_cast<const char*>(buffer.get() + offset), hostSize - 1);  // exclude null terminator
 
     util::logCall("NETWORK", "deserializeStruct()", true);
     return sid;
@@ -506,7 +503,7 @@ servID Peer::deserializeStruct(const unsigned char* buffer) {
 
 /* Serialization Methods */
 // serialize
-unsigned char* Peer::serializeWalletInfo(const walletInfo& info) {
+std::unique_ptr<unsigned char[]> Peer::serializeWalletInfo(const walletInfo& info) {
 
     /* Calculate the size required for serialization: */
     size_t tSize = 0;
@@ -517,34 +514,34 @@ unsigned char* Peer::serializeWalletInfo(const walletInfo& info) {
     tSize += sizeof(size_t) + sizeof(size_t) + sizeof(size_t) + sizeof(uint32_t) + addrSize + pubKeySize;
 
     /* Allocate buffer for serialization */
-    unsigned char* buffer = new unsigned char[tSize];
+    std::unique_ptr<unsigned char[]> buffer(new unsigned char[tSize]);
     size_t offset = 0;
 
     /* serialize utx-out */
 
     /* Serialize tSize itself */
-    std::memcpy(buffer + offset, &tSize, sizeof(tSize));
+    std::memcpy(buffer.get() + offset, &tSize, sizeof(tSize));
     offset += sizeof(tSize);
 
     /* Serialize addrSize Size itself */
-    std::memcpy(buffer + offset, &addrSize, sizeof(size_t));
+    std::memcpy(buffer.get() + offset, &addrSize, sizeof(size_t));
     offset += sizeof(size_t);
 
     /* Serialize pubKeySize Size itself */
-    std::memcpy(buffer + offset, &pubKeySize, sizeof(size_t));
+    std::memcpy(buffer.get() + offset, &pubKeySize, sizeof(size_t));
     offset += sizeof(size_t);
 
     /* Serialize clientID itself */
-    std::memcpy(buffer + offset, &info.clientID, sizeof(uint32_t));
+    std::memcpy(buffer.get() + offset, &info.clientID, sizeof(uint32_t));
     offset += sizeof(uint32_t);
 
     /* Serialize WallAddress itself */
-    std::memcpy(buffer + offset, info.walladdr.c_str(), addrSize);
+    std::memcpy(buffer.get() + offset, info.walladdr.c_str(), addrSize);
     offset += addrSize;
 
     /* Serialize pubKeyy (EVP_PKEY*) */
     if (info.pubKeyy != nullptr) {
-        unsigned char* tempPtr = buffer + offset;
+        unsigned char* tempPtr = buffer.get() + offset;
         i2d_PUBKEY(info.pubKeyy.get(), &tempPtr);
         offset += pubKeySize;
     }
@@ -554,37 +551,37 @@ unsigned char* Peer::serializeWalletInfo(const walletInfo& info) {
 }
 
 /* Deserialize Wallet info */
-walletInfo Peer::deserializeWalletInfo(const unsigned char* buffer) {
+walletInfo Peer::deserializeWalletInfo(const std::unique_ptr<unsigned char[]> buffer) {
     walletInfo info;
     size_t offset = 0;
 
     /* Deserialize tSize (not used in this function, but read to advance the offset) */
     size_t tSize;
-    std::memcpy(&tSize, buffer + offset, sizeof(size_t));
+    std::memcpy(&tSize, buffer.get() + offset, sizeof(size_t));
     offset += sizeof(size_t);
 
     /* Deserialize addrSize */
     size_t addrSize;
-    std::memcpy(&addrSize, buffer + offset, sizeof(size_t));
+    std::memcpy(&addrSize, buffer.get() + offset, sizeof(size_t));
     offset += sizeof(size_t);
 
     /* Deserialize pubKeySize */
     size_t pubKeySize;
-    std::memcpy(&pubKeySize, buffer + offset, sizeof(size_t));
+    std::memcpy(&pubKeySize, buffer.get() + offset, sizeof(size_t));
     offset += sizeof(size_t);
 
     /* Deserialize clientID */
-    std::memcpy(&info.clientID, buffer + offset, sizeof(uint32_t));
+    std::memcpy(&info.clientID, buffer.get() + offset, sizeof(uint32_t));
     offset += sizeof(uint32_t);
 
     /* Deserialize WallAddress */
     info.walladdr.resize(addrSize);
-    info.walladdr.assign(reinterpret_cast<const char*>(buffer + offset), addrSize - 1);
+    info.walladdr.assign(reinterpret_cast<const char*>(buffer.get() + offset), addrSize - 1);
     offset += addrSize;
 
     /* Deserialize pubKeyy (EVP_PKEY*) */
     if (pubKeySize > 0) {
-        const unsigned char* tempPtr = buffer + offset;
+        const unsigned char* tempPtr = buffer.get() + offset;
         EVP_PKEY* temp = d2i_PUBKEY(nullptr, &tempPtr, pubKeySize);
         info.pubKeyy.reset(temp, EVP_PKEY_Deleter());
         offset += pubKeySize;
