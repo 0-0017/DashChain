@@ -2,6 +2,11 @@ cmake_minimum_required(VERSION 3.25) # 3.31
 project(DashChain)
 
 set(CMAKE_CXX_STANDARD 20)
+set(Python3_ROOT_DIR "/usr")
+set(Python3_FIND_STRATEGY LOCATION)
+set(Python3_FIND_VERSION 3.13)
+set(Python3_INCLUDE_DIR "/usr/include/python3.13")
+set(Python3_LIBRARY "/usr/lib/libpython3.13.so")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer -g")
 
 # Find OpenSSL
