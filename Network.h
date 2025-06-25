@@ -15,7 +15,6 @@
 #include "Wallet.h"
 #include "Coin.h"
 #include "Consensus.h"
-#include "Trainer.h"
 
 // Message Types
 enum class CustomMsgTypes : uint32_t
@@ -45,7 +44,6 @@ protected:
 	static util u;
 	uint16_t port;
 	servID serverID;
-	Trainer trainer;
 	Consensus consensus;
 	std::string delegateID;
 	std::string currentDelegate;
@@ -57,7 +55,6 @@ protected:
 	unsigned long long created; // Time Server Was Created
 	std::vector<servID> nodeID; // List of Servers Structs
 	std::vector<walletInfo> wallets;
-	std::vector<double> predictions;
 	std::vector<transactions> mempool;
 
 	virtual bool OnPeerConnect(std::shared_ptr<olc::net::connection<CustomMsgTypes>> peer) override
@@ -461,12 +458,6 @@ public:
 
 	/* Vote For Delegates */
 	void vote(std::vector<std::tuple<std::string, std::string, float>> votes);
-
-	/* Get current Block */
-	auto loadData();
-
-	/* Train Data and return output */
-	void train();
 
 	/* Get List of UTXOs In Wallet */
 	void listTx();

@@ -27,8 +27,6 @@ Ensure you have the necessary dependencies installed before proceeding:
 - **Nlohmann/json** Header Only Library Required for json data transfer and future smart contract implementations.
 - **C++ Compiler** Ensure you have a compiler that supports C++17 or later.
 - **CMake** For managing builds across different environments.
-- **Python 3.7+** For reinforcement logic and dynamic policy integration
-- **pip** For Python package manager
 
 ## Build Instructions
 
@@ -39,7 +37,7 @@ To compile and run Project DASH (From Source):
    git clone https://github.com/0-0017/DashChain
    cd DashChain
    
-2. Set Up the Python Environment (NOTE: "chmod +x setup.sh" may be required)
+2. (OPTIONAL: Setup Shell) (NOTE: "chmod +x setup.sh" may be required)
    ```sh
    ./setup.sh
 
@@ -52,10 +50,6 @@ To compile and run Project DASH (From Source):
 4. Run The Program
    ```sh
    ./DashChain
-
-5. Optional: Activate Python venv
-   ```sh
-   source venv/bin/activate  # (Linux/macOS)
 
 ## Key Components
 
@@ -160,18 +154,6 @@ Each block within the blockchain is structured with a distinct head and body.
     - `shaHash(const std::string& data)`: Performs SHA hashing.
     - `toString(const T& value)`: Converts various data types to strings.
 
-#### 9. **AI Class (`AI.h`)**
-- **Purpose**: Bridges C++ and Python to enable intelligent decision-making using reinforcement learning agents.
-
-- **Key Methods**:
-  - `trainData(auto data)`: Interfaces with Python to send environment state and retrieve AI-generated actions as a `std::vector<double>`.
-  - `serializeState()`: Converts C++ environment data into Python-compatible format (typically a dictionary).
-  - `extractAction(PyObject* result)`: Parses Python list output and maps values in order to the C++ vector structure.
-  - `loadPolicyModel()`: Initializes or loads a trained Python policy model for inference execution.
-  - `shutdownPython()`: Finalizes and cleans up the embedded Python interpreter session.
-
-> This class serves as the intelligent core for reinforcement learning-based governance, enabling dynamic policy behavior informed by environmental feedback.
-
 ### Blockchain Initialization
 
 The project starts with the creation of a Genesis Block, which creates a previous hash. This design choice enhances security and prevents potential leaks.
@@ -230,6 +212,6 @@ Project DASH is still in development. While currently functional, it has known m
 
 	- Expanding the Coin class to track more than just circulation.
 
-	- Implement Storage and Logging functionality
-
 	- Enhancing network functionality for better peer-to-peer interaction.
+
+    - Implement AI For Smart Consensus & Self Healing

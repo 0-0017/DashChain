@@ -10,7 +10,7 @@ void Peer::serverOnStart(Peer& server) {
     sPeriod = 15;
     chain = nullptr;
     servID initialNode;
-    initialNode.host = "34.44.200.9"; /* 99.105.19.8 */
+    initialNode.host = "34.56.217.220";
     initialNode.portNum = 50507;
     setNodeID(initialNode);
     setTimeCreated();
@@ -98,8 +98,6 @@ void Peer::blkLoop(Peer& server) {
             if ((timestamp - chain->getCurrBlock()->getTimestamp()) >= 15) {
                 currentDelegate = consensus.getCurrentDelegate();
                 if (currentDelegate == delegateID) {
-                    blkRqMethod();
-                    train();
                 }
             }
         }
@@ -368,43 +366,6 @@ std::string Peer::requestDelegate(){
         util::logCall("NETWORK", "requestDelegate()", false, "Balance Too Low");
         std::cout << "Balance Too Low\n";
         return "";
-    }
-}
-
-auto Peer::loadData() {
-
-    /* Get Block Height & tx Volume*/
-    Block* temp = chain->getCurrBlock();
-    unsigned int height = temp->getBlockHeight();
-    size_t txVolume = temp->getData().size();
-
-    /* Get Total Supply and circulating supply */
-    double totalSupply = X0017.getTotalSupply();
-    double circSupply = X0017.getCircSupply();
-
-    /* Get Delegate's Balance */
-    double balance = w1.getBalance();
-
-    /* Get Votes For Current Period */
-    std::vector<std::tuple<std::string, std::string, float>> votes = consensus.getVotesQueue();
-    size_t votesQueueSize = votes.size();
-
-    /* Create Dictionary to sent to python */
-    auto data = std::make_tuple(totalSupply, circSupply, balance, votesQueueSize, height, txVolume);
-
-    return data;
-}
-
-void Peer::train() {
-    predictions = trainer.trainData(loadData());
-
-    if (!predictions.empty()) {
-        consensus.setMaxDelegates(predictions[0]);
-        consensus.setWindowPeriod(predictions[1]);
-        consensus.setVotingPeriod(predictions[2]);
-        consensus.setDecayFactor(predictions[3]);
-        consensus.setMinBalance(predictions[4]);
-        sPeriod = predictions[5];
     }
 }
 
