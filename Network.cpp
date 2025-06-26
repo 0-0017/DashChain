@@ -333,7 +333,7 @@ void Peer::confirm() {
                 if (delIDSize > 0) {
                     delegateID.resize(delIDSize);
                     delegateID = tx.getDelegatesID();
-                    consensus.setDelegates(delegateID);
+                    consensus.setDelegateIDs(delegateID);
                     delegateID.clear();
                 }
 
