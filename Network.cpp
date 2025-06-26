@@ -98,6 +98,7 @@ void Peer::blkLoop(Peer& server) {
             if ((timestamp - chain->getCurrBlock()->getTimestamp()) >= 15) {
                 currentDelegate = consensus.getCurrentDelegate();
                 if (currentDelegate == delegateID) {
+                    blkRqMethod();
                 }
             }
         }
