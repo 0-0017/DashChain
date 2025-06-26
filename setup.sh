@@ -59,7 +59,7 @@ install_dependencies
 # 3. Build the C++ Project
 # ---------------------
 echo "Building DashChain..."
-mkdir -p build && cd build
+mkdir build && cd build
 cmake ..
 make
 
