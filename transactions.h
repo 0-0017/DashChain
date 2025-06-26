@@ -90,10 +90,10 @@ public:
 		size_t numAmm = 0, recAddAmm = 0, delAmm = 0, delIDAmm = 0, vQueAmm = 0;
 		size_t sendSize = 0, txidSize = 0, ammSize = 0, recAddSize = 0, delSize = 0, delIDSize = 0, vQueSize = 0;
 
-		sendSize = sendAddr.size() * sizeof(char); //Calculate size of sendAddr String
+		sendSize = sendAddr.size() + 1; // For Null terminator
 
 		/* Calculate txid Size */
-		txidSize = txid.size() * sizeof(char);
+		txidSize = txid.size() + 1; //For Null terminator
 
 		numAmm = ammount.size();
 		ammSize = ammount.size() * sizeof(double); // Calculate size of amount vector
