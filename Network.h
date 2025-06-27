@@ -128,7 +128,7 @@ protected:
 				std::cout << "ServerStart Message\n";
 				std::unique_ptr<unsigned char[]> rec;
 				msg >> rec;
-				servID newNode = deserializeStruct(std::move(rec));
+				servID newNode = deserializeStruct(rec);
 				nodeID.push_back(newNode);
 
 				/* Send Current Chain State */
@@ -220,7 +220,7 @@ protected:
 				std::unique_ptr<unsigned char[]> rec;
 				msg >> rec;
 				utxout uin;
-				uin = w1.deserialize_utxout(std::move(rec));
+				uin = w1.deserialize_utxout(rec);
 				transactions tx = transactions::deserialize(util::toUnsignedChar(uin.utxo));
 
 

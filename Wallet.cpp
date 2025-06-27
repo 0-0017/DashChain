@@ -381,8 +381,10 @@ std::unique_ptr<unsigned char[]> Wallet::serialize_utxout(const utxout& obj) con
     size_t tSize = 0;
 
     /* Calculate size and serialze public key */
-    unsigned char *buf = nullptr;
-    const int len = i2d_PUBKEY(obj.pubkey.get(), &buf);
+    const int len = i2d_PUBKEY(obj.pubkey.get(), nullptr);
+    std::unique_ptr<unsigned char[]> buf(new unsigned char[len]);
+    unsigned char *ptr = buf.get();
+    int written = i2d_PUBKEY(obj.pubkey.get(), &ptr);
     size_t utSize = obj.utxo.size() + 1;
 
 
@@ -412,16 +414,17 @@ std::unique_ptr<unsigned char[]> Wallet::serialize_utxout(const utxout& obj) con
 
     /* Serialize utxo itself */
     std::memcpy(buffer.get() + offset, obj.utxo.c_str(), utSize);
-    offset += obj.utxo.size();
+    offset += utSize;
 
     /* Serialize signed hash itself */
     std::memcpy(buffer.get() + offset, obj.utxoSignedHash.data(), obj.utxoSignedHash.size());
     offset += obj.utxoSignedHash.size();
 
     /* Serialize public key itself */
-    std::memcpy(buffer.get() + offset, buf, len);
+    std::memcpy(buffer.get() + offset, buf.get(), len);
 
     util::logCall("WALLET", "serialize_utxout()", true);
+    ptr = nullptr;
     return buffer;
 }
 
