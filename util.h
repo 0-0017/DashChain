@@ -75,10 +75,6 @@ public:
 				ss << elem.dump() << " "; // Use the dump() method to convert json to string
 			}
 		}
-		else if constexpr (std::is_class_v<T> && requires { typename T::element_type; }) {
-			if (value) ss << *value;
-			else ss << "nullptr";
-		}
 		else {
 			ss << value; // Use the default behavior for other types
 		}

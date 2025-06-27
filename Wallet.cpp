@@ -296,7 +296,7 @@ void Wallet::inUTXO(const transactions& txin) {
 
 bool Wallet::verifyTx(const utxout& out) {
     /* Declare variables */
-    transactions utxo = transactions::deserialize(std::move(util::toUnsignedChar(out.utxo)));
+    transactions utxo = transactions::deserialize(util::toUnsignedChar(out.utxo));
     std::vector<unsigned char> hash;
     if (util::shaHash(out.utxo, hash)) {
         /* Verify Hash */
