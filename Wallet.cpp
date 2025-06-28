@@ -209,7 +209,10 @@ utxout Wallet::outUTXO(double feee, const std::vector<std::string>& rwa, const s
     utxout out;
     std::vector<unsigned char> hash;
     std::vector<unsigned char> sig;
-    std::string msg = util::toString(utxo.serialize().get());
+    std::unique_ptr<unsigned char[]> temp = utxo.serialize();
+    size_t utxSize = 0; std::memcpy(&utxSize, temp.get(), sizeof(size_t));
+    std::string msg; msg.resize(utxSize);
+    msg.assign(reinterpret_cast<const char*>(temp.get()), utxSize);
 
     if (util::shaHash(msg, hash)) {
         if (ecDoSign(hash, sig)) {
