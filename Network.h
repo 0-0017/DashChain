@@ -220,58 +220,11 @@ protected:
 				std::unique_ptr<unsigned char[]> rec;
 				msg >> rec;
 				utxout uin;
+				std::cout << "rec :" << rec.get() << " --!\n";
 				uin = w1.deserialize_utxout(rec);
-				transactions tx = transactions::deserialize(util::toUnsignedChar(uin.utxo));
-
-
-				/* Verify if the transaction is valid */
-				if (tx.inputsValid() && tx.outputsValid()) {
-					/* check for double spend */
-					if (chain->isNewTxid(tx.getTxid())) {
-						if (w1.verifyTx(uin)) {
-							if (tx.getRecieveAddr().size() == tx.getAmmount().size()) {
-								std::vector<std::string> txra = tx.getRecieveAddr();
-								std::vector<double> txam = tx.getAmmount();
-								std::vector<std::string> delegates = tx.getDelegates();
-								std::vector<std::string> delegateID = tx.getDelegatesID();
-								std::vector<std::tuple<std::string, std::string, float>> votesQueue = tx.getVotes();
-								for (int i = 0; i < tx.getRecieveAddr().size(); i++) {
-									std::vector<std::string>ra;
-									std::vector<double> am;
-									ra.push_back(txra[i]);
-									am.push_back(txam[i]);
-									transactions confirmed(w1.getWalletAddr(), ra, am, (tx.getFee() / txra.size()),
-										tx.getLockTime(),tx.getVersion(), delegates, delegateID, votesQueue);
-									mempool.push_back(confirmed);
-									verifyMempool();
-									util::logCall("NETWORK", "OnMessage(TxRecieved)", true);
-								}
-							}
-							else {
-								/* If the transaction Cant be verifies */
-								util::logCall("NETWORK", "OnMessage(TxRecieved)", false, "Addresses Mix Match!");
-								std::cout << "Addresses Mix Match!\n";
-							}
-						}
-						else {
-							/* If the transaction Cant be verifies */
-							util::logCall("NETWORK", "OnMessage(TxRecieved)", false, "Transaction Cannot Be Verified!");
-							std::cout << "Transaction Cannot Be Verified!\n";
-						}
-					}
-					else {
-						/* If the transaction is on blockchain */
-						util::logCall("NETWORK", "OnMessage(TxRecieved)", false, "Transaction Spent!");
-						std::cout << "Transaction Spent!\n";
-					}
-
-				}
-				else {
-					/* If the transaction inputs or outputs are invalid */
-					util::logCall("NETWORK", "OnMessage(TxRecieved)", false, "Invalid transaction inputs or outputs!");
-					std::cout << "Invalid transaction inputs or outputs!\n";
-				}
-
+				std::cout << "utxo :" << uin.utxo << " --!\n";
+				mempool_emplace(uin);
+				broadcastTransaction(uin);
 			}
 			break;
 			case CustomMsgTypes::InitialBlock:
@@ -432,6 +385,9 @@ public:
 	/* Update Time slot max seconds! */
 	void updateSlot();
 
+	/* Add Transactions To The Mempool */
+	void mempool_emplace(const utxout& uin);
+
 	/* Update mempool (Called everytime tx is received) */
 	void verifyMempool();
 
@@ -452,6 +408,9 @@ public:
 
 	/* Get Wallets Balance */
 	double getBalance() const;
+
+	/* Get Instance Delegate ID */
+	std::string get_this_delID() const;
 
 	/* Get Wallets Address */
 	std::string getWalletAddress() const;

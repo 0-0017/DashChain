@@ -83,35 +83,40 @@ void sendTransaction(Peer &p) {
 void vote(Peer &p) {
     const double amount = p.getBalance();
     std::string sender = p.getWalletAddress();
+    std::string ID = p.get_this_delID();
     float totalVotes = 0;
     std::vector<std::tuple<std::string, std::string, float>> votes;
     int numDelegates;
 
-    do {
-        std::cout << "Enter the number of delegates to vote for: ";
-        std::cin >> numDelegates;
+    if (ID == "error" || ID.empty()) {
+        std::cout << "\nVote Failed: Invalid ID\n";
+    }
+    else{
+        do {
+            std::cout << "Enter the number of delegates to vote for: ";
+            std::cin >> numDelegates;
 
-        for (int i = 0; i < numDelegates; ++i) {
-            std::string delegateID;
-            float voteCount;
+            for (int i = 0; i < numDelegates; ++i) {
+                std::string delegateID;
+                float voteCount;
 
-            std::cout << "Enter delegate ID: ";
-            std::cin >> delegateID;
+                std::cout << "Enter delegate ID: ";
+                std::cin >> delegateID;
 
-            std::cout << "Enter number of votes: ";
-            std::cin >> voteCount;
-            totalVotes += voteCount;
+                std::cout << "Enter number of votes: ";
+                std::cin >> voteCount;
+                totalVotes += voteCount;
 
-            if (totalVotes > amount) {
-                std::cout << " Balance Surpassed Please Revote \n";
-                votes.clear();
-                votes.shrink_to_fit();
-                break;
-            } else {
-                votes.emplace_back(sender, delegateID, voteCount);
+                if (totalVotes > amount) {
+                    std::cout << " Balance Surpassed Please Revote \n";
+                    votes.clear();
+                    break;
+                } else {
+                    votes.emplace_back(sender, delegateID, voteCount);
+                }
             }
-        }
-    }while (totalVotes > amount);
+        }while (totalVotes > amount);
+    }
 
     p.vote(votes);
 

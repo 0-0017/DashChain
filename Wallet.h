@@ -45,7 +45,7 @@ public:
 	EVP_PKEY_ptr extract_public_key();
 	utxout outUTXO(double feee, const std::vector<std::string>& rwa, const std::vector<double>& amm, const std::vector<std::string> &delegates,
 		const std::vector<std::string> &delegateID, const std::vector<std::tuple<std::string, std::string, float>> &votesQueue);
-	void inUTXO(const transactions& txin);
+	void inUTXO(const transactions& txin, size_t index);
 	bool verifyTx(const utxout& out);
 	void listTxs();
 	void setBalance();

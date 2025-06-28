@@ -211,6 +211,49 @@ void Peer::verifyMempool() {
     util::logCall("NETWORK", "verifyMempool()", true);
 }
 
+void Peer::mempool_emplace(const utxout& uin) {
+    transactions tx = transactions::deserialize(util::toUnsignedChar(uin.utxo));
+    /* Verify if the transaction is valid */
+    if (tx.inputsValid() && tx.outputsValid()) {
+        /* check for double spend */
+        if (chain->isNewTxid(tx.getTxid())) {
+            if (w1.verifyTx(uin)) {
+                if (tx.getRecieveAddr().size() == tx.getAmmount().size()) {
+                    std::vector<std::string> txra = tx.getRecieveAddr();
+                    std::vector<double> txam = tx.getAmmount();
+                    std::vector<std::string> delegates = tx.getDelegates();
+                    std::vector<std::string> delegateID = tx.getDelegatesID();
+                    std::vector<std::tuple<std::string, std::string, float>> votesQueue = tx.getVotes();
+                    mempool.emplace_back(tx);
+                    verifyMempool();
+                    util::logCall("NETWORK", "OnMessage(TxRecieved)", true);
+                }
+                else {
+                    /* If the transaction Cant be verifies */
+                    util::logCall("NETWORK", "OnMessage(TxRecieved)", false, "Addresses Mix Match!");
+                    std::cout << "Addresses Mix Match!\n";
+                }
+            }
+            else {
+                /* If the transaction Cant be verifies */
+                util::logCall("NETWORK", "OnMessage(TxRecieved)", false, "Transaction Cannot Be Verified!");
+                std::cout << "Transaction Cannot Be Verified!\n";
+            }
+        }
+        else {
+            /* If the transaction is on blockchain */
+            util::logCall("NETWORK", "OnMessage(TxRecieved)", false, "Transaction Spent!");
+            std::cout << "Transaction Spent!\n";
+        }
+
+    }
+    else {
+        /* If the transaction inputs or outputs are invalid */
+        util::logCall("NETWORK", "OnMessage(TxRecieved)", false, "Invalid transaction inputs or outputs!");
+        std::cout << "Invalid transaction inputs or outputs!\n";
+    }
+}
+
 void Peer::blkRqMethod() {
     std::vector<transactions> txs;
 
@@ -259,7 +302,7 @@ bool Peer::sendTx(std::vector<std::string>& recipients, std::vector<double> amou
     std::vector<std::string> delegateID;
     std::vector<std::tuple<std::string, std::string, float>> votesQueue;
     utxout u1 = w1.outUTXO(X0017.getTxFee(), recipients, amounts, delegates, delegateID, votesQueue);
-    broadcastTransaction(u1);
+    mempool_emplace(u1);
 
     util::logCall("NETWORK", "sendTx()", true);
     return true;
@@ -276,6 +319,11 @@ void Peer::currBlockInfo() {
 void Peer::getBlock(unsigned int height) {
     chain->getBlock(height);
 }
+
+std::string Peer::get_this_delID() const {
+    return delegateID;
+}
+
 
 void Peer::updateCoins(transactions rew) {
     double totus = 0;
@@ -308,11 +356,15 @@ void Peer::confirm() {
 
                 if (recSize > 0) {
                     /* Update Wallet */
-                    if (w1.getWalletAddr() == rec[0]) {
-                        w1.inUTXO(tx);
-                        rec.clear();
-                        std::cout << "Wallets Updated\n";
+                    size_t pos = 0;
+                    for (auto& ra : rec) {
+                        if (w1.getWalletAddr() == ra) {
+                            w1.inUTXO(tx, pos);
+                            std::cout << "Wallets Updated\n";
+                        }
+                        pos++;
                     }
+                    rec.clear();
                 }
 
                 /* Update Consensus */
