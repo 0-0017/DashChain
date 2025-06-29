@@ -161,11 +161,20 @@ protected:
 						SendToPeer(peer, newBlk);
 						i++;
 					} while (curr_blk->next != nullptr);
+
+					/* Serialize Final Block */
+					std::unique_ptr<unsigned char[]> block_ser = curr_blk->serialize();
+					curr_blk = nullptr;
+					olc::net::message<CustomMsgTypes> newBlk;
+					newBlk.header.id = CustomMsgTypes::PopulateChain;
+					newBlk << block_ser;
+					SendToPeer(peer, newBlk);
+
+					/* Signal The End Of Block Transmission */
+					olc::net::message<CustomMsgTypes> strComplete;
+					strComplete.header.id = CustomMsgTypes::StartComplete;
+					SendToPeer(peer, strComplete);
 				}
-				/* Signal The End Of Block Transmission */
-				olc::net::message<CustomMsgTypes> strComplete;
-				strComplete.header.id = CustomMsgTypes::StartComplete;
-				SendToPeer(peer, strComplete);
 
 				/* Send Node List */
 				for (auto& it : nodeID) {
@@ -223,7 +232,7 @@ protected:
 			break;
 			case CustomMsgTypes::PopulateChain:
 			{
-				std::cout << "KnownNode Message\n";
+				std::cout << "PopulateChain Message\n";
 				std::unique_ptr<unsigned char[]> rec;
 				msg >> rec;
 				Block* nb = chain->getCurrBlock()->deserialize(rec);
