@@ -9,6 +9,7 @@ void Peer::serverOnStart(Peer& server) {
     created = util::TimeStamp();
     sPeriod = 15;
     chain = nullptr;
+    rcvCns = false;
     servID initialNode;
     initialNode.host = "34.56.217.220";
     initialNode.portNum = 50507;
@@ -107,7 +108,7 @@ void Peer::blkLoop(Peer& server) {
 
 void Peer::cnsLoop(Peer& server) {
     util::logCall("NETWORK", "cnsLoop()", true);
-    while (true) {
+    while (rcvCns) {
         /* Lock mutex for the update operation */
         std::lock_guard<std::mutex> lock(mtxC);
         consensus.updateDelegates();

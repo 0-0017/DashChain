@@ -43,6 +43,7 @@ protected:
 	Coin X0017;
 	static util u;
 	uint16_t port;
+	bool rcvCns;
 	servID serverID;
 	Consensus consensus;
 	std::string delegateID;
@@ -120,6 +121,7 @@ protected:
 				consensus.setMaxDelegates(maxDelegates);
 				consensus.setDecayFactor(decayFactor);
 				consensus.setMinBalance(minBalance);
+				rcvCns = true;
 				util::logCall("NETWORK", "OnMessage(Consensus)", true);
 			}
 				break;
