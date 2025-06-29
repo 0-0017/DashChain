@@ -146,7 +146,6 @@ protected:
 				int i = 0;
 				if (curr_blk->next == nullptr) {
 					std::unique_ptr<unsigned char[]> block_ser = curr_blk->serialize();
-					curr_blk = curr_blk->next;
 					olc::net::message<CustomMsgTypes> newBlk;
 					newBlk.header.id = CustomMsgTypes::PopulateChain;
 					newBlk << block_ser;
@@ -166,9 +165,6 @@ protected:
 				/* Signal The End Of Block Transmission */
 				olc::net::message<CustomMsgTypes> strComplete;
 				strComplete.header.id = CustomMsgTypes::StartComplete;
-				unsigned int totalHeight = chain->getCurrBlock()->getBlockHeight();
-				std::unique_ptr<unsigned char[]> checkSize = std::make_unique<unsigned char[]>(static_cast<unsigned char>(totalHeight));
-				msg << checkSize;
 				SendToPeer(peer, strComplete);
 
 				/* Send Node List */
