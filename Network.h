@@ -169,12 +169,11 @@ protected:
 					newBlk.header.id = CustomMsgTypes::PopulateChain;
 					newBlk << block_ser;
 					SendToPeer(peer, newBlk);
-
-					/* Signal The End Of Block Transmission */
-					olc::net::message<CustomMsgTypes> strComplete;
-					strComplete.header.id = CustomMsgTypes::StartComplete;
-					SendToPeer(peer, strComplete);
 				}
+				/* Signal The End Of Block Transmission */
+				olc::net::message<CustomMsgTypes> strComplete;
+				strComplete.header.id = CustomMsgTypes::StartComplete;
+				SendToPeer(peer, strComplete);
 
 				/* Send Node List */
 				for (auto& it : nodeID) {
