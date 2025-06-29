@@ -139,17 +139,31 @@ bool BlockChain::isNewTxid(const std::string txid) {
 	std::vector<transactions> pbTxs;
 	while (ptr->next != nullptr) {
 		pbTxs = ptr->getTxs();
-		for (int i = 0; i < pbTxs.size(); i++) {
-			if (pbTxs[i].getTxid() == txid) {
+		for (auto& tx : pbTxs) {
+			if (tx.getTxid() == txid) {
 				util::logCall("BLOCKCHAIN", "isNewTxid()", true);
 				return false; // tx is in blockchain
 			}
 		}
 		ptr = ptr->next;
 	}
-	ptr = nullptr;
-	util::logCall("BLOCKCHAIN", "isNewTxid()", true);
-	return true;
+	if (!ptr->getTxs().empty()) {
+		pbTxs = ptr->getTxs();
+		for (auto& tx : pbTxs) {
+			if (tx.getTxid() == txid) {
+				util::logCall("BLOCKCHAIN", "isNewTxid()", true);
+				return false; // tx is in blockchain
+			}
+		}
+		ptr = nullptr;
+		util::logCall("BLOCKCHAIN", "isNewTxid()", true);
+		return true;
+	}
+	else {
+		ptr = nullptr;
+		util::logCall("BLOCKCHAIN", "isNewTxid()", true);
+		return true;
+	}
 }
 
 transactions BlockChain::getTx(const std::string txid) {

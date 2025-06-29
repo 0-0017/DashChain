@@ -273,8 +273,8 @@ void Peer::blkRqMethod() {
     txs.emplace_back(reward);
 
     /* Add confirmed transactions To Block */
-    for (int i = 0; i < mempool.size(); i++) {
-        txs.emplace_back(mempool[i]);
+    for (auto& tx : mempool) {
+        txs.emplace_back(tx);
     }
 
     /* Generate Block And Add To Network */
