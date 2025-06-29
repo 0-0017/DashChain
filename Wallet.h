@@ -51,6 +51,7 @@ public:
 	void setBalance();
 	double getBalance() const;
 	std::string getWalletAddr() const;
+	void setWalletAddr(const std::string& wa);
 	EVP_PKEY_ptr getPubKey() const;
 	unsigned short getLockTime() const;
 	void setLockTime(unsigned short lk);

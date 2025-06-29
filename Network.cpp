@@ -325,6 +325,9 @@ std::string Peer::get_this_delID() const {
     return delegateID;
 }
 
+void Peer::set_address(const std::string& wa) {
+    w1.setWalletAddr(wa);
+}
 
 void Peer::updateCoins(transactions rew) {
     double totus = 0;

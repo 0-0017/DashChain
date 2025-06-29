@@ -19,6 +19,7 @@ void getTransactionInfo();
 void getBlockchainInfo();
 void requestDelegate();
 void getSpecificBlock();
+void setWallet();
 void processCommand(std::string& command, Peer& p);
 
 #endif //MAIN_H

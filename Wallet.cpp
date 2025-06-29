@@ -386,6 +386,10 @@ std::string Wallet::getWalletAddr() const {
     return address;
 }
 
+void Wallet::setWalletAddr(const std::string& wa) {
+    address = wa;
+}
+
 EVP_PKEY_ptr Wallet::getPubKey() const {
     return pubKeyP;
 }

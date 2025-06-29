@@ -24,8 +24,9 @@ enum class CustomMsgTypes : uint32_t
 	Consensus,
 	KnownNode,
 	TxRecieved,
-	InitialBlock,
 	BlkRecieved,
+	StartComplete,
+	PopulateChain,
 	WalletInfo,
 	DelegateID,
 	Votes,
@@ -55,6 +56,7 @@ protected:
 	std::thread tCns; // This Thread Manages Consensus
 	unsigned long long created; // Time Server Was Created
 	std::vector<servID> nodeID; // List of Servers Structs
+	std::vector<Block*> block_pool;
 	std::vector<walletInfo> wallets;
 	std::vector<transactions> mempool;
 
@@ -146,32 +148,28 @@ protected:
 					std::unique_ptr<unsigned char[]> block_ser = curr_blk->serialize();
 					curr_blk = curr_blk->next;
 					olc::net::message<CustomMsgTypes> newBlk;
-					newBlk.header.id = CustomMsgTypes::InitialBlock;
+					newBlk.header.id = CustomMsgTypes::PopulateChain;
 					newBlk << block_ser;
 					SendToPeer(peer, newBlk);
 				}
 				else {
 					do {
-						if (i == 0) {
-							std::unique_ptr<unsigned char[]> block_ser = curr_blk->serialize();
-							curr_blk = curr_blk->next;
-							olc::net::message<CustomMsgTypes> newBlk;
-							newBlk.header.id = CustomMsgTypes::InitialBlock;
-							newBlk << block_ser;
-							SendToPeer(peer, newBlk);
-							i++;
-						}
-						else {
-							std::unique_ptr<unsigned char[]> block_ser = curr_blk->serialize();
-							curr_blk = curr_blk->next;
-							olc::net::message<CustomMsgTypes> newBlk;
-							newBlk.header.id = CustomMsgTypes::BlkRecieved;
-							newBlk << block_ser;
-							SendToPeer(peer, newBlk);
-							i++;
-						}
+						std::unique_ptr<unsigned char[]> block_ser = curr_blk->serialize();
+						curr_blk = curr_blk->next;
+						olc::net::message<CustomMsgTypes> newBlk;
+						newBlk.header.id = CustomMsgTypes::PopulateChain;
+						newBlk << block_ser;
+						SendToPeer(peer, newBlk);
+						i++;
 					} while (curr_blk->next != nullptr);
 				}
+				/* Signal The End Of Block Transmission */
+				olc::net::message<CustomMsgTypes> strComplete;
+				strComplete.header.id = CustomMsgTypes::StartComplete;
+				unsigned int totalHeight = chain->getCurrBlock()->getBlockHeight();
+				std::unique_ptr<unsigned char[]> checkSize = std::make_unique<unsigned char[]>(static_cast<unsigned char>(totalHeight));
+				msg << checkSize;
+				SendToPeer(peer, strComplete);
 
 				/* Send Node List */
 				for (auto& it : nodeID) {
@@ -193,6 +191,47 @@ protected:
 				node << rec;
 				this->Broadcast(node);
 				util::logCall("NETWORK", "OnMessage(ServerStart)", true);
+			}
+			break;
+			case CustomMsgTypes::StartComplete:
+			{
+				std::cout << "StartComplete Message\n";
+
+				/* Sort Blocks From Lowest To Highest by Block height */
+				std::ranges::sort(block_pool, [](const Block* a, const Block* b)
+				                  {return a->getBlockHeight() < b->getBlockHeight();});
+
+				/* Verify & Populate Chain */
+				size_t pos = 0;
+
+				for (auto& it : block_pool) {
+					if (pos == 0) {
+						chain->initial(it);
+						chain->setChnTmstmp(it->getTimestamp());
+						verifyMempool();
+						confirm();
+						util::logCall("NETWORK", "OnMessage(StartComplete - Initial)", true);
+						pos++;
+					}
+					else {
+						if (chain->verifyBlockchain()) {
+							chain->GenerateBlock(it->getData(), it);
+							chain->setVersion(it->getVersion());
+							verifyMempool();
+							confirm();
+							util::logCall("NETWORK", "OnMessage(StartComplete - NextBlk)", true);
+						}
+					}
+				}
+			}
+			break;
+			case CustomMsgTypes::PopulateChain:
+			{
+				std::cout << "KnownNode Message\n";
+				std::unique_ptr<unsigned char[]> rec;
+				msg >> rec;
+				Block* nb = chain->getCurrBlock()->deserialize(rec);
+				block_pool.emplace_back(nb);
 			}
 			break;
 			case CustomMsgTypes::KnownNode:
@@ -229,19 +268,6 @@ protected:
 				broadcastTransaction(uin);
 			}
 			break;
-			case CustomMsgTypes::InitialBlock:
-			{
-				std::cout << "InitialBlock Message\n";
-				std::unique_ptr<unsigned char[]> rec;
-				msg >> rec;
-				Block* nb = chain->getCurrBlock()->deserialize(rec);
-				chain->initial(nb);
-				chain->setChnTmstmp(nb->getTimestamp());
-				verifyMempool();
-				confirm();
-				util::logCall("NETWORK", "OnMessage(InitialBlock)", true);
-			}
-				break;
 			case CustomMsgTypes::BlkRecieved:
 			{
 				std::cout << "BlkRecieved Message\n";
@@ -410,6 +436,9 @@ public:
 
 	/* Get Wallets Balance */
 	double getBalance() const;
+
+	/* Change Wallet Address to existing Address */
+	void set_address(const std::string& wa);
 
 	/* Get Instance Delegate ID */
 	std::string get_this_delID() const;

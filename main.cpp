@@ -10,6 +10,7 @@ enum Command {
     BLOCKCHAIN_INFO,
     REQUEST_DELEGATE,
     GET_BLOCK,
+    SET_WALLET,
     VOTE,
     EXIT,
     UNKNOWN
@@ -24,6 +25,7 @@ std::unordered_map<std::string, Command> commandMap = {
     {"get_tx", GET_TX},
     {"blockchain_info", BLOCKCHAIN_INFO},
     {"request_delegate", REQUEST_DELEGATE},
+    {"set_wallet", SET_WALLET},
     {"get_block", GET_BLOCK},
     {"vote", VOTE},
     {"exit", EXIT}
@@ -35,6 +37,7 @@ void displayHelp() {
     std::cout << "  tx_history       - Get transaction history\n";
     std::cout << "  send_tx          - Send transaction\n";
     std::cout << "  vote             - Vote for delegates\n";
+    std::cout << "  set_wallet       - Change wallets \n";
     std::cout << "  get_tx [txid]    - Get specific transaction details\n";
     std::cout << "  blockchain_info  - Get blockchain details\n";
     std::cout << "  request_delegate - Get Delegate ID for voting\n";
@@ -128,6 +131,14 @@ void vote(Peer &p) {
     }
 }
 
+void setWallet(Peer &p) {
+    std::string wallet_addr;
+    std::cout << "\nEnter Wallet Address: ";
+    std::cin >> wallet_addr;
+
+    p.set_address(wallet_addr);
+}
+
 void getTransactionInfo(Peer &p) {
     std::string txid;
     std::cout << "\nEnter TXID: ";
@@ -180,6 +191,9 @@ void processCommand(std::string& command, Peer& p) {
             break;
         case GET_BLOCK:
             getSpecificBlock(p);
+            break;
+        case SET_WALLET:
+            setWallet(p);
             break;
         case VOTE:
             vote(p);
