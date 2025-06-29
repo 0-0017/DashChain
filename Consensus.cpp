@@ -111,7 +111,7 @@ std::vector<std::string>  Consensus::getDelegates() {
     return delegates;
 }
 
-void Consensus::setDelegates(const std::vector<std::string> &dels) {
+void Consensus::setDelegates(const std::vector<std::string>& dels) {
     delegates = dels;
 }
 
@@ -218,7 +218,6 @@ std::string Consensus::getCurrentDelegate() {
     }
     std::string currentDelegate = delegates.front();
     delegates.erase(delegates.begin());
-    delegates.shrink_to_fit();
     util::logCall("CONSENSUS", "getCurrentDelegate()", true);
     return currentDelegate;
 }
