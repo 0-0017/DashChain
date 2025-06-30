@@ -355,7 +355,6 @@ void Peer::confirm() {
             for (auto& tx : txs) {
                 const size_t recSize = tx.getRecieveAddr().size();
                 std::vector<std::string> rec;
-                rec.resize(recSize);
                 rec = tx.getRecieveAddr();
 
                 if (recSize > 0) {
@@ -380,21 +379,18 @@ void Peer::confirm() {
                 std::vector<std::tuple<std::string, std::string, float>> votesQueue;
 
                 if (delSize > 0) {
-                    delegates.resize(delSize);
                     delegates = tx.getDelegates();
                     consensus.setDelegates(delegates);
                     delegates.clear();
                 }
 
                 if (delIDSize > 0) {
-                    delegateID.resize(delIDSize);
                     delegateID = tx.getDelegatesID();
                     consensus.setDelegateIDs(delegateID);
                     delegateID.clear();
                 }
 
                 if (votesSize > 0) {
-                    votesQueue.resize(votesSize);
                     votesQueue = tx.getVotes();
                     consensus.setVotesQueue(votesQueue);
                     votesQueue.clear();

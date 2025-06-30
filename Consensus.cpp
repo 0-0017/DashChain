@@ -216,7 +216,7 @@ std::string Consensus::getCurrentDelegate() {
         std::string error = "error";
         return error;
     }
-    std::string currentDelegate = delegates.front();
+    std::string currentDelegate = std::move(delegates.front());
     delegates.erase(delegates.begin());
     util::logCall("CONSENSUS", "getCurrentDelegate()", true);
     return currentDelegate;
