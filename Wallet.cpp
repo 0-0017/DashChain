@@ -296,17 +296,14 @@ void Wallet::inUTXO(const transactions& txin, size_t index) {
     /* Create Personal UTXO */
     std::vector<std::string> del;
     size_t delSize = txin.getDelegates().size();
-    del.reserve(delSize);
     del = txin.getDelegates();
 
     std::vector<std::string> delID;
     size_t delIDSize = txin.getDelegatesID().size();
-    delID.reserve(delIDSize);
     delID = txin.getDelegatesID();
 
     std::vector<std::tuple<std::string, std::string, float>> votesQ;
     size_t votesSize = txin.getVotes().size();
-    votesQ.reserve(votesSize);
     votesQ = txin.getVotes();
 
     std::string mwa = address;
@@ -314,7 +311,6 @@ void Wallet::inUTXO(const transactions& txin, size_t index) {
     mra.push_back(mwa);
 
     std::vector<double> amm;
-    amm.reserve(1);
     amm.push_back(txin.getAmmount()[index]);
 
     transactions ttx(address, mra, amm, txin.getFee(), txin.getLockTime(), txin.getVersion(), del,

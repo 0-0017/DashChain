@@ -171,10 +171,10 @@ transactions BlockChain::getTx(const std::string txid) {
 	std::vector<transactions> pbTxs;
 	while (ptr->next != nullptr) {
 		pbTxs = ptr->getTxs();
-		for (int i = 0; i < pbTxs.size(); i++) {
-			if (pbTxs[i].getTxid() == txid) {
+		for (auto& tx : pbTxs) {
+			if (tx.getTxid() == txid) {
 				util::logCall("BLOCKCHAIN", "getTx()", true);
-				return pbTxs[i]; // return tx
+				return tx; // return tx
 			}
 		}
 		ptr = ptr->next;

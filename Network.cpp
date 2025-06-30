@@ -199,9 +199,9 @@ void Peer::updateSlot() {
 
 void Peer::verifyMempool() {
     std::vector<transactions> new_mempool;
-    for (int i = 0; i < mempool.size(); i++) {
-        if (chain->isNewTxid(mempool[i].getTxid())) {
-            new_mempool.emplace_back(mempool[i]);
+    for (auto& tx : mempool) {
+        if (chain->isNewTxid(tx.getTxid())) {
+            new_mempool.emplace_back(tx);
         }
         else {
             continue;
@@ -333,8 +333,8 @@ void Peer::updateCoins(transactions rew) {
     double totus = 0;
     std::vector<double> amm = rew.getAmmount();
 
-    for (int i = 0; i < amm.size(); i++) {
-        totus += amm[i];
+    for (double am : amm) {
+        totus += am;
     }
 
     X0017.setTotalSupply(totus);
@@ -349,7 +349,6 @@ void Peer::confirm() {
     if (confirmed != nullptr) {
         if (!confirmed->getTxs().empty()) {
             std::vector<transactions> txs;
-            txs.reserve(confirmed->getTxs().size());
             txs = confirmed->getTxs();
 
             for (auto& tx : txs) {
