@@ -16,7 +16,7 @@ Consensus::Consensus()
 }
 
 bool Consensus::delIDExist(const std::string &ID) const {
- return std::ranges::find(delegates, ID) != delegates.end();
+    return std::ranges::find(delegates, ID) != delegates.end();
 }
 
 std::string Consensus::genDelegateID(){
@@ -108,10 +108,12 @@ std::string Consensus::genDelegateID(){
 }
 
 std::vector<std::string>  Consensus::getDelegates() {
+    std::lock_guard<std::mutex> lock(delegatesMutex);
     return delegates;
 }
 
 void Consensus::setDelegates(const std::vector<std::string>& dels) {
+    std::lock_guard<std::mutex> lock(delegatesMutex);
     delegates = dels;
 }
 
@@ -137,7 +139,7 @@ void Consensus::setVotesQueue(const std::vector<std::tuple<std::string, std::str
 }
 
 std::tuple<bool, std::string> Consensus::requestDelegate(const double balance) {
-
+    std::lock_guard<std::mutex> lock(delegatesMutex);
     if (balance >= minBalance) {
         const std::string id = genDelegateID();
         delegates.push_back(id);
@@ -212,6 +214,7 @@ void Consensus::setMinBalance(const float mb) {
 }
 
 std::string Consensus::getCurrentDelegate() {
+    std::lock_guard<std::mutex> lock(delegatesMutex);
     if (delegates.empty()) {
         std::string error = "error";
         return error;
@@ -224,6 +227,7 @@ std::string Consensus::getCurrentDelegate() {
 
 void Consensus::updateDelegates() {
     if (const unsigned long long timeNow = util::TimeStamp(); timeNow - lastUpd >= votingPeriod) {
+        std::lock_guard<std::mutex> lock(delegatesMutex);
 
         /* Process Vote Decay */
         std::map<std::pair<std::string, std::string>, std::vector<float>> votesContain; // temp container

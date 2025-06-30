@@ -10,6 +10,9 @@
 class Consensus {
 public:
     Consensus();
+    ~Consensus() {
+        std::cout << "Destroying Consensus\n";
+    }
 
     std::vector<std::string> getDelegates();
     void setDelegates(const std::vector<std::string> &dels);
@@ -67,6 +70,7 @@ private:
     unsigned long votingPeriod;
     unsigned short windowPeriod;
     unsigned short maxDelegates;
+    std::mutex delegatesMutex;
     float decayFactor;
     float minBalance;
     static util u;
