@@ -122,7 +122,15 @@ std::vector<std::string> Consensus::getDelegateIDs() {
 }
 
 void Consensus::setDelegateIDs(const std::vector<std::string> &delIDs) {
-    delegateID = delIDs;
+    std::lock_guard<std::mutex> lock(delegatesMutex);
+    for (auto& id : delIDs) {
+        if (delIDExist(id)) {
+            continue;
+        }
+        else {
+            delegateID.push_back(id);
+        }
+    }
 }
 
 void Consensus::addDelegateID(const std::string& delegate_id) {
@@ -132,10 +140,6 @@ void Consensus::addDelegateID(const std::string& delegate_id) {
 
 std::vector<std::tuple<std::string, std::string, float>> Consensus::getVotesQueue() {
     return votesQueue;
-}
-
-void Consensus::setVotesQueue(const std::vector<std::tuple<std::string, std::string, float>> &votes_queue) {
-    votesQueue = votes_queue;
 }
 
 std::tuple<bool, std::string> Consensus::requestDelegate(const double balance) {

@@ -391,7 +391,7 @@ void Peer::confirm() {
 
                 if (votesSize > 0) {
                     votesQueue = tx.getVotes();
-                    consensus.setVotesQueue(votesQueue);
+                    consensus.updatedVotes(votesQueue);
                     votesQueue.clear();
                 }
                 std::cout << "Consensus Updated\n";

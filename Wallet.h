@@ -40,12 +40,17 @@ public:
 	EVP_PKEY_ptr generateECDSAKeyPair();
 
 	/* Wallet Methods */
+
+	/* Sign & Verify SIGNED Transactions Methods */
 	bool ecDoSign(const std::vector<unsigned char> &hash, std::vector<unsigned char> &signature) const;
 	bool ecDoVerify(const EVP_PKEY_ptr& pubKey, const std::vector<unsigned char> &hash, const std::vector<unsigned char> &signature);
 	EVP_PKEY_ptr extract_public_key();
+
+	/* send & recieve Transactions methods */
 	utxout outUTXO(double feee, const std::vector<std::string>& rwa, const std::vector<double>& amm, const std::vector<std::string> &delegates,
 		const std::vector<std::string> &delegateID, const std::vector<std::tuple<std::string, std::string, float>> &votesQueue);
 	void inUTXO(const transactions& txin, size_t index);
+
 	bool verifyTx(const utxout& out);
 	void listTxs();
 	void setBalance();

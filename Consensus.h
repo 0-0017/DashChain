@@ -20,12 +20,19 @@ public:
     void setDelegateIDs(const std::vector<std::string> &delIDs);
     void addDelegateID(const std::string& delegate_id);
     std::vector<std::tuple<std::string, std::string, float>> getVotesQueue();
-    void setVotesQueue(const std::vector<std::tuple<std::string, std::string, float>> &votes_queue);
+
+    /* Request To become a delegate In the network */
     std::tuple<bool, std::string> requestDelegate(double balance);
     std::string genDelegateID();
+
+    /* Get The Current Delegate Assigned to Block Creation */
     std::string getCurrentDelegate();
     bool delIDExist(const std::string &ID) const;
+
+    /* Updated Votes From Network to Consensus */
     void updatedVotes(const std::vector<std::tuple<std::string, std::string, float>>& votes);
+
+    /* Updated Delegate window based on votes in the network */
     void updateDelegates();
     unsigned long long getTimestamp() const;
     void setTimestamp(unsigned long long ts);
@@ -41,6 +48,8 @@ public:
     void setDecayFactor(float df);
     float getMinBalance() const;
     void setMinBalance(float mb);
+
+    /* Serialization For Consensus information passed through network */
     std::unique_ptr<unsigned char[]> serializeConsensus();
     std::tuple<unsigned long long, unsigned long long, unsigned long,
     unsigned short, unsigned short, float, float> deserializeConsensus(const std::unique_ptr<unsigned char[]>& data);
