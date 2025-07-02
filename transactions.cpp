@@ -18,7 +18,6 @@ transactions::transactions(std::string sa, std::vector<std::string> ra, std::vec
     delegateID(std::move(delegatesID)),
     votesQueue(std::move(votes))
 {
-    util::logCall("TRANSACTIONS", "transactions()", true);
 }
 
 /* Copy */
@@ -39,7 +38,6 @@ transactions::transactions(const transactions& copy)
 
 
 transactions::~transactions() {
-    util::logCall("TRANSACTIONS", "~transactions()", true);
 };
 
 unsigned long long transactions::getTimeStamp() const {
@@ -131,7 +129,6 @@ std::string transactions::setTxid(){
 
     random += randomA;
     std::string tx_id = ("0X0017" + random + util::toString(util::TimeStamp()));
-    util::logCall("TRANSACTIONS", "setTxid()", true);
     return tx_id;
 }
 
@@ -177,7 +174,6 @@ bool transactions::inputsValid() const {
         return false;
     }
 
-    util::logCall("TRANSACTIONS", "inputsValid()", true);
     return true; // Return only after checking all values
 }
 
@@ -194,7 +190,6 @@ bool transactions::outputsValid() const {
         }
     }
 
-    util::logCall("TRANSACTIONS", "outputsValid()", true);
     return true; // Return only after checking all values
 }
 
@@ -206,7 +201,6 @@ double transactions::totalAmm() const {
         amm += ammount[i];
     }
 
-    util::logCall("TRANSACTIONS", "totalAmm()", true);
     return amm;
 }
 
@@ -439,7 +433,6 @@ std::unique_ptr<unsigned char[]> transactions::serialize() const {
         offset += sizeof(flt);
     }
 
-    util::logCall("TRANSACTIONS", "serialize()", true);
     return buffer; // Return the serialized buffer
 }
 
@@ -610,6 +603,5 @@ transactions transactions::deserialize(const std::unique_ptr<unsigned char[]>& d
     delete[] vs;
     delete[] ts;
 
-    util::logCall("TRANSACTIONS", "deserialize()", true);
     return tx;
 }

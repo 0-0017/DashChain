@@ -117,7 +117,6 @@ public:
 			std::cerr << "Unsupported type for toUnsignedChar!\n";
 		}
 
-		logCall("UTIL", "toUnsignedChar()", true);
 		return result;
 	}
 
@@ -125,11 +124,9 @@ public:
 	template<typename T>
 	static const char* toConstChar(const T& input) {
 		if constexpr (std::is_same_v<T, std::string>) {
-			logCall("UTIL", "toConstChar()", true);
 			return input.c_str();
 		}
 		else if constexpr (std::is_same_v<T, std::vector<uint8_t>>) {
-			logCall("UTIL", "toConstChar()", true);
 			return reinterpret_cast<const char*>(input.data());
 		}
 		else {

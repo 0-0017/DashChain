@@ -43,7 +43,6 @@ std::vector<unsigned char> Block::MerkleRoot(const std::vector<transactions>& tx
             txHash.emplace_back(std::move(hash));
         }
         else {
-            util::logCall("BLOCK", "MerkleRoot()", false, "Failed to hash tx");
             std::cerr << "Failed to hash tx" << std::endl;
             return {};
         }
@@ -65,7 +64,6 @@ std::vector<unsigned char> Block::MerkleRoot(const std::vector<transactions>& tx
             if (std::vector<unsigned char> newHash; util::shaHash(combinedHashStr, newHash)) {
                 newLevel.emplace_back(std::move(newHash));
             } else {
-                util::logCall("BLOCK", "MerkleRoot()", false, "Failed to hash combined data");
                 std::cerr << "Failed to hash combined data" << std::endl;
                 return {};
             }
@@ -73,7 +71,6 @@ std::vector<unsigned char> Block::MerkleRoot(const std::vector<transactions>& tx
         txHash = newLevel;
     }
 
-    util::logCall("BLOCK", "MerkleRoot()", true);
     return txHash.front(); // Final Merkle Root
 }
 
@@ -154,11 +151,9 @@ std::vector<unsigned char> Block::setCurrHash() const{
     std::string msg(reinterpret_cast<char*>(h_data.get()));
     std::vector<unsigned char> hash;
     if (util::shaHash(msg, hash)) {
-        util::logCall("BLOCK", "setCurrHash()", true);
         return hash;
     }
     else {
-        util::logCall("BLOCK", "setCurrHash()", false, "Failed to hash block");
         std::cerr << "Failed to hash block" << std::endl;
         return {};
     }
@@ -174,12 +169,10 @@ std::vector<unsigned char> Block::getPrevHash() const {
 }
 
 std::vector<transactions> Block::getTxs() const {
-    util::logCall("BLOCK", "getTxs()", true);
     return data;
 }
 
 std::vector<transactions> Block::getData() const {
-    util::logCall("BLOCK", "getData()", true);
     return data;
 }
 
@@ -188,7 +181,6 @@ size_t Block::setSize() const{
     size_t size = 0;
     size += data.size() + head.merkleRoot.size() + sizeof(unsigned long long) + head.prevHash.size() + sizeof(float) + sizeof(head);
     size += sizeof(size_t) + sizeof(unsigned int);
-    util::logCall("BLOCK", "setSize()", true);
     return size;
 }
 
@@ -283,7 +275,6 @@ std::unique_ptr<unsigned char[]> Block::serialize() const {
 
     std::memcpy(buffer.get() + offset, tData.data(), dSize); //data
 
-    util::logCall("BLOCK", "serialize()", true);
     return buffer;
 }
 
@@ -380,7 +371,6 @@ Block* Block::deserialize(const std::unique_ptr<unsigned char[]>& buffer) const 
 
     if (newMerk == merkleRoot && newCurrHs == currHash) {
         if (newBlockSiz == blockSize) {
-            util::logCall("BLOCK", "deserialize()", true);
             return block;
         }
         else {

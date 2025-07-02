@@ -301,7 +301,6 @@ void BlockChain::getBlock(unsigned int bheight) {
 			}
 			ptr = ptr->next;
 		}
-		util::logCall("BLOCKCHAIN", "getBlock()", true);
 		ptr = nullptr;
 	}
 	else {

@@ -134,7 +134,6 @@ void Consensus::setDelegateIDs(const std::vector<std::string> &delIDs) {
 }
 
 void Consensus::addDelegateID(const std::string& delegate_id) {
-    util::logCall("CONSENSUS", "addDelegateID()", true);
     delegateID.push_back(delegate_id);
 }
 
@@ -225,7 +224,6 @@ std::string Consensus::getCurrentDelegate() {
     }
     std::string currentDelegate = std::move(delegates.front());
     delegates.erase(delegates.begin());
-    util::logCall("CONSENSUS", "getCurrentDelegate()", true);
     return currentDelegate;
 }
 
@@ -341,7 +339,6 @@ std::unique_ptr<unsigned char[]> Consensus::serializeConsensus() {
 
     std::memcpy(Buffer.get() + offset, &minBalance, sizeof(float));
 
-    util::logCall("CONSENSUS", "serializeConsensus()", true);
     return Buffer;
 }
 
@@ -385,7 +382,6 @@ unsigned short, unsigned short, float, float> Consensus::deserializeConsensus(co
     std::tuple<unsigned long long, unsigned long long, unsigned long, unsigned short, unsigned short, float,
     float>consensus(timestamp, lastUpd, votingPeriod, windowPeriod, maxDelegates, decayFactor, minBalance);
 
-    util::logCall("CONSENSUS", "deserializeConsensus()", true);
     return consensus;
 }
 
@@ -418,7 +414,6 @@ std::unique_ptr<unsigned char[]> Consensus::serializeVector(const std::vector<st
     std::memcpy(serializedData.get(), &totalSize, sizeof(totalSize));  // Store total buffer size
     std::memcpy(serializedData.get() + sizeof(totalSize), buffer.data(), buffer.size());
 
-    util::logCall("CONSENSUS", "serializeVector()", true);
     return serializedData;
 }
 
@@ -450,6 +445,5 @@ std::vector<std::tuple<std::string, std::string, float>> Consensus::deserializeV
         vec.emplace_back(str1, str2, value);
     }
 
-    util::logCall("CONSENSUS", "deserializeVector()", true);
     return vec;
 }

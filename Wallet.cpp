@@ -90,7 +90,6 @@ bool Wallet::ecDoSign(const std::vector<unsigned char> &hash, std::vector<unsign
     if (EVP_DigestSign(mdctx, signature.data(), &sig_len, hash.data(), hash.size())) {
         signature.resize(sig_len);
         EVP_MD_CTX_free(mdctx);
-        util::logCall("WALLET", "ecDoSign()", true);
         return true;
     }
 
@@ -115,7 +114,6 @@ bool Wallet::ecDoVerify(const EVP_PKEY_ptr& pubKey, const std::vector<unsigned c
 
     bool result = EVP_DigestVerify(mdctx, signature.data(), signature.size(), hash.data(), hash.size()) == 1;
     EVP_MD_CTX_free(mdctx);
-    util::logCall("WALLET", "ecDoVerify()", true);
     return result;
 }
 
@@ -287,7 +285,6 @@ utxout Wallet::outUTXO(double feee, const std::vector<std::string>& rwa, const s
     UTXO.shrink_to_fit();
     setBalance();
 
-    util::logCall("WALLET", "outUTXO()", true);
     return out;
 }
 
@@ -318,7 +315,6 @@ void Wallet::inUTXO(const transactions& txin, size_t index) {
 
     UTXO.emplace_back(ttx);
     setBalance();
-    util::logCall("WALLET", "inUTXO()", true);
 }
 
 bool Wallet::verifyTx(const utxout& out) {
@@ -340,7 +336,6 @@ bool Wallet::verifyTx(const utxout& out) {
                 return false;
             }
 
-            util::logCall("WALLET", "verifyTx()", true);
             return true;
         }
         else {
@@ -360,7 +355,6 @@ void Wallet::listTxs() {
     for (auto& tx: UTXO) {
         tx.display();
     }
-    util::logCall("WALLET", "listTxs()", true);
 }
 
 void Wallet::setBalance() {
@@ -371,7 +365,6 @@ void Wallet::setBalance() {
     }
 
     balance = amm;
-    util::logCall("WALLET", "setBalance()", true);
 }
 
 double Wallet::getBalance() const {
@@ -454,7 +447,6 @@ std::unique_ptr<unsigned char[]> Wallet::serialize_utxout(const utxout& obj) con
     /* Serialize public key itself */
     std::memcpy(buffer.get() + offset, buf.get(), len);
 
-    util::logCall("WALLET", "serialize_utxout()", true);
     ptr = nullptr;
     return buffer;
 }
@@ -493,6 +485,5 @@ utxout Wallet::deserialize_utxout(const std::unique_ptr<unsigned char[]>& buffer
     EVP_PKEY* raw_key = d2i_PUBKEY(nullptr, &pk, obj.pkeySize);
     obj.pubkey = EVP_PKEY_ptr(raw_key, EVP_PKEY_Deleter());
 
-    util::logCall("WALLET", "deserialize_utxout()", true);
     return obj;
 }

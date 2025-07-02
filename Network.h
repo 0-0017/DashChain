@@ -107,7 +107,6 @@ protected:
 			}
 			case CustomMsgTypes::Consensus:
 			{
-				std::cout << "Consnsus Message\n";
 				std::unique_ptr<unsigned char[]> rec;
 				msg >> rec;
 				std::tuple<unsigned long long, unsigned long long, unsigned long, unsigned short, unsigned short,
@@ -234,7 +233,6 @@ protected:
 			break;
 			case CustomMsgTypes::PopulateChain:
 			{
-				std::cout << "PopulateChain Message\n";
 				std::unique_ptr<unsigned char[]> rec;
 				msg >> rec;
 				Block* nb = chain->getCurrBlock()->deserialize(rec);
@@ -243,7 +241,6 @@ protected:
 			break;
 			case CustomMsgTypes::KnownNode:
 			{
-				std::cout << "KnownNode Message\n";
 				std::unique_ptr<unsigned char[]> rec;
 				msg >> rec;
 				servID newNode = deserializeStruct(rec);
@@ -258,26 +255,21 @@ protected:
 					nodeID.push_back(newNode);
 					this->broadcastNode(serializeStruct(newNode));
 				}
-				util::logCall("NETWORK", "OnMessage(KnownNode)", true);
 			}
 				break;
 			case CustomMsgTypes::TxRecieved:
 			{
-				std::cout << "TxRecieved Message\n";
 				/* deserialize utx-out and verify transaction */
 				std::unique_ptr<unsigned char[]> rec;
 				msg >> rec;
 				utxout uin;
-				std::cout << "rec :" << rec.get() << " --!\n";
 				uin = w1.deserialize_utxout(rec);
-				std::cout << "utxo :" << uin.utxo << " --!\n";
 				mempool_emplace(uin);
 				broadcastTransaction(uin);
 			}
 			break;
 			case CustomMsgTypes::BlkRecieved:
 			{
-				std::cout << "BlkRecieved Message\n";
 				if (chain->verifyBlockchain()) {
 					std::unique_ptr<unsigned char[]> rec;
 					msg >> rec;
@@ -286,13 +278,11 @@ protected:
 					chain->setVersion(nb->getVersion());
 					verifyMempool();
 					confirm();
-					util::logCall("NETWORK", "OnMessage(BlkRecieved)", true);
 				}
 			}
 			break;
 			case CustomMsgTypes::WalletInfo:
 			{
-				std::cout << "WalletInfo Message\n";
 				std::unique_ptr<unsigned char[]> rec;
 				msg >> rec;
 				walletInfo wi;
@@ -307,12 +297,10 @@ protected:
 				if (!present) {
 					wallets.push_back(wi);
 				}
-				util::logCall("NETWORK", "OnMessage(WalletInfo)", true);
 			}
 			break;
 			case CustomMsgTypes::DelegateID:
 			{
-				std::cout << "DelegateID Message\n";
 				std::unique_ptr<unsigned char[]> rec;
 				msg >> rec;
 				size_t offset = 0;
@@ -334,12 +322,10 @@ protected:
 					consensus.addDelegateID(id);
 					broadcastDelegateID(id);
 				}
-				util::logCall("NETWORK", "OnMessage(DelegateID)", true);
 			}
 				break;
 			case CustomMsgTypes::Votes:
 			{
-				std::cout << "Votes Message\n";
 				std::unique_ptr<unsigned char[]> rec;
 				msg >> rec;
 				std::vector<std::tuple<std::string, std::string, float>> votes = Consensus::deserializeVector(rec);
@@ -359,7 +345,6 @@ protected:
 						}
 					}
 				}
-				util::logCall("NETWORK", "OnMessage(Votes)", true);
 			}
 				break;
 			case CustomMsgTypes::Chain:
@@ -368,7 +353,6 @@ protected:
 				std::unique_ptr<unsigned char[]> rec;
 				msg >> rec;
 				chain->deserializeInfo(rec);
-				util::logCall("NETWORK", "OnMessage(Chain)", true);
 			}
 		}
 	}

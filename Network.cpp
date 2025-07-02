@@ -225,7 +225,6 @@ void Peer::verifyMempool() {
     }
     mempool = std::move(new_mempool);
     mempool.shrink_to_fit();
-    util::logCall("NETWORK", "verifyMempool()", true);
 }
 
 void Peer::mempool_emplace(const utxout& uin) {
@@ -243,30 +242,25 @@ void Peer::mempool_emplace(const utxout& uin) {
                     std::vector<std::tuple<std::string, std::string, float>> votesQueue = tx.getVotes();
                     mempool.emplace_back(tx);
                     verifyMempool();
-                    util::logCall("NETWORK", "OnMessage(TxRecieved)", true);
                 }
                 else {
                     /* If the transaction Cant be verifies */
-                    util::logCall("NETWORK", "OnMessage(TxRecieved)", false, "Addresses Mix Match!");
                     std::cout << "Addresses Mix Match!\n";
                 }
             }
             else {
                 /* If the transaction Cant be verifies */
-                util::logCall("NETWORK", "OnMessage(TxRecieved)", false, "Transaction Cannot Be Verified!");
                 std::cout << "Transaction Cannot Be Verified!\n";
             }
         }
         else {
             /* If the transaction is on blockchain */
-            util::logCall("NETWORK", "OnMessage(TxRecieved)", false, "Transaction Spent!");
             std::cout << "Transaction Spent!\n";
         }
 
     }
     else {
         /* If the transaction inputs or outputs are invalid */
-        util::logCall("NETWORK", "OnMessage(TxRecieved)", false, "Invalid transaction inputs or outputs!");
         std::cout << "Invalid transaction inputs or outputs!\n";
     }
 }
@@ -355,7 +349,6 @@ void Peer::updateCoins(transactions rew) {
 
     X0017.setTotalSupply(totus);
     X0017.setCircSupply(totus);
-    util::logCall("NETWORK", "updateCoins()", true);
 }
 
 void Peer::confirm() {
@@ -378,7 +371,6 @@ void Peer::confirm() {
                     for (auto& ra : rec) {
                         if (w1.getWalletAddr() == ra) {
                             w1.inUTXO(tx, pos);
-                            std::cout << "Wallets Updated\n";
                         }
                         pos++;
                     }
@@ -410,7 +402,6 @@ void Peer::confirm() {
                     consensus.updatedVotes(votesQueue);
                     votesQueue.clear();
                 }
-                std::cout << "Consensus Updated\n";
             }
         }
     }
@@ -420,18 +411,15 @@ void Peer::confirm() {
 void Peer::vote(std::vector<std::tuple<std::string, std::string, float>> votes) {
     consensus.updatedVotes(votes);
     broadcastVotes(votes);
-    util::logCall("NETWORK", "vote()", true);
 }
 
 std::string Peer::requestDelegate(){
     if (std::tuple<bool, std::string> ret = consensus.requestDelegate(w1.getBalance()); std::get<0>(ret) == true) {
         delegateID = std::get<1>(ret);
         broadcastDelegateID(delegateID);
-        util::logCall("NETWORK", "requestDelegate()", true);
         return std::get<1>(ret);
     }
     else {
-        util::logCall("NETWORK", "requestDelegate()", false, "Balance Too Low");
         std::cout << "Balance Too Low\n";
         return "";
     }
@@ -576,7 +564,6 @@ std::unique_ptr<unsigned char[]> Peer::serializeStruct(const servID& sid) {
     // Copy host string
     std::memcpy(buffer.get() + offset, sid.host.c_str(), hostSize);
 
-    util::logCall("NETWORK", "serializeStruct()", true);
     return buffer;
 }
 
@@ -597,7 +584,6 @@ servID Peer::deserializeStruct(const std::unique_ptr<unsigned char[]>& buffer) {
 
     sid.host = std::string(reinterpret_cast<const char*>(buffer.get() + offset), hostSize - 1);  // exclude null terminator
 
-    util::logCall("NETWORK", "deserializeStruct()", true);
     return sid;
 }
 
@@ -646,7 +632,6 @@ std::unique_ptr<unsigned char[]> Peer::serializeWalletInfo(const walletInfo& inf
         offset += pubKeySize;
     }
 
-    util::logCall("NETWORK", "serializeWalletInfo()", true);
     return buffer;
 }
 
@@ -690,6 +675,5 @@ walletInfo Peer::deserializeWalletInfo(const std::unique_ptr<unsigned char[]>& b
         info.pubKeyy = nullptr;
     }
 
-    util::logCall("NETWORK", "deserializeWalletInfo()", true);
     return info;
 }

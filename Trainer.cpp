@@ -23,9 +23,6 @@ void Trainer::load_data(const std::vector<double>& data) {
     json_stream << "}";
 
     json_body = json_stream.str();
-
-    // Optional: log the payload for debugging
-    std::cout << "[Trainer] Prepared JSON payload: " << json_body << std::endl;
 }
 
 std::vector<double> Trainer::train() const {
@@ -65,8 +62,6 @@ std::vector<double> Trainer::train() const {
         std::string status_message;
         response_stream >> http_version >> status_code;
         std::getline(response_stream, status_message);
-        std::cout << "Response: " << status_code << " " << status_message << "\n";
-
         // Read headers
         asio::read_until(socket, response, "\r\n\r\n");
         std::string header;
@@ -88,7 +83,6 @@ std::vector<double> Trainer::train() const {
             }
             return predictions;
         } catch (const std::exception& e) {
-            std::cerr << "JSON parse error: " << e.what() << "\n";
             return predictions;
         }
     } catch (std::exception& e) {
