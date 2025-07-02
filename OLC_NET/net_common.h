@@ -56,5 +56,10 @@
 
 #define ASIO_STANDALONE
 #include <asio.hpp>
+#include <asio/connect.hpp>
+#include <asio/io_context.hpp>
+#include <asio/streambuf.hpp>
+#include <asio/write.hpp>
+#include <asio/ip/tcp.hpp>
 #include <asio/ts/buffer.hpp>
 #include <asio/ts/internet.hpp>

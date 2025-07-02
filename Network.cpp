@@ -49,9 +49,11 @@ void Peer::serverOnStart(Peer& server) {
             tMsg = std::thread(&Peer::msgLoop, this, std::ref(server));
             tBlk = std::thread(&Peer::blkLoop, this, std::ref(server));
             tCns = std::thread(&Peer::cnsLoop, this, std::ref(server));
+            tTrn = std::thread(&Peer::trnLoop, this, std::ref(server));
             tMsg.detach();
             tBlk.detach();
             tCns.detach();
+            tTrn.detach();
 
         }
         else
@@ -70,9 +72,11 @@ void Peer::serverOnStart(Peer& server) {
             tMsg = std::thread(&Peer::msgLoop, this, std::ref(server));
             tBlk = std::thread(&Peer::blkLoop, this, std::ref(server));
             tCns = std::thread(&Peer::cnsLoop, this, std::ref(server));
+            tTrn = std::thread(&Peer::trnLoop, this, std::ref(server));
             tMsg.detach();
             tBlk.detach();
             tCns.detach();
+            tTrn.detach();
         }
     }
 }
@@ -100,6 +104,7 @@ void Peer::blkLoop(Peer& server) {
                 currentDelegate = consensus.getCurrentDelegate();
                 if (currentDelegate == delegateID) {
                     blkRqMethod();
+                    train_data();
                 }
             }
         }
@@ -112,6 +117,17 @@ void Peer::cnsLoop(Peer& server) {
         /* Lock mutex for the update operation */
         std::lock_guard<std::mutex> lock(mtxC);
         consensus.updateDelegates();
+    }
+}
+
+void Peer::trnLoop(Peer& server) {
+    unsigned int i = 0;
+    unsigned int cbh = chain->getCurrBlock()->getBlockHeight();
+    /* Lock mutex for the update operation */
+    std::lock_guard<std::mutex> lock(mtxD);
+    while (cbh > i && delegateID == currentDelegate) {
+        train_data();
+        i++;
     }
 }
 
@@ -426,6 +442,39 @@ bool Peer::ConnectTo(const std::string& host, uint16_t port) {
     std::cout << "[NetworkManager] Connecting to " << host << ":" << port << "\n";
     util::logCall("NETWORK", "ConnectTo()", true);
     return this->ConnectToPeer(host, port);
+}
+
+void Peer::train_data() {
+    /*Prepare data for load */
+    std::vector<double> data;
+    const double totalSupply = X0017.getTotalSupply();
+    const double circSupply = X0017.getCircSupply();
+    const double balance = w1.getBalance();
+    const double periodVotes = static_cast<double>(consensus.getVotesQueue().size());
+    const double height = chain->getBlockHeight();
+    const double txVolume = static_cast<double>(chain->getCurrBlock()->getData().size());
+
+    /* Load Data */
+    data.push_back(totalSupply);
+    data.push_back(circSupply);
+    data.push_back(balance);
+    data.push_back(periodVotes);
+    data.push_back(height);
+    data.push_back(txVolume);
+    trainer.load_data(data);
+
+    /* Get Predictions. NOTE: can be empty */
+    std::vector<double> predictions = trainer.train();
+
+    /* Apply Predictions */
+    if (!predictions.empty()) {
+        consensus.setMaxDelegates(static_cast<unsigned long>(predictions[0]));
+        consensus.setWindowPeriod(static_cast<unsigned long>(predictions[1]));
+        consensus.setVotingPeriod(static_cast<unsigned long>(predictions[2]));
+        consensus.setDecayFactor(static_cast<float>(predictions[3]));
+        consensus.setMinBalance(static_cast<float>(predictions[4]));
+        sPeriod = static_cast<unsigned short>(predictions[5]);
+    }
 }
 
 // Broadcasts a chat message to all connected peers.

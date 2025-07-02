@@ -15,6 +15,7 @@
 #include "Wallet.h"
 #include "Coin.h"
 #include "Consensus.h"
+#include "Trainer.h"
 
 // Message Types
 enum class CustomMsgTypes : uint32_t
@@ -42,6 +43,7 @@ protected:
 	//Variables
 	Wallet w1;
 	Coin X0017;
+	Trainer trainer;
 	static util u;
 	uint16_t port;
 	bool rcvCns;
@@ -54,6 +56,7 @@ protected:
 	std::thread tMsg; // This Thread Manages Messages
 	std::thread tBlk; // This Thread Manages Block Creation
 	std::thread tCns; // This Thread Manages Consensus
+	std::thread tTrn; // This thread manages AI Training
 	unsigned long long created; // Time Server Was Created
 	std::vector<servID> nodeID; // List of Servers Structs
 	std::vector<Block*> block_pool;
@@ -371,9 +374,10 @@ protected:
 	}
 private:
 	/* Variable */
-	std::mutex mtxA;  // Shared mutex for messages
-	std::mutex mtxB;  // Shared mutex for blocks
-	std::mutex mtxC;  // Shared mutex consensus
+	std::mutex mtxA; // Shared mutex for messages
+	std::mutex mtxB; // Shared mutex for blocks
+	std::mutex mtxC; // Shared mutex consensus
+	std::mutex mtxD; // Shared mutex AI
 
 
 public:
@@ -389,6 +393,7 @@ public:
 		tMsg.join();
 		tBlk.join();
 		tCns.join();
+		tTrn.join();
 		delete chain;
 		this->Stop();
 	}
@@ -401,6 +406,9 @@ public:
 
 	/* Updates the Server for consensus */
 	void cnsLoop(Peer& server);
+
+	/* Updates the Server for AI Training */
+	void trnLoop(Peer& server);
 
 	/* Setter to add a ServerID object to the vector */
 	void setNodeID(const servID& sid);
@@ -467,10 +475,13 @@ public:
 
 	void getBlock(unsigned int height);
 
-	// Utility function to initiate an outbound connection to a remote peer.
+	/* Utility function to initiate an outbound connection to a remote peer. */
 	bool ConnectTo(const std::string& host, uint16_t port);
 
-	// Utility function to broadcast a chat message to every connected peer.
+	/* Train Data Via AI API */
+	void train_data();
+
+	/* Utility function to broadcast a chat message to every connected peer. */
 	void BroadcastChat(const std::string& text);
 
 	void broadcastNode(std::unique_ptr<unsigned char[]> sid);

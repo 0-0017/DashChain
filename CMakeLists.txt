@@ -11,7 +11,7 @@ find_package(OpenSSL REQUIRED)
 include_directories(${CMAKE_SOURCE_DIR}/OLC_NET)
 
 file(GLOB SOURCES "*.cpp")
-add_executable(DashChain main.cpp ${SOURCES})
+add_executable(DashChain Trainer.cpp ${SOURCES})
 
 # Link OpenSSL and libcurl to your project
 target_link_libraries(DashChain OpenSSL::Crypto)
