@@ -214,4 +214,4 @@ Project DASH is still in development. While currently functional, it has known m
 
 	- Enhancing network functionality for better peer-to-peer interaction.
 
-    - Implement AI For Smart Consensus & Self Healing
+    - Improving AI For Smart Consensus & Self Healing
