@@ -11,7 +11,7 @@ void Peer::serverOnStart(Peer& server) {
     chain = nullptr;
     rcvCns = false;
     servID initialNode;
-    initialNode.host = "34.56.217.220";
+    initialNode.host = "99.105.19.8";
     initialNode.portNum = 50507;
     setNodeID(initialNode);
     setTimeCreated();
