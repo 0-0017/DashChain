@@ -18,7 +18,7 @@
 
 #include <iostream>
 #include <chrono>
-#include <stdio.h>
+#include <cstdio>
 #include <openssl/evp.h>
 #include <openssl/err.h>
 #include <openssl/ec.h>
@@ -32,7 +32,7 @@
 #include <openssl/param_build.h>
 #include <openssl/core_names.h>
 #include <string>
-#include <string.h>
+#include <cstring>
 #include <sstream>
 #include <vector>
 #include <queue>

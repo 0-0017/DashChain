@@ -1,0 +1,13 @@
+stable-baselines3
+uvicorn[standard]
+python-multipart
+sb3-contrib
+matplotlib
+fastapi~=0.115.14
+optuna~=4.4.0
+pandas
+numpy~=2.2.6
+gym
+gymnasium~=1.1.1
+pydantic~=2.11.7
+stable_baselines3~=2.6.0

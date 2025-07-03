@@ -210,6 +210,7 @@ void processCommand(std::string& command, Peer& p) {
 
 int main() {
     /* Server Startup */
+    std::system("python python/main.py");
     Peer server(50507);
     server.serverOnStart(server);
 
