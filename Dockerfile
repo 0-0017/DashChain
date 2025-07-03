@@ -1,13 +1,23 @@
 FROM ubuntu:22.04
 
-WORKDIR /chain
+# Install required packages
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    cmake \
+    libssl-dev \
+    libasio-dev \
+    nlohmann-json-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install dependencies if needed
-RUN apt-get update && apt-get install -y curl bash
+# Set working directory
+WORKDIR /app
 
+# Copy source code
 COPY . .
 
-# Make sure your script is executable
-RUN chmod +x start_chain.sh
+# Create build directory and compile
+RUN mkdir build && cd build && cmake .. && make
 
-CMD ["./start_chain.sh"]
+# Run the compiled binary
+CMD ["./build/DashChain"]
