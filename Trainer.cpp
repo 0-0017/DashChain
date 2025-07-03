@@ -33,7 +33,7 @@ std::vector<double> Trainer::train() const {
 
         // Resolve the host
         asio::ip::tcp::resolver resolver(io_context);
-        auto endpoints = resolver.resolve("localhost", "8000");
+        auto endpoints = resolver.resolve("api", "8000");
 
         // Connect to the server
         asio::ip::tcp::socket socket(io_context);
