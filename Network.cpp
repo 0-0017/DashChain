@@ -121,14 +121,9 @@ void Peer::cnsLoop(Peer& server) {
 }
 
 void Peer::trnLoop(Peer& server) {
-    unsigned int i = 0;
-    unsigned int cbh = chain->getCurrBlock()->getBlockHeight();
     /* Lock mutex for the update operation */
     std::lock_guard<std::mutex> lock(mtxD);
-    while (cbh > i && delegateID == currentDelegate) {
-        train_data();
-        i++;
-    }
+    std::system("python ../python/main.py");
 }
 
 /* Add a ServerID JSON object to the Node vector */
